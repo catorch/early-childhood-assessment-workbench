@@ -1,0 +1,14 @@
+node_modules
+.next
+.turbo
+dist
+coverage
+docs/
+README.md
+.codex
+.env
+.env.local
+.env.*.local
+*.log
+*.tsbuildinfo
+prisma/dev.db

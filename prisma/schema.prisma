@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VideoStatus {
+  UPLOADED
+  UNMATCHED
+  PROCESSING
+  COMPLETED
+  NEEDS_REVIEW
+  FAILED
+}
+
+enum AiRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum CreditAssignment {
+  CREDIT
+  PARTIAL_CREDIT
+  NO_CREDIT
+  NOT_OBSERVED
+  UNCERTAIN
+}
+
+enum ReviewPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PromptStatus {
+  CURRENT
+  CANDIDATE
+  ARCHIVED
+}
+
+model Child {
+  id              String   @id @default(cuid())
+  externalChildId String   @unique
+  ageMonths       Int
+  ageBand         String
+  classroom       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  videos       Video[]
+  humanRatings HumanRating[]
+}
+
+model Video {
+  id                 String      @id @default(cuid())
+  filename           String
+  fileUrl            String
+  status             VideoStatus @default(UPLOADED)
+  datasetSplit       String      @default("validation")
+  observationDate    DateTime?
+  observedAtLabel    String?
+  durationSeconds    Int?
+  domainFocus        String?
+  childId            String?
+  externalChildId    String?
+  reviewPriority     ReviewPriority?
+  priorityReason     String?
+  uploadedBy         String?
+  uploadedAt         DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  child         Child?        @relation(fields: [childId], references: [id])
+  aiRuns        AiRun[]
+  humanRatings  HumanRating[]
+
+  @@index([status])
+  @@index([datasetSplit])
+  @@index([childId])
+}
+
+model RubricSkill {
+  id             String   @id @default(cuid())
+  skillCode      String   @unique
+  name           String
+  domain         String
+  strand         String?
+  definition     String
+  minAgeMonths   Int
+  maxAgeMonths   Int
+  scoringRules   Json
+  productionReady Boolean @default(true)
+  versionLabel   String   @default("2026.05")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  detections   AiSkillDetection[]
+  humanRatings HumanRating[]
+
+  @@index([domain, strand])
+  @@index([minAgeMonths, maxAgeMonths])
+}
+
+model PromptVersion {
+  id                         String       @id @default(cuid())
+  name                       String
+  version                    String
+  promptText                 String
+  modelName                  String
+  modelConfig                Json
+  structuredOutputSchemaVersion String    @default("1.2")
+  status                     PromptStatus @default(CANDIDATE)
+  parentPromptVersionId      String?
+  changeNotes                String?
+  exactAgreement             Float?
+  cohenKappa                 Float?
+  createdBy                  String
+  createdAt                  DateTime     @default(now())
+  promotedAt                 DateTime?
+
+  aiRuns             AiRun[]
+  reliabilityReports ReliabilityReport[]
+
+  @@unique([name, version])
+  @@index([status])
+}
+
+model AiRun {
+  id              String      @id @default(cuid())
+  videoId         String
+  promptVersionId String
+  status          AiRunStatus @default(QUEUED)
+  modelName       String
+  modelConfig     Json
+  rawResponse     Json?
+  diagnostics     Json?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdBy       String?
+  createdAt       DateTime    @default(now())
+
+  video         Video              @relation(fields: [videoId], references: [id])
+  promptVersion PromptVersion      @relation(fields: [promptVersionId], references: [id])
+  detections    AiSkillDetection[]
+
+  @@index([videoId])
+  @@index([promptVersionId])
+  @@index([status])
+}
+
+model AiSkillDetection {
+  id              String           @id @default(cuid())
+  aiRunId         String
+  videoId         String
+  rubricSkillId   String
+  domain          String
+  strand          String?
+  credit          CreditAssignment
+  confidence      Float
+  evidence        Json
+  timestampStart  Int?
+  timestampEnd    Int?
+  rationale       String
+  dalData         Json?
+  reviewFlags     String[]
+  needsReview     Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+
+  aiRun          AiRun            @relation(fields: [aiRunId], references: [id])
+  rubricSkill    RubricSkill      @relation(fields: [rubricSkillId], references: [id])
+  reviewOverrides ReviewOverride[]
+
+  @@index([videoId, rubricSkillId])
+  @@index([needsReview])
+  @@index([domain])
+}
+
+model HumanRating {
+  id            String           @id @default(cuid())
+  videoId       String
+  childId       String?
+  rubricSkillId String
+  raterId       String
+  credit        CreditAssignment
+  notes         String?
+  importedAt    DateTime         @default(now())
+  importedBy    String?
+
+  video       Video       @relation(fields: [videoId], references: [id])
+  child       Child?      @relation(fields: [childId], references: [id])
+  rubricSkill RubricSkill @relation(fields: [rubricSkillId], references: [id])
+
+  @@unique([videoId, rubricSkillId, raterId])
+  @@index([videoId, rubricSkillId])
+}
+
+model ReviewOverride {
+  id              String           @id @default(cuid())
+  aiDetectionId   String
+  originalCredit  CreditAssignment
+  correctedCredit CreditAssignment
+  reviewerNote    String?
+  reviewerId      String
+  createdAt       DateTime         @default(now())
+
+  aiDetection AiSkillDetection @relation(fields: [aiDetectionId], references: [id])
+
+  @@index([aiDetectionId])
+  @@index([reviewerId])
+}
+
+model ReliabilityReport {
+  id               String   @id @default(cuid())
+  promptVersionId  String
+  datasetSplit     String
+  exactAgreement   Float
+  cohenKappa       Float?
+  totalComparisons Int
+  agreed           Int
+  disagreements    Int
+  confusionMatrix  Json
+  errorPatterns    Json
+  targetMet        Boolean  @default(false)
+  calculatedBy     String?
+  calculatedAt     DateTime @default(now())
+
+  promptVersion PromptVersion @relation(fields: [promptVersionId], references: [id])
+
+  @@index([promptVersionId, datasetSplit])
+}
