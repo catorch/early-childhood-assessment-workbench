@@ -1,5 +1,5 @@
 {
-  "name": "early-childhood-assessment-workbench",
+  "name": "help-review-pilot",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,11 +10,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",
     "db:generate": "prisma generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:validate": "prisma validate"
   },
   "dependencies": {
     "@prisma/client": "7.8.0",
-    "lucide-react": "1.16.0",
+    "lucide-react": "^1.24.0",
     "next": "16.2.6",
     "react": "19.2.5",
     "react-dom": "19.2.5",
@@ -25,16 +25,14 @@
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "dotenv": "^17.4.2",
     "eslint": "^9.39.0",
     "eslint-config-next": "16.2.6",
+    "playwright": "^1.61.1",
     "prisma": "7.8.0",
     "tailwindcss": "4.3.0",
-    "tsx": "^4.20.6",
     "typescript": "6.0.3",
     "vitest": "^4.0.13"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   },
   "packageManager": "pnpm@10.26.0"
 }

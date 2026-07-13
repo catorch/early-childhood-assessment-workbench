@@ -1,7 +1,0 @@
-docs/
-README.md
-.codex
-.git/
-node_modules/
-coverage/
-*.tsbuildinfo

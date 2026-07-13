@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
-export default function HomePage() {
-  redirect("/dashboard");
+import { resolvePilotHome } from "@/lib/help-review/server-navigation";
+
+export default async function HomePage() {
+  redirect(await resolvePilotHome());
 }

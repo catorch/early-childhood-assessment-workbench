@@ -1,0 +1,259 @@
+# Tasks: Assessment Reliability Workbench
+
+Generated with the Kiro spec-driven workflow.
+
+Source design: `docs/specs/assessment-reliability-workbench/design.md`
+
+## Implementation Plan
+
+This task plan is organized by the RFP milestone sequence and the practical reliability-first approach from the May 27 client conversation. The first implementation priority is not dashboard polish; it is a traceable batch pipeline that can reproduce the current baseline, expose where AI-human scoring diverges, and support structured prompt/model iteration.
+
+Each task references the requirements it supports.
+
+## Tasks
+
+- [ ] 1. Kickoff and requirements alignment
+- [ ] 1.1 Confirm source materials and data inventory
+  - Request current Gemini prompt or Gem configuration.
+  - Request HELP rubric, scoring rules, manual excerpts, and DAL calculation guidance.
+  - Request prior AI output CSVs, expert benchmark scores, and existing IRR results.
+  - Request available videos, permission status, child metadata, and existing platform integration notes.
+  - Record missing inputs as schedule or reliability risks.
+  - _Requirements: FR-1, FR-2, FR-6, FR-10, NFR-2, NFR-6_
+- [ ] 1.2 Define validation protocol
+  - Define tuning, calibration, and held-out validation splits.
+  - Confirm the primary metric for the >=90% target.
+  - Confirm supporting metrics: percent agreement, Cohen's kappa, Krippendorff's alpha, and grouped error rates.
+  - Define how present vs emerging, emerging vs not present, atypical flags, circled/family-discussion flags, and DAL fields count in reliability.
+  - _Requirements: FR-1, FR-2, FR-6, NFR-1, NFR-2_
+- [ ] 1.3 Finalize MVP scope and architecture
+  - Confirm batch processing, age-gated scoring, structured AI output, human review, reliability reporting, and export/API-ready schemas as MVP scope.
+  - Confirm what is explicitly out of scope for the July 31 delivery.
+  - Confirm deployment path and review cadence with the content advisor.
+  - _Requirements: FR-3, FR-5, FR-7, FR-8, FR-10, NFR-6_
+
+- [ ] 2. Data model and validation foundation
+- [ ] 2.1 Align domain types with HELP scoring
+  - Map HELP labels for present, emerging, not present, atypical indicators, and circled/family-discussion flags into the internal credit taxonomy.
+  - Add or confirm domain types for permission status, dataset split, rubric version, prompt version, AI run, detection, human rating, review override, and reliability report.
+  - _Requirements: FR-1, FR-2, FR-3, FR-5, FR-6, NFR-1_
+- [ ] 2.2 Update Prisma schema for production-shaped persistence
+  - Confirm models for children, videos, rubric skills, prompt versions, AI runs, detections, human ratings, overrides, reliability reports, and optional processing batches.
+  - Add indexes for video-skill comparisons, prompt version metrics, dataset split queries, and child external IDs.
+  - Keep child metadata minimal and avoid unnecessary PII.
+  - _Requirements: FR-1, FR-2, FR-4, FR-6, FR-9, NFR-4_
+- [ ] 2.3 Implement shared validation schemas
+  - Validate video registration, child metadata import, rubric import, prompt versions, AI provider output, human ratings import, review overrides, and reliability report requests.
+  - Return row-level errors for imports.
+  - Reject invalid AI structured output before persistence.
+  - _Requirements: FR-1, FR-3, FR-4, FR-5, FR-6, FR-8_
+- [ ] 2.4 Seed safe prototype data
+  - Keep sample videos, children, rubric skills, prompts, AI detections, human ratings, and reliability reports generic.
+  - Include examples for low confidence, present-vs-emerging mismatch, missing evidence, age-gate concerns, and DAL issues.
+  - _Requirements: FR-5, FR-6, FR-7, FR-9_
+
+- [ ] 3. Intake and batch processing proof of concept
+- [ ] 3.1 Implement video registration and child matching
+  - Register video metadata and storage references.
+  - Match videos to child records by external child ID or operator correction.
+  - Track permission status and dataset split.
+  - Surface unmatched or permission-blocked videos.
+  - _Requirements: FR-1, FR-8, FR-9_
+- [ ] 3.2 Implement child metadata import
+  - Import child IDs, age at observation or age derivation fields, age bands, and relevant support indicators.
+  - Validate required fields and return row-level errors.
+  - Avoid storing unnecessary demographic data.
+  - _Requirements: FR-1, FR-9_
+- [ ] 3.3 Implement rubric import and age-gated skill scope
+  - Store skill code, domain, strand, age range, definition, and scoring rules.
+  - Build a helper that returns only child-relevant HELP skills.
+  - Surface warnings for missing or ambiguous rubric data.
+  - _Requirements: FR-2, FR-3, NFR-2_
+- [ ] 3.4 Implement processing batch status
+  - Group video processing requests into a batch.
+  - Show batch-level counts for queued, running, completed, failed, needs review, and blocked.
+  - Preserve per-video status and retryability.
+  - _Requirements: FR-3, FR-7, NFR-3_
+
+- [ ] 4. AI processing pipeline
+- [ ] 4.1 Keep the AI runner backend-only
+  - Load video, child context, rubric scope, prompt version, and model config inside `lib/ai/run-video-assessment.ts`.
+  - Keep provider calls out of UI components.
+  - Return normalized run results to route handlers.
+  - _Requirements: FR-3, FR-4, NFR-3, NFR-4_
+- [ ] 4.2 Use the mock provider for deterministic development
+  - Return structured detections for seeded videos.
+  - Include controlled examples that test review and reliability flows.
+  - Keep mock outputs compatible with the same schema as Gemini outputs.
+  - _Requirements: FR-3, FR-5, FR-6_
+- [ ] 4.3 Add Gemini provider integration boundary
+  - Add server-only provider configuration.
+  - Submit video reference, prompt text, model config, child context, and age-gated rubric scope.
+  - Capture raw response metadata and provider diagnostics without exposing secrets.
+  - _Requirements: FR-3, FR-4, FR-9_
+- [ ] 4.4 Validate, normalize, and persist AI output
+  - Validate model output against the structured schema.
+  - Normalize HELP scoring labels into the internal credit taxonomy.
+  - Persist skill detections, confidence, evidence, timestamp, rationale, atypical/family-discussion flags, DAL fields, and review flags.
+  - Mark AI runs and videos as completed, failed, or needs review.
+  - _Requirements: FR-2, FR-3, FR-5, NFR-1_
+- [ ] 4.5 Implement processing routes and retry
+  - Support `POST /api/videos/[videoId]/process`.
+  - Preserve prior attempts when retrying failed runs.
+  - Tie every run to video, child, rubric version, prompt version, model config, and dataset split.
+  - _Requirements: FR-3, FR-4, FR-8_
+
+- [ ] 5. Prompt and model experiment tracking
+- [ ] 5.1 Implement prompt version CRUD
+  - Store prompt text, version, model name, model config, schema version, change notes, and parent version.
+  - Prevent duplicate name/version pairs.
+  - Keep used prompt versions immutable.
+  - _Requirements: FR-4, FR-8, FR-10_
+- [ ] 5.2 Implement prompt promotion rules
+  - Allow authorized users to mark a prompt current, candidate, or archived.
+  - Prevent promotion if structured output settings or rubric grounding are missing.
+  - Record promotion audit metadata.
+  - _Requirements: FR-4, FR-9, FR-10_
+- [ ] 5.3 Track before/after experiment metrics
+  - Store reliability metrics for each evaluated prompt version.
+  - Compare candidate vs current prompts by exact agreement, kappa, grouped agreement, and top disagreement patterns.
+  - Preserve content advisor notes and experiment hypotheses.
+  - _Requirements: FR-4, FR-6, FR-7, FR-10_
+- [ ] 5.4 Build prompt experiment UI
+  - Show prompt table, selected prompt details, model config, change notes, and status.
+  - Show before/after metrics and whether the validation target is met.
+  - _Requirements: FR-4, FR-6, FR-7, NFR-5_
+
+- [ ] 6. Reliability baseline and error analysis
+- [ ] 6.1 Import expert human ratings
+  - Parse expert ratings from CSV or JSON.
+  - Validate video IDs, skill IDs, rater IDs, credit assignments, and dataset split.
+  - Store independent ratings separately from AI-visible review overrides.
+  - _Requirements: FR-5, FR-6, NFR-1_
+- [ ] 6.2 Build comparison rows
+  - Match AI detections and expert ratings by video-skill pair.
+  - Track prompt version, model config, rubric version, domain, strand, and dataset split.
+  - Decide how to represent missing AI detections or missing human ratings.
+  - _Requirements: FR-6, NFR-1_
+- [ ] 6.3 Implement reliability metrics
+  - Calculate exact agreement, total comparisons, agreed count, disagreement count, and target status.
+  - Calculate Cohen's kappa where appropriate.
+  - Calculate Krippendorff's alpha where appropriate.
+  - Produce confusion matrices and grouped metrics where sample size allows.
+  - Add unit tests for normal, empty, sparse, and imbalanced comparison sets.
+  - _Requirements: FR-6, NFR-1_
+- [ ] 6.4 Implement error pattern analysis
+  - Separate missed skill detection, false positive detection, present-vs-emerging mismatch, emerging-vs-not-present mismatch, age-gate errors, evidence gaps, and DAL issues.
+  - Rank disagreement patterns by frequency and impact.
+  - Generate recommendations for the next prompt/model iteration.
+  - _Requirements: FR-6, FR-7, NFR-2_
+- [ ] 6.5 Build reliability dashboard
+  - Show exact agreement, kappa, alpha where available, comparison count, target status, and prompt trend.
+  - Show grouped metrics by domain, strand, score type, dataset split, and prompt version.
+  - Show confusion matrix and top disagreement patterns.
+  - _Requirements: FR-6, FR-7, NFR-5_
+
+- [ ] 7. Human-in-the-loop review
+- [ ] 7.1 Build video review detail
+  - Show video reference/player, child context, AI detections, confidence, evidence, timestamp, and review flags.
+  - Show selected HELP skill definition and scoring rules.
+  - Show DAL fields and concern flags where available.
+  - _Requirements: FR-5, FR-7, NFR-5_
+- [ ] 7.2 Implement reviewer actions
+  - Support accept, correct, remove, and add missing skill.
+  - Store original AI credit, corrected credit, reviewer note, reviewer ID, timestamp, prompt version, and model config.
+  - Show override history.
+  - _Requirements: FR-5, FR-9, NFR-1_
+- [ ] 7.3 Build prioritized review queue
+  - Prioritize low confidence, AI-human disagreement, missing evidence, age-gate concerns, DAL issues, and present-vs-emerging mismatch.
+  - Add filters by domain, score type, prompt version, dataset split, and priority reason.
+  - _Requirements: FR-5, FR-7, NFR-5_
+- [ ] 7.4 Preserve independent rating mode
+  - Support workflows where expert raters do not see AI outputs.
+  - Keep independent ratings and post-AI reviewer overrides separate in data and exports.
+  - _Requirements: FR-5, FR-6, FR-9_
+
+- [ ] 8. Dashboard, exports, and interoperability
+- [ ] 8.1 Build milestone dashboard
+  - Show total videos, permissioned videos, processed videos, needs review, current prompt, current agreement, and target status.
+  - Show recent processing activity and retryable failures.
+  - Show review queue preview and prompt performance trend.
+  - _Requirements: FR-7, NFR-5_
+- [ ] 8.2 Implement structured exports
+  - Export AI outputs, human ratings, review overrides, reliability reports, prompt logs, and batch status as CSV and JSON.
+  - Keep stable field names and include video, child, skill, prompt, model, rubric, and dataset references.
+  - _Requirements: FR-7, FR-8, FR-10_
+- [ ] 8.3 Document API-shaped records
+  - Document request/response shapes for video registration, processing, prompts, reliability, imports, overrides, and exports.
+  - Keep export and API fields aligned with the domain model.
+  - _Requirements: FR-8, FR-10_
+- [ ] 8.4 Add operator-facing status and errors
+  - Show upload validation errors, import row errors, AI run failures, permission blocks, and reliability data gaps.
+  - Provide retry actions where safe.
+  - Keep diagnostic details visible to admin/engineer roles.
+  - _Requirements: FR-1, FR-3, FR-6, FR-7, FR-9_
+
+- [ ] 9. Access control, privacy, and audit
+- [ ] 9.1 Add prototype auth context
+  - Identify the current user for imports, exports, prompt changes, AI runs, and review actions.
+  - Start with mocked auth if needed, but keep the boundary replaceable with Auth.js, Clerk, or the client platform.
+  - _Requirements: FR-5, FR-9_
+- [ ] 9.2 Add role checks
+  - Restrict prompt promotion, imports, exports, reliability validation, and settings to authorized roles.
+  - Restrict review actions to reviewer/admin roles.
+  - Return forbidden responses without leaking protected data.
+  - _Requirements: FR-8, FR-9_
+- [ ] 9.3 Add audit metadata
+  - Record created-by and updated-by metadata for prompt versions, imports, exports, AI runs, overrides, and reliability reports.
+  - Include audit fields in admin views or exports where appropriate.
+  - _Requirements: FR-9, FR-10, NFR-1_
+- [ ] 9.4 Enforce permission status
+  - Prevent videos from being used for tuning, validation, or experiments beyond their approved permission.
+  - Surface blocked videos and reason codes to operators.
+  - _Requirements: FR-1, FR-9, NFR-4_
+
+- [ ] 10. Documentation and handoff
+- [ ] 10.1 Write technical documentation
+  - Document architecture, data model, AI provider boundary, storage adapter, route handlers, reliability metrics, exports, and deployment path.
+  - Include environment variable requirements and setup steps.
+  - _Requirements: FR-10_
+- [ ] 10.2 Write operator guide
+  - Document video registration, child metadata import, batch processing, review, reliability report generation, prompt experiment review, and exports.
+  - Include known limitations and common failure modes.
+  - _Requirements: FR-10_
+- [ ] 10.3 Maintain prompt version log
+  - Document each prompt/model iteration, hypothesis, dataset split, before/after metrics, content advisor notes, and known failure modes.
+  - _Requirements: FR-4, FR-6, FR-10_
+- [ ] 10.4 Prepare handoff package
+  - Package final codebase or deployable project.
+  - Include final reliability report, validation assumptions, prompt log, operator guide, technical docs, export schema, and recommended next steps.
+  - _Requirements: FR-7, FR-8, FR-10_
+
+- [ ] 11. Milestone verification
+- [ ] 11.1 Verify kickoff package for $500 milestone
+  - Confirm finalized scope, data intake checklist, validation protocol, implementation plan, milestone schedule, and dependency list.
+  - _Requirements: FR-10, NFR-6_
+- [ ] 11.2 Verify June 30 proof of concept
+  - Confirm a small batch can be registered, matched to child metadata, processed through the AI runner, validated, persisted, and exported.
+  - Confirm outputs include skill ID, domain, strand, suggested credit, confidence, evidence, timestamp, review flag, and DAL fields where applicable.
+  - _Requirements: FR-1, FR-2, FR-3, FR-7, FR-8, NFR-6_
+- [ ] 11.3 Verify July 10 first reliability benchmark
+  - Confirm expert ratings import works.
+  - Confirm comparison rows and reliability metrics generate for the baseline prompt.
+  - Confirm error pattern analysis identifies present-vs-emerging and other high-impact mismatches.
+  - _Requirements: FR-4, FR-6, FR-7, NFR-2, NFR-6_
+- [ ] 11.4 Verify July 15 human review interface
+  - Confirm reviewers can inspect evidence, accept, correct, remove, add missing skills, and export override logs.
+  - Confirm independent rating mode remains separate from AI-visible review mode.
+  - _Requirements: FR-5, FR-7, FR-9, NFR-6_
+- [ ] 11.5 Verify July 27 final reliability validation
+  - Lock final prompt/model configuration.
+  - Run the agreed held-out validation set.
+  - Produce reproducible final metrics and state whether the >=90% exact agreement target was met.
+  - If not met, produce gap analysis and remediation plan.
+  - _Requirements: FR-4, FR-6, FR-7, FR-10, NFR-6_
+- [ ] 11.6 Verify July 31 final delivery and handoff
+  - Confirm docs, exports, prompt log, final reliability report, known limitations, and handoff materials are complete.
+  - Confirm Acelero can run or access the MVP through the documented workflow.
+  - _Requirements: FR-8, FR-10, NFR-6_
+

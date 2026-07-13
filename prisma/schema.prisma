@@ -4,231 +4,266 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-enum VideoStatus {
-  UPLOADED
-  UNMATCHED
+enum Role {
+  EDUCATOR
+  ADMIN
+}
+
+enum AssessmentStatus {
+  DRAFT
+  UPLOADING
   PROCESSING
-  COMPLETED
-  NEEDS_REVIEW
+  READY_FOR_REVIEW
+  IN_REVIEW
+  FINALIZED
   FAILED
 }
 
-enum AiRunStatus {
+enum VideoAssetStatus {
+  PENDING_UPLOAD
+  AVAILABLE
+  REPLACED
+  DELETED
+}
+
+enum ProcessingRunStatus {
   QUEUED
   RUNNING
   COMPLETED
   FAILED
 }
 
-enum CreditAssignment {
-  CREDIT
-  PARTIAL_CREDIT
-  NO_CREDIT
+enum PrimaryCredit {
+  PRESENT
+  EMERGING
   NOT_OBSERVED
-  UNCERTAIN
+  NOT_APPLICABLE
 }
 
-enum ReviewPriority {
-  LOW
-  MEDIUM
-  HIGH
+enum DecisionOrigin {
+  ACCEPTED
+  OVERRIDDEN
+  SCORED_INDEPENDENTLY
+  DISMISSED
 }
 
-enum PromptStatus {
-  CURRENT
-  CANDIDATE
-  ARCHIVED
-}
-
-model Child {
+model User {
   id              String   @id @default(cuid())
-  externalChildId String   @unique
-  ageMonths       Int
-  ageBand         String
-  classroom       String?
+  externalSubject String   @unique
+  email           String?  @unique
+  displayName     String?
+  role            Role
+  isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  videos       Video[]
-  humanRatings HumanRating[]
+  provisionsCreated    AccessProvision[] @relation("ProvisionCreator")
+  sessions             Session[]
+  childAssignments     ChildAssignment[] @relation("EducatorAssignments")
+  assignmentsCreated   ChildAssignment[] @relation("AssignmentCreator")
+  assessments          Assessment[]      @relation("AssessmentEducator")
+  finalizedAssessments Assessment[]      @relation("AssessmentFinalizer")
+  uploadedVideos       VideoAsset[]      @relation("VideoUploader")
+  videoAccessRecords   VideoAccessGrantRecord[]
+  requestedRuns        ProcessingRun[]   @relation("RunRequester")
+  reviewDecisions      ReviewDecision[]
 }
 
-model Video {
-  id                 String      @id @default(cuid())
-  filename           String
-  fileUrl            String
-  status             VideoStatus @default(UPLOADED)
-  datasetSplit       String      @default("validation")
-  observationDate    DateTime?
-  observedAtLabel    String?
-  durationSeconds    Int?
-  domainFocus        String?
-  childId            String?
-  externalChildId    String?
-  reviewPriority     ReviewPriority?
-  priorityReason     String?
-  uploadedBy         String?
-  uploadedAt         DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+model AccessProvision {
+  id                    String    @id @default(cuid())
+  externalSubject       String?   @unique
+  exactEmail            String?
+  intendedRole          Role
+  providerEnrollmentRef String?
+  provisionedById       String
+  activatedAt           DateTime?
+  deactivatedAt         DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  child         Child?        @relation(fields: [childId], references: [id])
-  aiRuns        AiRun[]
-  humanRatings  HumanRating[]
+  provisionedBy User @relation("ProvisionCreator", fields: [provisionedById], references: [id], onDelete: Restrict)
 
-  @@index([status])
-  @@index([datasetSplit])
-  @@index([childId])
+  @@index([exactEmail, deactivatedAt])
 }
 
-model RubricSkill {
-  id             String   @id @default(cuid())
-  skillCode      String   @unique
-  name           String
-  domain         String
-  strand         String?
-  definition     String
-  minAgeMonths   Int
-  maxAgeMonths   Int
-  scoringRules   Json
-  productionReady Boolean @default(true)
-  versionLabel   String   @default("2026.05")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+model Session {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  userId     String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime?
 
-  detections   AiSkillDetection[]
-  humanRatings HumanRating[]
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([domain, strand])
-  @@index([minAgeMonths, maxAgeMonths])
+  @@index([userId, expiresAt])
 }
 
-model PromptVersion {
-  id                         String       @id @default(cuid())
-  name                       String
-  version                    String
-  promptText                 String
-  modelName                  String
-  modelConfig                Json
-  structuredOutputSchemaVersion String    @default("1.2")
-  status                     PromptStatus @default(CANDIDATE)
-  parentPromptVersionId      String?
-  changeNotes                String?
-  exactAgreement             Float?
-  cohenKappa                 Float?
-  createdBy                  String
-  createdAt                  DateTime     @default(now())
-  promotedAt                 DateTime?
+model Child {
+  id                String   @id @default(cuid())
+  externalChildId   String   @unique
+  ageMonths         Int
+  approvedContext   Json?
+  processingAllowed Boolean?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  aiRuns             AiRun[]
-  reliabilityReports ReliabilityReport[]
-
-  @@unique([name, version])
-  @@index([status])
+  assignments ChildAssignment[]
+  assessments Assessment[]
 }
 
-model AiRun {
-  id              String      @id @default(cuid())
-  videoId         String
-  promptVersionId String
-  status          AiRunStatus @default(QUEUED)
-  modelName       String
-  modelConfig     Json
-  rawResponse     Json?
-  diagnostics     Json?
-  startedAt       DateTime?
-  completedAt     DateTime?
-  createdBy       String?
-  createdAt       DateTime    @default(now())
+model ChildAssignment {
+  id          String    @id @default(cuid())
+  educatorId  String
+  childId     String
+  startsAt    DateTime  @default(now())
+  endsAt      DateTime?
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  video         Video              @relation(fields: [videoId], references: [id])
-  promptVersion PromptVersion      @relation(fields: [promptVersionId], references: [id])
-  detections    AiSkillDetection[]
+  educator  User  @relation("EducatorAssignments", fields: [educatorId], references: [id], onDelete: Restrict)
+  child     Child @relation(fields: [childId], references: [id], onDelete: Restrict)
+  createdBy User  @relation("AssignmentCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
-  @@index([videoId])
-  @@index([promptVersionId])
-  @@index([status])
+  @@index([educatorId, startsAt, endsAt, revokedAt])
+  @@index([childId, startsAt, endsAt, revokedAt])
 }
 
-model AiSkillDetection {
+model Assessment {
   id              String           @id @default(cuid())
-  aiRunId         String
-  videoId         String
-  rubricSkillId   String
-  domain          String
-  strand          String?
-  credit          CreditAssignment
-  confidence      Float
-  evidence        Json
-  timestampStart  Int?
-  timestampEnd    Int?
-  rationale       String
-  dalData         Json?
-  reviewFlags     String[]
-  needsReview     Boolean          @default(false)
+  childId         String
+  educatorId      String
+  observationDate DateTime
+  contextSnapshot Json?
+  status          AssessmentStatus @default(DRAFT)
+  finalizedById   String?
+  finalizedAt     DateTime?
+  revision        Int              @default(0)
+  clientRequestId String?
+  finalizationKey String?          @unique
   createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  aiRun          AiRun            @relation(fields: [aiRunId], references: [id])
-  rubricSkill    RubricSkill      @relation(fields: [rubricSkillId], references: [id])
-  reviewOverrides ReviewOverride[]
+  child          Child           @relation(fields: [childId], references: [id], onDelete: Restrict)
+  educator       User            @relation("AssessmentEducator", fields: [educatorId], references: [id], onDelete: Restrict)
+  finalizedBy    User?           @relation("AssessmentFinalizer", fields: [finalizedById], references: [id], onDelete: Restrict)
+  videoAssets    VideoAsset[]
+  processingRuns ProcessingRun[]
+  videoAccessRecords VideoAccessGrantRecord[]
 
-  @@index([videoId, rubricSkillId])
-  @@index([needsReview])
-  @@index([domain])
+  @@index([educatorId, status, updatedAt])
+  @@index([childId, observationDate])
+  @@unique([educatorId, clientRequestId])
 }
 
-model HumanRating {
-  id            String           @id @default(cuid())
-  videoId       String
-  childId       String?
-  rubricSkillId String
-  raterId       String
-  credit        CreditAssignment
-  notes         String?
-  importedAt    DateTime         @default(now())
-  importedBy    String?
+model VideoAsset {
+  id               String           @id @default(cuid())
+  assessmentId     String
+  status           VideoAssetStatus @default(PENDING_UPLOAD)
+  storageKey       String           @unique
+  originalFilename String?
+  contentType      String?
+  byteSize         BigInt?
+  durationSeconds  Int?
+  checksumSha256   String?
+  uploadedById     String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
 
-  video       Video       @relation(fields: [videoId], references: [id])
-  child       Child?      @relation(fields: [childId], references: [id])
-  rubricSkill RubricSkill @relation(fields: [rubricSkillId], references: [id])
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  uploadedBy User       @relation("VideoUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  accessRecords VideoAccessGrantRecord[]
 
-  @@unique([videoId, rubricSkillId, raterId])
-  @@index([videoId, rubricSkillId])
+  @@index([assessmentId, status])
 }
 
-model ReviewOverride {
-  id              String           @id @default(cuid())
-  aiDetectionId   String
-  originalCredit  CreditAssignment
-  correctedCredit CreditAssignment
-  reviewerNote    String?
-  reviewerId      String
-  createdAt       DateTime         @default(now())
+model VideoAccessGrantRecord {
+  id            String   @id @default(cuid())
+  assessmentId  String
+  videoAssetId  String
+  viewerId      String
+  purpose       String
+  issuedAt      DateTime @default(now())
+  expiresAt     DateTime
 
-  aiDetection AiSkillDetection @relation(fields: [aiDetectionId], references: [id])
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  videoAsset VideoAsset @relation(fields: [videoAssetId], references: [id], onDelete: Restrict)
+  viewer     User       @relation(fields: [viewerId], references: [id], onDelete: Restrict)
 
-  @@index([aiDetectionId])
-  @@index([reviewerId])
+  @@index([assessmentId, viewerId, issuedAt])
+  @@index([videoAssetId, expiresAt])
 }
 
-model ReliabilityReport {
-  id               String   @id @default(cuid())
-  promptVersionId  String
-  datasetSplit     String
-  exactAgreement   Float
-  cohenKappa       Float?
-  totalComparisons Int
-  agreed           Int
-  disagreements    Int
-  confusionMatrix  Json
-  errorPatterns    Json
-  targetMet        Boolean  @default(false)
-  calculatedBy     String?
-  calculatedAt     DateTime @default(now())
+model ProcessingRun {
+  id                            String              @id @default(cuid())
+  assessmentId                  String
+  attempt                       Int
+  status                        ProcessingRunStatus @default(QUEUED)
+  externalJobId                 String?             @unique
+  scoringConfigurationReference String?
+  safeErrorCode                 String?
+  retryOfRunId                  String?
+  requestedById                 String
+  submittedAt                   DateTime?
+  startedAt                     DateTime?
+  completedAt                   DateTime?
+  createdAt                     DateTime            @default(now())
+  updatedAt                     DateTime            @updatedAt
 
-  promptVersion PromptVersion @relation(fields: [promptVersionId], references: [id])
+  assessment  Assessment        @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  requestedBy User              @relation("RunRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  suggestions SkillSuggestion[]
+  retryOf      ProcessingRun?   @relation("ProcessingRetries", fields: [retryOfRunId], references: [id], onDelete: Restrict)
+  retries      ProcessingRun[]  @relation("ProcessingRetries")
 
-  @@index([promptVersionId, datasetSplit])
+  @@unique([assessmentId, attempt])
+  @@index([assessmentId, status])
+}
+
+model SkillSuggestion {
+  id                String         @id @default(cuid())
+  processingRunId   String
+  sourceSkillId     String
+  skillCode         String
+  skillName         String
+  domain            String
+  strand            String?
+  draftCredit       PrimaryCredit?
+  confidence        Float?
+  uncertaintyReason String?
+  evidence          Json
+  rationale         String?
+  sourceOrder       Int
+  createdAt         DateTime       @default(now())
+
+  processingRun ProcessingRun   @relation(fields: [processingRunId], references: [id], onDelete: Restrict)
+  decision      ReviewDecision?
+
+  @@unique([processingRunId, sourceSkillId])
+  @@unique([processingRunId, sourceOrder])
+}
+
+model ReviewDecision {
+  id           String         @id @default(cuid())
+  suggestionId String         @unique
+  educatorId   String
+  origin       DecisionOrigin
+  finalCredit  PrimaryCredit?
+  dismissed    Boolean        @default(false)
+  note         String?
+  revision     Int            @default(1)
+  decidedAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  suggestion SkillSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Restrict)
+  educator   User            @relation(fields: [educatorId], references: [id], onDelete: Restrict)
+
+  @@index([educatorId, decidedAt])
 }

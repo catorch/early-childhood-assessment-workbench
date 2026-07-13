@@ -3,9 +3,9 @@ node_modules
 .turbo
 dist
 coverage
-docs/
-README.md
+
 .codex
+.playwright-mcp
 .env
 .env.local
 .env.*.local
@@ -13,3 +13,4 @@ README.md
 *.tsbuildinfo
 prisma/dev.db
 .vercel
+.data

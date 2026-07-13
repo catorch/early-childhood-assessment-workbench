@@ -1,11 +1,9 @@
 export default function Loading() {
   return (
-    <main className="content">
-      <section className="card card-pad">
-        <p className="muted" style={{ margin: 0 }}>
-          Loading assessment workbench...
-        </p>
-      </section>
+    <main className="page-shell" aria-busy="true">
+      <p className="status-message" role="status">
+        Loading...
+      </p>
     </main>
   );
 }
