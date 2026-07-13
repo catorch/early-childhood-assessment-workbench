@@ -1,6 +1,6 @@
 "use client";
 
-import { GitCompareArrows } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import type { PrimaryCredit, SavedReviewDecision } from "@/lib/help-review/domain";
@@ -37,12 +37,12 @@ export function ReviewConflictDialog({
 
   return (
     <dialog aria-labelledby="review-conflict-title" aria-modal="true" className="confirm-dialog conflict-dialog" onCancel={(event) => { event.preventDefault(); onUseCurrent(); }} ref={ref}>
-      <div className="dialog-heading"><span className="dialog-icon primary"><GitCompareArrows aria-hidden="true" /></span><div><h2 id="review-conflict-title">Review changed in another session</h2><p>Nothing was overwritten. Choose which value to continue with.</p></div></div>
+      <div className="dialog-heading"><span className="dialog-icon warning"><AlertTriangle aria-hidden="true" /></span><div><h2 id="review-conflict-title">Review changed in another session</h2><p>Your save was paused because a newer decision is already stored. Nothing was overwritten.</p></div></div>
       <div className="conflict-comparison">
-        <section><span className="eyebrow">Currently saved</span><strong>{describe(current)}</strong><p>{current?.note || "No educator note"}</p></section>
         <section><span className="eyebrow">Your unsaved change</span><strong>{describe(attempted)}</strong><p>{attempted?.note || "No educator note"}</p></section>
+        <section><span className="eyebrow">Latest saved decision</span><strong>{describe(current)}</strong><p>{current?.note || "No educator note"}</p></section>
       </div>
-      <div className="dialog-actions"><button className="button secondary" onClick={onUseCurrent} type="button">Use saved decision</button><button className="button primary" onClick={onReapply} type="button">Apply my decision</button></div>
+      <div className="dialog-actions"><button className="button secondary" onClick={onUseCurrent} type="button">Use latest decision</button><button className="button primary" onClick={onReapply} type="button">Reapply my decision</button></div>
     </dialog>
   );
 }
