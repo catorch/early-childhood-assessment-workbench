@@ -49,6 +49,15 @@ enum DecisionOrigin {
   DISMISSED
 }
 
+enum SupportEventType {
+  VIDEO_ACCESSED
+  DECISION_SAVED
+  PROCESSING_RETRIED
+  ACCESS_CHANGED
+  ASSIGNMENT_CHANGED
+  ASSESSMENT_FINALIZED
+}
+
 model User {
   id              String   @id @default(cuid())
   externalSubject String   @unique
@@ -266,4 +275,17 @@ model ReviewDecision {
   educator   User            @relation(fields: [educatorId], references: [id], onDelete: Restrict)
 
   @@index([educatorId, decidedAt])
+}
+
+model SupportEvent {
+  id           String           @id
+  type         SupportEventType
+  actorId      String
+  occurredAt   DateTime         @default(now())
+  assessmentId String?
+  subjectId    String?
+  referenceId  String?
+
+  @@index([actorId, occurredAt])
+  @@index([assessmentId, occurredAt])
 }

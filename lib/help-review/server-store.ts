@@ -1,9 +1,4 @@
-/**
- * File-backed sanitized adapter for local pilot development.
- *
- * Production environments must replace this module at the repository boundary
- * after the approved database, roster, and identity contracts are selected.
- */
+/** Shared state repository with a local file fallback and a Neon demo adapter. */
 
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -17,7 +12,6 @@ const statePath = path.join(dataDirectory, "pilot-state.json");
 let writeQueue: Promise<void> = Promise.resolve();
 
 async function ensureState(): Promise<void> {
-  assertRuntimeConfiguration();
   await mkdir(dataDirectory, { recursive: true });
   try {
     await readFile(statePath, "utf8");
@@ -29,6 +23,11 @@ async function ensureState(): Promise<void> {
 
 /** Reads the current sanitized state; invalid first-party state fails loudly. */
 export async function readPilotState(): Promise<PilotState> {
+  assertRuntimeConfiguration();
+  if (process.env.HELP_REVIEW_STATE_ADAPTER === "neon") {
+    const { readNeonPilotState } = await import("./neon-store");
+    return readNeonPilotState();
+  }
   await ensureState();
   const raw = await readFile(statePath, "utf8");
   const parsed = JSON.parse(raw) as PilotState;
@@ -58,6 +57,11 @@ export async function readPilotState(): Promise<PilotState> {
 
 /** Serializes a state update and atomically replaces the local fixture file. */
 export async function updatePilotState<T>(mutation: (state: PilotState) => T | Promise<T>): Promise<T> {
+  assertRuntimeConfiguration();
+  if (process.env.HELP_REVIEW_STATE_ADAPTER === "neon") {
+    const { updateNeonPilotState } = await import("./neon-store");
+    return updateNeonPilotState(mutation);
+  }
   let result!: T;
   const operation = writeQueue.then(async () => {
     const state = await readPilotState();
@@ -76,6 +80,11 @@ export function uploadDirectory(): string {
 }
 
 export async function removePilotUpload(storageKey: string): Promise<void> {
+  if (process.env.HELP_REVIEW_VIDEO_ADAPTER === "vercel-blob") {
+    const { del } = await import("@vercel/blob");
+    await del(storageKey);
+    return;
+  }
   await rm(path.join(uploadDirectory(), path.basename(storageKey)), { force: true });
 }
 

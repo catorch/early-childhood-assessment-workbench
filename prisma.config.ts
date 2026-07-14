@@ -7,6 +7,8 @@ export default defineConfig({
     path: "prisma/migrations"
   },
   datasource: {
-    url: process.env["DATABASE_URL"]
+    // Schema operations must bypass Neon's pooled endpoint. Runtime traffic uses
+    // DATABASE_URL through the Neon driver adapter instead.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"]
   }
 });

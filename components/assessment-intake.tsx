@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft, CalendarDays, CheckCircle2, FileVideo2, RefreshCw, ShieldAlert, ShieldCheck, Trash2, Upload } from "lucide-react";
+import { upload as uploadBlob } from "@vercel/blob/client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -13,7 +14,7 @@ import { assessmentDestination } from "@/lib/help-review/presentation";
 const acceptedTypes = ["video/mp4", "video/webm", "video/quicktime"];
 const maxBytes = 100 * 1024 * 1024;
 
-function uploadVideo(
+function uploadVideoThroughServer(
   assessmentId: string,
   file: File,
   setProgress: (progress: number) => void
@@ -35,6 +36,54 @@ function uploadVideo(
     formData.set("video", file);
     request.send(formData);
   });
+}
+
+function uploadExtension(file: File): string {
+  const extension = file.name.toLowerCase().match(/\.(mp4|webm|mov)$/)?.[0];
+  if (extension) return extension;
+  if (file.type === "video/webm") return ".webm";
+  if (file.type === "video/quicktime") return ".mov";
+  return ".mp4";
+}
+
+async function waitForRecordedBlob(assessmentId: string, pathname: string): Promise<StoredVideo> {
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const response = await fetch(`/api/assessments/${assessmentId}/upload`, { cache: "no-store" });
+    const payload = await response.json() as { video?: StoredVideo | null; error?: string };
+    if (!response.ok) throw new Error(payload.error ?? "The completed upload could not be verified.");
+    if (payload.video?.storageKey === pathname) return payload.video;
+    await new Promise((resolve) => window.setTimeout(resolve, 500));
+  }
+  throw new Error("The video was uploaded, but its assessment record is still being verified. Refresh this draft shortly.");
+}
+
+async function uploadVideo(
+  assessmentId: string,
+  file: File,
+  setProgress: (progress: number) => void
+): Promise<StoredVideo> {
+  const route = `/api/assessments/${assessmentId}/upload`;
+  const configResponse = await fetch(route, { cache: "no-store" });
+  const config = await configResponse.json() as { uploadMode?: "blob" | "server"; error?: string };
+  if (!configResponse.ok) throw new Error(config.error ?? "The upload could not be authorized.");
+  if (config.uploadMode !== "blob") return uploadVideoThroughServer(assessmentId, file, setProgress);
+
+  const pathname = `help-review/${assessmentId}/${window.crypto.randomUUID()}${uploadExtension(file)}`;
+  const blob = await uploadBlob(pathname, file, {
+    access: "private",
+    contentType: file.type,
+    handleUploadUrl: route,
+    clientPayload: JSON.stringify({
+      assessmentId,
+      originalFilename: file.name,
+      contentType: file.type,
+      byteSize: file.size
+    }),
+    multipart: file.size > 10 * 1024 * 1024,
+    onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage))
+  });
+  setProgress(100);
+  return waitForRecordedBlob(assessmentId, blob.pathname);
 }
 
 export function AssessmentIntake() {

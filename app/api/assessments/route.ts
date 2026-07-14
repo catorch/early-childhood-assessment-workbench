@@ -8,6 +8,7 @@ import { assessmentActionLabel, assessmentDestination } from "@/lib/help-review/
 import { AccessError, activeUserFromState, requireChildAssignment } from "@/lib/help-review/server-auth";
 import { assertSameOrigin, routeError, validationError } from "@/lib/help-review/server-http";
 import { readPilotState, updatePilotState } from "@/lib/help-review/server-store";
+import { findExistingAssessmentForCreate } from "@/lib/help-review/server-workflow";
 
 const CreateAssessmentSchema = z.object({
   childId: z.string().min(1),
@@ -65,14 +66,14 @@ export async function POST(request: NextRequest) {
       requireChildAssignment(state, actor.id, parsed.data.childId);
       const child = state.children.find((candidate) => candidate.id === parsed.data.childId && candidate.isActive);
       if (!child) throw new Error("Assigned child is missing from pilot state.");
-      const existingDraft = state.assessments.find(
-        (candidate) =>
-          candidate.educatorId === actor.id &&
-          (candidate.clientRequestId === parsed.data.requestId ||
-            (candidate.childId === child.id && candidate.observationDate === parsed.data.observationDate)) &&
-          candidate.status === "DRAFT"
+      const existingAssessment = findExistingAssessmentForCreate(
+        state,
+        actor.id,
+        child.id,
+        parsed.data.observationDate,
+        parsed.data.requestId
       );
-      if (existingDraft) return existingDraft;
+      if (existingAssessment) return existingAssessment;
       const now = new Date().toISOString();
       const created = {
         id: `assessment-${randomUUID()}`,

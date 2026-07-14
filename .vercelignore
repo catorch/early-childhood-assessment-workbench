@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.data/
+.codex/
+.playwright-mcp/
+coverage/
+docs/
+tests/
+**/*.test.ts
+**/*.test.tsx
+*.log

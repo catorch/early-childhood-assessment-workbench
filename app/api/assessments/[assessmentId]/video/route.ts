@@ -3,6 +3,7 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 
+import { get } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 
 import { activeUserFromState } from "@/lib/help-review/server-auth";
@@ -30,6 +31,28 @@ export async function GET(request: NextRequest, context: { params: Promise<{ ass
       return assessment.video;
     });
     if (!video) return NextResponse.json({ error: "Video unavailable." }, { status: 404 });
+    if (process.env.HELP_REVIEW_VIDEO_ADAPTER === "vercel-blob") {
+      const blob = await get(video.storageKey, {
+        access: "private",
+        headers: range ? { Range: range } : undefined
+      });
+      const statusCode: number = blob?.statusCode ?? 404;
+      if (!blob?.stream || (statusCode !== 200 && statusCode !== 206)) {
+        return NextResponse.json({ error: "Video unavailable." }, { status: 404 });
+      }
+      const headers = new Headers({
+        "Accept-Ranges": blob.headers.get("accept-ranges") ?? "bytes",
+        "Cache-Control": "private, no-store",
+        "Content-Type": blob.blob.contentType ?? video.contentType,
+        "X-Content-Type-Options": "nosniff"
+      });
+      for (const name of ["content-length", "content-range"]) {
+        const value = blob.headers.get(name);
+        if (value) headers.set(name, value);
+      }
+      const responseStatus = range && headers.has("content-range") ? 206 : statusCode;
+      return new NextResponse(blob.stream, { status: responseStatus, headers });
+    }
     const filePath = path.join(uploadDirectory(), path.basename(video.storageKey));
     const metadata = await stat(filePath);
     let start = 0;

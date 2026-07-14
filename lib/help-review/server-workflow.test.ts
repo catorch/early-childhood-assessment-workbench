@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import { createSanitizedPilotState } from "./fixtures";
 import type { PilotAssessment } from "./models";
 import { assessmentActionLabel, assessmentDestination } from "./presentation";
-import { materializeCompletedRun, safeProcessingError } from "./server-workflow";
+import {
+  findExistingAssessmentForCreate,
+  materializeCompletedRun,
+  safeProcessingError
+} from "./server-workflow";
 
 function processingAssessment(filename = "observation.mp4"): PilotAssessment {
   return {
@@ -82,5 +86,25 @@ describe("assessment workflow state", () => {
       expect(assessmentDestination(assessment)).toBe(destination);
       expect(assessmentActionLabel(assessment)).toBe(label);
     }
+  });
+
+  it("replays a draft-creation key after the assessment advances", () => {
+    const state = createSanitizedPilotState();
+    const assessment = {
+      ...processingAssessment(),
+      status: "READY_FOR_REVIEW" as const,
+      clientRequestId: "11111111-1111-4111-8111-111111111111"
+    };
+    state.assessments.push(assessment);
+
+    expect(
+      findExistingAssessmentForCreate(
+        state,
+        assessment.educatorId,
+        assessment.childId,
+        assessment.observationDate,
+        assessment.clientRequestId
+      )
+    ).toBe(assessment);
   });
 });

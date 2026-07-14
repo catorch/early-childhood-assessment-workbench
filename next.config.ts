@@ -10,7 +10,7 @@ const contentSecurityPolicy = [
   "media-src 'self' blob:",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self'",
+  "connect-src 'self' https://vercel.com https://*.blob.vercel-storage.com",
   "font-src 'self'"
 ].join("; ");
 

@@ -5,6 +5,27 @@ import { deriveReviewSummary } from "./domain";
 import type { PilotAssessment, PilotState, PilotUser } from "./models";
 import { AccessError, requireChildAssignment } from "./server-auth";
 
+export function findExistingAssessmentForCreate(
+  state: PilotState,
+  educatorId: string,
+  childId: string,
+  observationDate: string,
+  clientRequestId: string
+): PilotAssessment | undefined {
+  const repeatedRequest = state.assessments.find(
+    (assessment) =>
+      assessment.educatorId === educatorId && assessment.clientRequestId === clientRequestId
+  );
+  if (repeatedRequest) return repeatedRequest;
+  return state.assessments.find(
+    (assessment) =>
+      assessment.educatorId === educatorId &&
+      assessment.childId === childId &&
+      assessment.observationDate === observationDate &&
+      assessment.status === "DRAFT"
+  );
+}
+
 export function requireAssessment(state: PilotState, actor: PilotUser, assessmentId: string): PilotAssessment {
   const assessment = state.assessments.find((candidate) => candidate.id === assessmentId);
   if (!assessment || actor.role !== "EDUCATOR" || assessment.educatorId !== actor.id) {

@@ -14,7 +14,7 @@ function declarations(kind: "model" | "enum") {
 }
 
 describe("lean pilot schema boundary", () => {
-  it("contains only the eleven pilot models", () => {
+  it("contains only the twelve pilot models", () => {
     expect(declarations("model").sort()).toEqual(
       [
         "Assessment",
@@ -25,6 +25,7 @@ describe("lean pilot schema boundary", () => {
         "ReviewDecision",
         "Session",
         "SkillSuggestion",
+        "SupportEvent",
         "User",
         "VideoAsset",
         "VideoAccessGrantRecord"
