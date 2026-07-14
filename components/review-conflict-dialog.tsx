@@ -47,7 +47,7 @@ export function ReviewConflictDialog({
             <AlertTriangle aria-hidden="true" className="size-5" />
           </AlertDialogMedia>
           <div>
-            <AlertDialogTitle className="font-heading text-[21px] font-bold text-ink">Review changed in another session</AlertDialogTitle>
+            <AlertDialogTitle className="font-heading text-[21px] font-normal text-ink">Review changed in another session</AlertDialogTitle>
             <AlertDialogDescription className="mt-1.5 text-[13px] leading-6 text-muted-foreground">
               Your save was paused because a newer decision is already stored. Nothing was overwritten.
             </AlertDialogDescription>

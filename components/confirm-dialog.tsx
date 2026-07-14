@@ -52,7 +52,7 @@ export function ConfirmDialog({
             <AlertTriangle aria-hidden="true" className="size-5" />
           </AlertDialogMedia>
           <div className="min-w-0">
-            <AlertDialogTitle className="font-heading text-[21px] font-bold text-ink">{title}</AlertDialogTitle>
+            <AlertDialogTitle className="font-heading text-[21px] font-normal text-ink">{title}</AlertDialogTitle>
             <AlertDialogDescription className="mt-1.5 text-[13px] leading-6 text-muted-foreground">{description}</AlertDialogDescription>
           </div>
           <AlertDialogCancel aria-label="Close dialog" disabled={pending} size="icon" variant="outline"><X aria-hidden="true" /></AlertDialogCancel>

@@ -31,7 +31,7 @@ export function PageHeading({
     <header className={cn("flex items-end justify-between gap-6 max-sm:items-start max-sm:flex-col", className)}>
       <div className="max-w-[720px]">
         {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-        <h1 className="mt-1 font-heading text-4xl font-bold leading-[1.15] text-ink max-sm:text-[30px]">{title}</h1>
+        <h1 className="mt-1 font-heading text-4xl font-normal leading-[1.15] text-ink max-sm:text-[30px]">{title}</h1>
         {description ? <p className="mt-2.5 leading-relaxed text-muted-foreground">{description}</p> : null}
       </div>
       {actions}
@@ -41,4 +41,4 @@ export function PageHeading({
 
 export const backLinkClass = "mb-[26px] inline-flex items-center gap-1.5 text-sm font-bold text-primary-strong no-underline hover:underline hover:underline-offset-4";
 
-export const serifSectionHeadingClass = "font-heading text-2xl font-bold text-ink";
+export const serifSectionHeadingClass = "font-heading text-2xl font-normal text-ink";

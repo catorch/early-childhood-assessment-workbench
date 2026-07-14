@@ -246,11 +246,11 @@ export function AssessmentIntake() {
   return (
     <PageShell>
       <Link className={backLinkClass} href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link>
-      <header className="max-w-[720px]"><Eyebrow>New observation</Eyebrow><h1 className="mt-1 font-heading text-4xl font-bold leading-tight max-sm:text-[30px]">Upload an observation</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Add one short observation video for this assessment.</p></header>
+      <header className="max-w-[720px]"><Eyebrow>New observation</Eyebrow><h1 className="mt-1 font-heading text-4xl font-normal leading-tight max-sm:text-[30px]">Upload an observation</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Add one short observation video for this assessment.</p></header>
       {error ? <Alert className="mt-7" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
       <div className="mt-8 grid grid-cols-[minmax(0,1fr)_310px] items-start gap-12 max-md:grid-cols-1">
         <section className="border-t border-border pt-7" aria-labelledby="observation-details-title">
-          <div className="mb-[18px] flex items-center gap-2.5"><span className="grid size-[26px] place-items-center rounded-full bg-navy text-xs font-extrabold text-white">1</span><h2 className="text-lg font-bold" id="observation-details-title">Observation details</h2></div>
+          <div className="mb-[18px] flex items-center gap-2.5"><span className="grid size-[26px] place-items-center rounded-full bg-navy text-xs font-extrabold text-white">1</span><h2 className="text-lg font-normal" id="observation-details-title">Observation details</h2></div>
           <div className="mb-6 grid grid-cols-3 overflow-hidden rounded-md border border-border bg-surface max-sm:grid-cols-1">
             <span className="grid gap-1 border-r border-border p-3.5 last:border-0 max-sm:border-r-0 max-sm:border-b"><small className="text-[11px] uppercase text-muted-foreground">Child</small><strong>{child.externalChildId}</strong></span>
             <span className="grid gap-1 border-r border-border p-3.5 last:border-0 max-sm:border-r-0 max-sm:border-b"><small className="text-[11px] uppercase text-muted-foreground">Age</small><strong>{child.ageMonths} months</strong></span>
@@ -259,7 +259,7 @@ export function AssessmentIntake() {
           <label className="mb-2 flex items-center gap-1.5 text-[13px] font-extrabold" htmlFor="observation-date"><CalendarDays aria-hidden="true" size={16} /> Observation date</label>
           <Input className="w-full max-w-[260px]" id="observation-date" type="date" value={observationDate} onChange={(event) => setObservationDate(event.target.value)} disabled={Boolean(assessmentId)} />
 
-          <div className="mt-8 mb-[18px] flex items-center gap-2.5"><span className="grid size-[26px] place-items-center rounded-full bg-navy text-xs font-extrabold text-white">2</span><h2 className="text-lg font-bold">Observation video</h2></div>
+          <div className="mt-8 mb-[18px] flex items-center gap-2.5"><span className="grid size-[26px] place-items-center rounded-full bg-navy text-xs font-extrabold text-white">2</span><h2 className="text-lg font-normal">Observation video</h2></div>
           <input accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={chooseFile} ref={fileInputRef} type="file" />
           {file ? (
             <div className="overflow-hidden rounded-md border border-border bg-surface">

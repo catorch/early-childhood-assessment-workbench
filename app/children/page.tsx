@@ -62,7 +62,7 @@ export default function ChildrenPage() {
       <header className="flex items-end justify-between gap-6 max-sm:items-start max-sm:flex-col">
         <div>
           <Eyebrow>Educator workspace</Eyebrow>
-          <h1 className="mt-1 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[30px]">Assigned children</h1>
+          <h1 className="mt-1 font-heading text-4xl font-normal leading-tight text-ink max-sm:text-[30px]">Assigned children</h1>
           <p className="mt-2.5 leading-relaxed text-muted-foreground">Only children currently assigned to you are shown.</p>
         </div>
         {children ? <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] font-bold text-muted-foreground max-sm:hidden">{children.length} assigned</span> : null}

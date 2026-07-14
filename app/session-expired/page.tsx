@@ -21,7 +21,7 @@ export default async function SessionExpiredPage({
       <section className="w-full max-w-[620px] border-y border-border py-14 text-center" aria-labelledby="session-title">
         <span className="mx-auto mb-5 grid size-14 place-items-center rounded-full bg-warning-soft text-warning"><ClockAlert aria-hidden="true" /></span>
         <Eyebrow>Protected session</Eyebrow>
-        <h1 className="mt-2 font-heading text-4xl font-bold text-ink max-sm:text-[29px]" id="session-title">Your session expired</h1>
+        <h1 className="mt-2 font-heading text-4xl font-normal text-ink max-sm:text-[29px]" id="session-title">Your session expired</h1>
         <p className="mx-auto mt-3 max-w-[520px] leading-relaxed text-muted-foreground">Sign in again to continue. Your saved assessment work is still available.</p>
         <Button asChild className="mt-7">
           <Link href={`/sign-in?reason=expired&returnTo=${encodeURIComponent(returnTo)}`}><LogIn aria-hidden="true" size={17} /> Sign in again</Link>

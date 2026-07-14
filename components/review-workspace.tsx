@@ -362,7 +362,7 @@ export function ReviewWorkspace() {
         <div className="mx-auto grid min-h-28 w-[min(calc(100%_-_40px),1180px)] grid-cols-[minmax(250px,1fr)_auto_minmax(260px,.8fr)] items-center gap-7 py-5 max-[1000px]:grid-cols-[minmax(240px,1fr)_auto] max-[1000px]:gap-4 max-md:w-[min(calc(100%_-_24px),1180px)] max-md:grid-cols-1 max-md:gap-3.5 max-md:py-[18px]">
           <div className="flex min-w-0 items-center gap-3.5">
             <Button asChild aria-label="Back to child" size="icon" variant="outline"><Link href={`/children/${data.child.id}`}><ArrowLeft aria-hidden="true" size={18} /></Link></Button>
-            <div className="min-w-0"><Eyebrow>Assessment review</Eyebrow><h1 className="mt-1 font-heading text-[25px] font-bold leading-tight max-md:text-[23px]">Review AI draft</h1><p className="mt-1 text-xs text-muted-foreground">{data.child.externalChildId} · {formatDate(data.assessment.observationDate)}</p></div>
+            <div className="min-w-0"><Eyebrow>Assessment review</Eyebrow><h1 className="mt-1 font-heading text-[25px] font-normal leading-tight max-md:text-[23px]">Review AI draft</h1><p className="mt-1 text-xs text-muted-foreground">{data.child.externalChildId} · {formatDate(data.assessment.observationDate)}</p></div>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-muted-foreground max-[1000px]:col-span-full max-[1000px]:row-start-2 max-[1000px]:justify-start max-md:hidden" aria-label="Draft credit groups">
             <CreditCount className="text-success" count={data.suggestions.filter((item) => item.draftCredit === "PRESENT").length} label="Present" />
@@ -556,7 +556,7 @@ export function ReviewWorkspace() {
                 </div>
               ) : null}
               <Eyebrow>Editing {selected.skillCode}</Eyebrow>
-              <h2 className="mt-1 mb-2 font-heading text-[19px] font-bold leading-snug max-md:mt-2 max-md:text-[27px]" id="editor-title">{selected.skillName}</h2>
+              <h2 className="mt-1 mb-2 font-heading text-[19px] font-normal leading-snug max-md:mt-2 max-md:text-[27px]" id="editor-title">{selected.skillName}</h2>
               <div className="flex items-center gap-1 text-xs text-primary-strong max-md:text-sm"><span>{selected.domain}{selected.strand ? ` · ${selected.strand}` : ""}</span></div>
               <div className="mt-3 flex flex-wrap gap-1.5 max-md:mt-[18px]" aria-label="Evidence timestamps">
                 {selected.evidence.map((evidence, index) => {

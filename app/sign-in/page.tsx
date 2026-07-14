@@ -1,11 +1,10 @@
 "use client";
 
-import { AlertCircle, ArrowRight, GraduationCap, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, GraduationCap, ShieldCheck, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eyebrow } from "@/components/ui/app-patterns";
 import { cn } from "@/lib/utils";
 
 type SandboxUserId = "user-educator-1" | "user-educator-2" | "user-admin-1";
@@ -86,32 +85,32 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="mx-auto grid min-h-[calc(100vh-94px)] w-[min(calc(100%_-_40px),760px)] place-items-center py-16 max-sm:w-[min(calc(100%_-_24px),760px)] max-sm:py-12">
-      <section className="w-full border-y border-border py-12" aria-labelledby="sign-in-title">
-        <div className="mb-5 grid size-12 place-items-center rounded-full bg-accent text-primary" aria-hidden="true"><ShieldCheck /></div>
-        <Eyebrow>HELP Review pilot</Eyebrow>
-        <h1 className="mt-2 font-heading text-[46px] font-bold leading-tight text-ink max-sm:text-4xl" id="sign-in-title">Sign in</h1>
-        <p className="mt-3 leading-relaxed text-muted-foreground">Choose an approved sanitized staff profile.</p>
-        {error ? <Alert className="mt-7" variant="destructive"><AlertCircle aria-hidden="true" /><AlertDescription>{error}</AlertDescription></Alert> : null}
-        <div className="mt-8 grid gap-3" aria-label="Sandbox profiles">
+    <main className="grid min-h-[calc(100vh-62px)] place-items-center px-5 py-12 max-sm:min-h-[calc(100vh-62px)] max-sm:px-3 max-sm:py-6">
+      <section className="w-full max-w-[420px] border border-border bg-surface px-7 py-7 shadow-[0_12px_32px_rgba(24,59,86,.08)] max-sm:px-5 max-sm:py-6" aria-labelledby="sign-in-title">
+        <div className="grid size-[38px] place-items-center rounded-md bg-navy text-[#b9d5df]" aria-hidden="true"><ShieldCheck size={20} /></div>
+        <p className="mt-4 text-[9px] font-extrabold uppercase text-primary-strong">HELP Review pilot</p>
+        <h1 className="mt-1 font-heading text-[32px] font-normal leading-tight text-ink" id="sign-in-title">Sign in</h1>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Choose an approved sanitized staff profile.</p>
+        {error ? <Alert className="mt-[18px] px-3 py-3 text-[13px]" variant="destructive"><AlertDescription className="text-[13px] leading-relaxed">{error}</AlertDescription></Alert> : null}
+        <div className="mt-5 grid gap-2.5" aria-label="Sandbox profiles">
           {profiles.map((profile) => {
             const Icon = profile.icon;
             return (
               <button
-                className="group grid w-full grid-cols-[46px_1fr_auto] items-center gap-3.5 rounded-md border border-border bg-surface p-4 text-left transition-colors hover:border-primary hover:bg-surface-soft focus-visible:ring-3 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-55 max-sm:grid-cols-[42px_1fr_auto] max-sm:p-3.5"
+                className="group grid min-h-[62px] w-full grid-cols-[38px_minmax(0,1fr)_20px] items-center gap-3 rounded-md border border-border bg-surface px-2.5 py-2 text-left transition-colors hover:border-primary hover:bg-surface-soft focus-visible:ring-3 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-55"
                 disabled={pending !== null}
                 key={profile.id}
                 onClick={() => signIn(profile.id, profile.destination)}
                 type="button"
               >
-                <span className={cn("grid size-[46px] place-items-center rounded-full max-sm:size-[42px]", profile.tone === "admin" ? "bg-warning-soft text-warning" : "bg-accent text-primary-strong")}><Icon aria-hidden="true" /></span>
-                <span className="grid min-w-0 gap-1"><strong className="text-ink">{profile.label}</strong><small className="text-[13px] text-muted-foreground">{profile.detail}</small></span>
-                <ArrowRight aria-hidden="true" className="text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                <span className={cn("grid size-[38px] place-items-center rounded-md", profile.tone === "admin" ? "bg-warning-soft text-warning" : profile.tone === "educator-secondary" ? "bg-info-soft text-info" : "bg-accent text-primary-strong")}><Icon aria-hidden="true" size={19} /></span>
+                <span className="grid min-w-0 gap-0.5"><strong className="truncate text-sm text-ink">{profile.label}</strong><small className="truncate text-[11px] text-muted-foreground">{profile.detail}</small></span>
+                <ArrowRight aria-hidden="true" className="text-navy transition-transform group-hover:translate-x-0.5 group-hover:text-primary" size={19} />
               </button>
             );
           })}
         </div>
-        <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck aria-hidden="true" size={14} /> Pilot access is provisioned by an administrator.</p>
+        <p className="mt-[18px] flex items-center gap-1.5 text-[10px] text-muted-foreground"><ShieldCheck aria-hidden="true" size={13} /> Pilot access is provisioned by an administrator.</p>
       </section>
     </main>
   );

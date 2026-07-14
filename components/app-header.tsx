@@ -14,6 +14,7 @@ export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<PilotUser | null>(null);
+  const isSignIn = pathname === "/sign-in";
 
   useEffect(() => {
     if (pathname === "/sign-in" || pathname === "/") return;
@@ -23,7 +24,7 @@ export function AppHeader() {
     }).catch(() => setUser(null));
   }, [pathname]);
 
-  const visibleUser = pathname === "/sign-in" ? null : user;
+  const visibleUser = isSignIn ? null : user;
 
   async function signOut() {
     try {
@@ -44,16 +45,16 @@ export function AppHeader() {
 
   return (
     <>
-      <div className="min-h-7 bg-navy px-4 py-1.5 text-center text-xs font-bold text-white max-sm:min-h-6 max-sm:px-2 max-sm:py-1 max-sm:text-[10px]" role="status">
-        Sanitized pilot sandbox. Real child data is disabled.
+      <div className={cn("bg-navy text-center text-xs font-bold text-white", isSignIn ? "h-2 overflow-hidden" : "min-h-7 px-4 py-1.5 max-sm:min-h-6 max-sm:px-2 max-sm:py-1 max-sm:text-[10px]")} role="status">
+        <span className={cn(isSignIn && "sr-only")}>Sanitized pilot sandbox. Real child data is disabled.</span>
       </div>
       <header className="relative z-30 border-b border-border bg-white/98">
-        <div className="mx-auto flex min-h-[66px] w-[min(calc(100%-40px),1180px)] items-center justify-between gap-6 max-sm:min-h-[58px] max-sm:w-[min(calc(100%-24px),1120px)] max-sm:gap-2">
+        <div className={cn("mx-auto flex items-center gap-6", isSignIn ? "min-h-[54px] w-full justify-center" : "min-h-[66px] w-[min(calc(100%-40px),1180px)] justify-between max-sm:min-h-[58px] max-sm:w-[min(calc(100%-24px),1120px)] max-sm:gap-2")}>
           <Link
-            className="inline-flex items-center gap-2 text-xl font-bold text-navy no-underline max-sm:text-[17px]"
+            className={cn("inline-flex items-center gap-2 font-heading font-bold text-navy no-underline", isSignIn ? "text-[17px]" : "text-xl max-sm:text-[17px]")}
             href={visibleUser?.role === "ADMIN" ? "/admin/access" : visibleUser ? "/children" : "/"}
           >
-            <ClipboardCheck aria-hidden="true" className="text-primary" size={22} strokeWidth={2.2} />
+            <ClipboardCheck aria-hidden="true" className="text-primary" size={isSignIn ? 18 : 22} strokeWidth={2.2} />
             <span>HELP Review</span>
           </Link>
           {visibleUser ? (

@@ -94,7 +94,7 @@ export default function ProcessingPage() {
           {failed ? <XCircle aria-hidden="true" /> : ready ? <CheckCircle2 aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
         </span>
         <Eyebrow>{failed ? "Processing failed" : ready ? "Analysis complete" : "Analysis in progress"}</Eyebrow>
-        <h1 className="mt-2 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[29px]">{failed ? assessment.error?.title ?? "We could not complete the analysis" : ready ? "Ready for review" : "Analyzing observation"}</h1>
+        <h1 className="mt-2 font-heading text-4xl font-normal leading-tight text-ink max-sm:text-[29px]">{failed ? assessment.error?.title ?? "We could not complete the analysis" : ready ? "Ready for review" : "Analyzing observation"}</h1>
         <p className="mx-auto mt-3 max-w-[560px] leading-relaxed text-muted-foreground">{failed ? assessment.error?.description : ready ? "The validated draft is ready for your professional review." : "You may leave this page. Processing continues without keeping the browser open."}</p>
 
         <ol className="mx-auto my-7 grid max-w-[440px] text-left" aria-label="Processing progress">

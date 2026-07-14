@@ -68,7 +68,7 @@ function AssessmentsContent() {
   return (
     <PageShell>
       <header className="flex items-end justify-between gap-6 max-sm:items-start max-sm:flex-col">
-        <div><Eyebrow>Educator workspace</Eyebrow><h1 className="mt-1 font-heading text-4xl font-bold leading-tight max-sm:text-[30px]">Assessments</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Continue active observations or reopen finalized records.</p></div>
+        <div><Eyebrow>Educator workspace</Eyebrow><h1 className="mt-1 font-heading text-4xl font-normal leading-tight max-sm:text-[30px]">Assessments</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Continue active observations or reopen finalized records.</p></div>
         <Button asChild><Link href="/children">Start from a child</Link></Button>
       </header>
       <div className="mt-7 flex items-center justify-between gap-4 border-y border-border py-4 max-sm:items-stretch max-sm:flex-col">

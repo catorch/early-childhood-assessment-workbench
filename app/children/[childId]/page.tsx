@@ -47,7 +47,7 @@ export default function ChildPage() {
       <header className="flex items-center justify-between gap-6 border-b border-border pb-8 max-sm:items-start max-sm:flex-col">
         <div>
           <Eyebrow>Assigned child</Eyebrow>
-          <h1 className="mt-1 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[30px]">{data.child.externalChildId}</h1>
+          <h1 className="mt-1 font-heading text-4xl font-normal leading-tight text-ink max-sm:text-[30px]">{data.child.externalChildId}</h1>
           <div className="mt-3.5 flex gap-2"><span className="rounded border border-border bg-surface px-2 py-1 text-xs text-muted-foreground">{data.child.ageMonths} months</span>{data.child.contextLabel ? <span className="rounded border border-border bg-surface px-2 py-1 text-xs text-muted-foreground">{data.child.contextLabel}</span> : null}</div>
         </div>
         {data.child.processingAllowed ? <Button asChild><Link href={`/assessments/new?childId=${data.child.id}`}><Plus aria-hidden="true" size={17} /> Upload observation</Link></Button> : <Button aria-describedby="permission" disabled type="button"><Plus aria-hidden="true" size={17} /> Upload observation</Button>}
@@ -56,7 +56,7 @@ export default function ChildPage() {
         <Alert className="mt-7" id="permission" variant="warning"><ShieldAlert aria-hidden="true" size={19} /><AlertDescription>Processing permission is not approved. Contact the pilot administrator before uploading.</AlertDescription></Alert>
       ) : null}
       <section className="mt-10" aria-labelledby="assessment-history-title">
-        <div className="mb-4 flex items-end justify-between gap-5"><div><Eyebrow>History</Eyebrow><h2 className="mt-1 font-heading text-2xl font-bold" id="assessment-history-title">Assessments</h2></div><span className="text-[13px] text-muted-foreground">{data.assessments.length} total</span></div>
+        <div className="mb-4 flex items-end justify-between gap-5"><div><Eyebrow>History</Eyebrow><h2 className="mt-1 font-heading text-2xl font-normal" id="assessment-history-title">Assessments</h2></div><span className="text-[13px] text-muted-foreground">{data.assessments.length} total</span></div>
         {data.assessments.length === 0 ? <div className="border-t border-border py-7 text-muted-foreground">No observations have been started for this child.</div> : (
           <div className="border-t border-border">
             {data.assessments.map((assessment) => (
