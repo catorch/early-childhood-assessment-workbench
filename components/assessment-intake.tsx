@@ -7,6 +7,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { PageState } from "@/components/page-state";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { backLinkClass, Eyebrow, PageShell } from "@/components/ui/app-patterns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { handleProtectedResponse, responseError } from "@/lib/help-review/client-http";
 import type { PilotAssessment, PilotChild, StoredVideo } from "@/lib/help-review/models";
 import { assessmentDestination } from "@/lib/help-review/presentation";
@@ -232,52 +237,52 @@ export function AssessmentIntake() {
     }
   }
 
-  if (loading) return <main className="page-shell"><PageState description="Loading the assigned child and assessment draft." kind="loading" title="Loading observation" /></main>;
-  if (!child) return <main className="page-shell"><PageState description={error ?? "Choose a child from your assigned list."} kind="unavailable" title="Observation unavailable"><Link className="button primary" href="/children">Return to assigned children</Link></PageState></main>;
+  if (loading) return <PageShell><PageState description="Loading the assigned child and assessment draft." kind="loading" title="Loading observation" /></PageShell>;
+  if (!child) return <PageShell><PageState description={error ?? "Choose a child from your assigned list."} kind="unavailable" title="Observation unavailable"><Button asChild><Link href="/children">Return to assigned children</Link></Button></PageState></PageShell>;
   if (!child.processingAllowed) {
-    return <main className="page-shell"><Link className="back-link" href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link><PageState description="Processing permission is not approved for this child. No video can be submitted until the pilot administrator resolves it." kind="unavailable" title="Upload unavailable"><a className="button primary" href="mailto:pilot-support@example.test">Contact administrator</a><Link className="button secondary" href={`/children/${child.id}`}>Return to child</Link></PageState></main>;
+    return <PageShell><Link className={backLinkClass} href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link><PageState description="Processing permission is not approved for this child. No video can be submitted until the pilot administrator resolves it." kind="unavailable" title="Upload unavailable"><Button asChild><a href="mailto:pilot-support@example.test">Contact administrator</a></Button><Button asChild variant="secondary"><Link href={`/children/${child.id}`}>Return to child</Link></Button></PageState></PageShell>;
   }
 
   return (
-    <main className="page-shell intake-shell">
-      <Link className="back-link" href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link>
-      <header className="page-heading"><span className="eyebrow">New observation</span><h1>Upload an observation</h1><p>Add one short observation video for this assessment.</p></header>
-      {error ? <div className="notice error" role="alert">{error}</div> : null}
-      <div className="intake-layout">
-        <section className="intake-form" aria-labelledby="observation-details-title">
-          <div className="section-heading compact"><div><span className="step-number">1</span><h2 id="observation-details-title">Observation details</h2></div></div>
-          <div className="context-strip">
-            <span><small>Child</small><strong>{child.externalChildId}</strong></span>
-            <span><small>Age</small><strong>{child.ageMonths} months</strong></span>
-            <span><small>Permission</small><strong className="success-text"><ShieldCheck aria-hidden="true" size={14} /> Approved</strong></span>
+    <PageShell>
+      <Link className={backLinkClass} href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link>
+      <header className="max-w-[720px]"><Eyebrow>New observation</Eyebrow><h1 className="mt-1 font-heading text-4xl font-bold leading-tight max-sm:text-[30px]">Upload an observation</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Add one short observation video for this assessment.</p></header>
+      {error ? <Alert className="mt-7" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
+      <div className="mt-8 grid grid-cols-[minmax(0,1fr)_310px] items-start gap-12 max-md:grid-cols-1">
+        <section className="border-t border-border pt-7" aria-labelledby="observation-details-title">
+          <div className="mb-[18px] flex items-center gap-2.5"><span className="grid size-[26px] place-items-center rounded-full bg-navy text-xs font-extrabold text-white">1</span><h2 className="text-lg font-bold" id="observation-details-title">Observation details</h2></div>
+          <div className="mb-6 grid grid-cols-3 overflow-hidden rounded-md border border-border bg-surface max-sm:grid-cols-1">
+            <span className="grid gap-1 border-r border-border p-3.5 last:border-0 max-sm:border-r-0 max-sm:border-b"><small className="text-[11px] uppercase text-muted-foreground">Child</small><strong>{child.externalChildId}</strong></span>
+            <span className="grid gap-1 border-r border-border p-3.5 last:border-0 max-sm:border-r-0 max-sm:border-b"><small className="text-[11px] uppercase text-muted-foreground">Age</small><strong>{child.ageMonths} months</strong></span>
+            <span className="grid gap-1 p-3.5"><small className="text-[11px] uppercase text-muted-foreground">Permission</small><strong className="flex items-center gap-1 text-success"><ShieldCheck aria-hidden="true" size={14} /> Approved</strong></span>
           </div>
-          <label className="field-label" htmlFor="observation-date"><CalendarDays aria-hidden="true" size={16} /> Observation date</label>
-          <input id="observation-date" type="date" value={observationDate} onChange={(event) => setObservationDate(event.target.value)} disabled={Boolean(assessmentId)} />
+          <label className="mb-2 flex items-center gap-1.5 text-[13px] font-extrabold" htmlFor="observation-date"><CalendarDays aria-hidden="true" size={16} /> Observation date</label>
+          <Input className="w-full max-w-[260px]" id="observation-date" type="date" value={observationDate} onChange={(event) => setObservationDate(event.target.value)} disabled={Boolean(assessmentId)} />
 
-          <div className="section-heading compact upload-heading"><div><span className="step-number">2</span><h2>Observation video</h2></div></div>
+          <div className="mt-8 mb-[18px] flex items-center gap-2.5"><span className="grid size-[26px] place-items-center rounded-full bg-navy text-xs font-extrabold text-white">2</span><h2 className="text-lg font-bold">Observation video</h2></div>
           <input accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={chooseFile} ref={fileInputRef} type="file" />
           {file ? (
-            <div className="selected-video pending-file">
-              <video controls preload="metadata" src={previewUrl ?? undefined} />
-              <div className="selected-file-meta"><FileVideo2 aria-hidden="true" size={20} /><span><strong>{file.name}</strong><small>{(file.size / 1024 / 1024).toFixed(1)} MB · ready to upload</small></span><button className="icon-button" onClick={() => setFile(null)} title="Discard selected file" type="button"><Trash2 aria-hidden="true" size={17} /><span className="sr-only">Discard selected file</span></button></div>
-              <div className="upload-file-actions"><button className="button secondary" onClick={() => fileInputRef.current?.click()} type="button">Choose another</button><button className="button primary icon-text" disabled={step !== "IDLE"} onClick={() => void upload()} type="button"><Upload aria-hidden="true" size={16} /> Upload video</button></div>
+            <div className="overflow-hidden rounded-md border border-border bg-surface">
+              <video className="block max-h-[360px] w-full bg-navy" controls preload="metadata" src={previewUrl ?? undefined} />
+              <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3"><FileVideo2 aria-hidden="true" className="text-primary" size={20} /><span className="grid min-w-0 gap-1"><strong className="truncate">{file.name}</strong><small className="text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)} MB · ready to upload</small></span><Button aria-label="Discard selected file" onClick={() => setFile(null)} size="icon" title="Discard selected file" type="button" variant="outline"><Trash2 aria-hidden="true" size={17} /></Button></div>
+              <div className="flex justify-end gap-2 border-t border-border p-3 max-sm:flex-col-reverse"><Button className="max-sm:w-full" onClick={() => fileInputRef.current?.click()} type="button" variant="secondary">Choose another</Button><Button className="max-sm:w-full" disabled={step !== "IDLE"} onClick={() => void upload()} type="button"><Upload aria-hidden="true" size={16} /> Upload video</Button></div>
             </div>
           ) : uploadedVideo ? (
-            <div className="upload-ready-panel">
-              <span className="upload-ready-mark"><CheckCircle2 aria-hidden="true" /></span><div><span className="eyebrow">Upload complete</span><h3>{uploadedVideo.originalFilename}</h3><p>{(uploadedVideo.byteSize / 1024 / 1024).toFixed(1)} MB · private assessment video</p></div>
-              <div className="upload-ready-actions"><button className="button secondary" disabled={step !== "IDLE"} onClick={() => fileInputRef.current?.click()} type="button"><RefreshCw aria-hidden="true" size={15} /> Replace</button><button className="icon-button danger-icon" disabled={step !== "IDLE"} onClick={() => void removeUpload()} title="Remove uploaded video" type="button"><Trash2 aria-hidden="true" size={17} /><span className="sr-only">Remove uploaded video</span></button></div>
+            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-md border border-success-border bg-success-soft p-5 max-sm:grid-cols-[auto_minmax(0,1fr)]">
+              <span className="grid size-11 place-items-center rounded-full bg-success text-white"><CheckCircle2 aria-hidden="true" /></span><div className="min-w-0"><Eyebrow className="text-success before:bg-success">Upload complete</Eyebrow><h3 className="mt-1 truncate text-lg font-bold">{uploadedVideo.originalFilename}</h3><p className="mt-1 text-[13px] text-muted-foreground">{(uploadedVideo.byteSize / 1024 / 1024).toFixed(1)} MB · private assessment video</p></div>
+              <div className="flex gap-2 max-sm:col-span-full max-sm:justify-end"><Button disabled={step !== "IDLE"} onClick={() => fileInputRef.current?.click()} type="button" variant="secondary"><RefreshCw aria-hidden="true" size={15} /> Replace</Button><Button aria-label="Remove uploaded video" disabled={step !== "IDLE"} onClick={() => void removeUpload()} size="icon" title="Remove uploaded video" type="button" variant="destructive-outline"><Trash2 aria-hidden="true" size={17} /></Button></div>
             </div>
           ) : (
-            <button className="drop-zone" onClick={() => fileInputRef.current?.click()} type="button"><span className="upload-icon"><Upload aria-hidden="true" /></span><strong>Choose a video</strong><span>MP4, WebM, or MOV · maximum 100 MB</span></button>
+            <button className="grid min-h-[230px] w-full place-items-center content-center gap-2 rounded-md border border-dashed border-[#91aaa9] bg-[#f9fcfb] text-center text-muted-foreground transition-colors hover:border-primary hover:bg-accent/30" onClick={() => fileInputRef.current?.click()} type="button"><span className="grid size-[52px] place-items-center rounded-full bg-accent text-primary"><Upload aria-hidden="true" /></span><strong className="text-primary-strong">Choose a video</strong><span className="text-[13px]">MP4, WebM, or MOV · maximum 100 MB</span></button>
           )}
-          {step === "UPLOADING" ? <div className="upload-progress" aria-live="polite"><div><span>Uploading video</span><span>{progress}%</span></div><progress max="100" value={progress} /></div> : null}
-          <div className="form-actions">
-            <Link className="button secondary" href={`/children/${child.id}`}>Save and exit</Link>
-            <button className="button primary icon-text" disabled={!uploadedVideo || Boolean(file) || step !== "IDLE"} onClick={() => void startProcessing()} type="button"><ShieldCheck aria-hidden="true" size={17} /> {step === "STARTING" ? "Starting..." : "Start processing"}</button>
+          {step === "UPLOADING" ? <div className="mt-4" aria-live="polite"><div className="mb-2 flex justify-between text-[13px] font-bold text-muted-foreground"><span>Uploading video</span><span>{progress}%</span></div><Progress aria-label={`Uploading video, ${progress}%`} value={progress} /></div> : null}
+          <div className="mt-6 flex justify-end gap-2.5 border-t border-border pt-5 max-sm:[&>*]:flex-1">
+            <Button asChild variant="secondary"><Link href={`/children/${child.id}`}>Save and exit</Link></Button>
+            <Button disabled={!uploadedVideo || Boolean(file) || step !== "IDLE"} onClick={() => void startProcessing()} type="button"><ShieldCheck aria-hidden="true" size={17} /> {step === "STARTING" ? "Starting..." : "Start processing"}</Button>
           </div>
         </section>
-        <aside className="workflow-aside"><ShieldAlert aria-hidden="true" size={20} /><span><strong>Private by default</strong><small>The video is shared only with the authorized scoring service and assigned educator.</small></span><ol><li><strong>Upload verified</strong><span>The file remains in this assessment draft.</span></li><li><strong>Analysis runs</strong><span>You may leave while suggestions are prepared.</span></li><li><strong>Human review</strong><span>You decide every final HELP credit.</span></li></ol></aside>
+        <aside className="border-l-2 border-border py-2 pl-6 max-md:border-t max-md:border-l-0 max-md:pt-6 max-md:pl-0"><div className="flex gap-2.5"><ShieldAlert aria-hidden="true" className="shrink-0 text-primary" size={20} /><span className="grid gap-1"><strong>Private by default</strong><small className="text-[13px] leading-relaxed text-muted-foreground">The video is shared only with the authorized scoring service and assigned educator.</small></span></div><ol className="mt-5 grid list-none gap-6 pl-0 [counter-reset:step]">{[["Upload verified", "The file remains in this assessment draft."], ["Analysis runs", "You may leave while suggestions are prepared."], ["Human review", "You decide every final HELP credit."]].map(([title, detail]) => <li className="relative grid gap-1 pl-8 [counter-increment:step] before:absolute before:top-0 before:left-0 before:grid before:size-[22px] before:place-items-center before:rounded-full before:border before:border-border-strong before:bg-surface before:text-[11px] before:font-extrabold before:text-primary-strong before:content-[counter(step)]" key={title}><strong>{title}</strong><span className="text-[13px] leading-relaxed text-muted-foreground">{detail}</span></li>)}</ol></aside>
       </div>
-    </main>
+    </PageShell>
   );
 }

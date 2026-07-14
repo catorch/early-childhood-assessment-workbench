@@ -1,21 +1,22 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { AppHeader } from "@/components/app-header";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
-
-export const metadata: Metadata = {
-  title: "HELP Review Pilot",
-  description: "Educator review of draft HELP assessment suggestions."
-};
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        <title>HELP Review Pilot</title>
+        <meta content="Educator review of draft HELP assessment suggestions." name="description" />
+      </head>
       <body>
-        <AppHeader />
-        {children}
+        <TooltipProvider>
+          <AppHeader />
+          {children}
+        </TooltipProvider>
       </body>
     </html>
   );

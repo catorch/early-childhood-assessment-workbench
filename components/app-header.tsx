@@ -5,7 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PilotUser } from "@/lib/help-review/models";
+import { cn } from "@/lib/utils";
 
 export function AppHeader() {
   const pathname = usePathname();
@@ -34,52 +37,55 @@ export function AppHeader() {
     }
   }
 
+  const navClass = (active: boolean) => cn(
+    "flex min-h-[42px] items-center gap-2 border-b-2 border-transparent px-3 text-sm font-bold text-muted-foreground no-underline transition-colors hover:text-navy max-sm:px-2 max-sm:text-xs max-sm:[&_svg]:hidden",
+    active && "border-primary text-primary-strong"
+  );
+
   return (
     <>
-      <div className="sandbox-banner" role="status">
+      <div className="min-h-7 bg-navy px-4 py-1.5 text-center text-xs font-bold text-white max-sm:min-h-6 max-sm:px-2 max-sm:py-1 max-sm:text-[10px]" role="status">
         Sanitized pilot sandbox. Real child data is disabled.
       </div>
-      <header className="site-header">
-        <div className="site-header-inner">
-          <Link className="brand-link" href={visibleUser?.role === "ADMIN" ? "/admin/access" : visibleUser ? "/children" : "/"}>
-            <ClipboardCheck aria-hidden="true" size={22} strokeWidth={2.2} />
+      <header className="relative z-30 border-b border-border bg-white/98">
+        <div className="mx-auto flex min-h-[66px] w-[min(calc(100%-40px),1180px)] items-center justify-between gap-6 max-sm:min-h-[58px] max-sm:w-[min(calc(100%-24px),1120px)] max-sm:gap-2">
+          <Link
+            className="inline-flex items-center gap-2 text-xl font-bold text-navy no-underline max-sm:text-[17px]"
+            href={visibleUser?.role === "ADMIN" ? "/admin/access" : visibleUser ? "/children" : "/"}
+          >
+            <ClipboardCheck aria-hidden="true" className="text-primary" size={22} strokeWidth={2.2} />
             <span>HELP Review</span>
           </Link>
           {visibleUser ? (
-            <div className="header-actions">
-              <nav aria-label="Primary navigation" className="primary-nav">
+            <div className="flex items-center gap-2 max-sm:gap-1">
+              <nav aria-label="Primary navigation" className="flex self-stretch">
                 {visibleUser.role === "EDUCATOR" ? (
                   <>
-                    <Link className={pathname.startsWith("/children") ? "active" : ""} href="/children">
-                      <UsersRound aria-hidden="true" size={17} />
-                      Children
-                    </Link>
-                    <Link className={pathname.startsWith("/assessments") ? "active" : ""} href="/assessments">
-                      <ClipboardList aria-hidden="true" size={17} />
-                      Assessments
-                    </Link>
+                    <Link className={navClass(pathname.startsWith("/children"))} href="/children"><UsersRound aria-hidden="true" size={17} />Children</Link>
+                    <Link className={navClass(pathname.startsWith("/assessments"))} href="/assessments"><ClipboardList aria-hidden="true" size={17} />Assessments</Link>
                   </>
                 ) : (
                   <>
-                    <Link className={pathname === "/admin/access" ? "active" : ""} href="/admin/access">
-                      <ShieldCheck aria-hidden="true" size={17} />
-                      Access
-                    </Link>
-                    <Link className={pathname === "/admin/jobs" ? "active" : ""} href="/admin/jobs">
-                      Jobs
-                    </Link>
+                    <Link className={navClass(pathname === "/admin/access")} href="/admin/access"><ShieldCheck aria-hidden="true" size={17} />Access</Link>
+                    <Link className={navClass(pathname === "/admin/jobs")} href="/admin/jobs">Jobs</Link>
                   </>
                 )}
               </nav>
-              <a className="icon-button header-help" href="mailto:pilot-support@example.test" title="Contact pilot support">
-                <CircleHelp aria-hidden="true" size={18} />
-                <span className="sr-only">Contact pilot support</span>
-              </a>
-              <span className="user-name">{visibleUser.displayName}</span>
-              <button className="icon-button" onClick={signOut} title="Sign out" type="button">
-                <LogOut aria-hidden="true" size={18} />
-                <span className="sr-only">Sign out</span>
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button asChild className="max-sm:hidden" size="icon" variant="outline">
+                    <a aria-label="Contact pilot support" href="mailto:pilot-support@example.test"><CircleHelp aria-hidden="true" size={18} /></a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Contact pilot support</TooltipContent>
+              </Tooltip>
+              <span className="ml-3 text-[13px] text-muted-foreground max-md:hidden">{visibleUser.displayName}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button aria-label="Sign out" onClick={signOut} size="icon" type="button" variant="outline"><LogOut aria-hidden="true" size={18} /></Button>
+                </TooltipTrigger>
+                <TooltipContent>Sign out</TooltipContent>
+              </Tooltip>
             </div>
           ) : null}
         </div>

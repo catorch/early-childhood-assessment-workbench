@@ -168,6 +168,12 @@ The Next.js application uses server components for authorized page projections a
 
 ### UI Composition
 
+The implementation uses Tailwind CSS 4 as the only application styling layer and selected shadcn/ui primitives as the accessible control foundation. HELP Review semantic tokens live in `app/globals.css`; route and component composition stays in colocated utility classes. The system keeps the approved Georgia headings, system body type, teal/navy identity, restrained semantic colors, flat surfaces, 6 px corners, and compact operational density. It does not use DaisyUI, gradients, dark mode, decorative page cards, or a parallel legacy selector layer.
+
+shadcn/ui is intentionally limited to controls whose interaction and accessibility behavior benefit from a maintained primitive: buttons, form fields, alerts, dialogs, tabs, disclosure, progress, badges, skeletons, separators, and tooltips. Domain components such as the review workspace, suggestion groups, evidence player, assessment summary, and Admin workspaces remain application-owned compositions. Shared product patterns are implemented in `components/ui/app-patterns.tsx`, while `lib/utils.ts` provides the class merge boundary.
+
+Responsive behavior is expressed at the component boundary rather than through page-wide CSS overrides. Mobile review uses explicit list and full-height editor modes, tablet review uses the two-column reference composition, and desktop preserves the grouped list with contextual video/editor rail. Playwright smoke coverage checks desktop and 360 px navigation, mobile editor reachability, Admin access, horizontal overflow, serious/critical axe violations, and approved screenshot baselines. The three committed visual smoke baselines are a migration guard, not a substitute for the still-open 45-state fixture and approval task.
+
 | Component | Used by | Design behavior |
 |---|---|---|
 | `AppHeader` | All authenticated routes | Role-appropriate navigation, account menu, help, and sign-out; mobile collapses utilities without hiding the active section |

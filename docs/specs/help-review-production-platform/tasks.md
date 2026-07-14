@@ -27,6 +27,8 @@ The sanitized shared-demo deployment boundary is also implemented: pooled Neon r
 
 The implementation has passed TypeScript, ESLint, 46 focused Vitest checks, Prisma validation, an optimized Next.js production-environment build, direct authorization/permission requests, a Neon persistence smoke test, and interactive Playwright checks across desktop, tablet, and 360 px mobile states. Live smoke coverage passed sandbox sign-in, assigned and permission-blocked views, idempotent draft replay, direct private-Blob upload, processing-to-review, saved-decision persistence, authorized `206` media ranges, unauthenticated object denial, cross-origin rejection, and unassigned-resource denial. The deterministic local state is recreated from `lib/help-review/fixtures.ts`; `.data/` remains ignored.
 
+The user-facing frontend has also completed its Tailwind CSS 4 and selective shadcn/ui migration. The legacy global selector layer has been removed; HELP semantic tokens, shared application patterns, Lucide controls, Radix-backed dialogs/tooltips, responsive review modes, and flat screen-catalogue styling now cover every implemented route. Repeatable Playwright smoke coverage and three approved migration baselines protect sign-in, assigned children, educator review, mobile editor, and Admin navigation. The broader 45-state deterministic visual suite remains correctly unchecked in Task 11.4.
+
 Unchecked boxes are intentionally retained wherever the task's completion criteria require an approved external contract, organization-owned infrastructure, provider contract tests, backup/restore or rollback evidence, staging acceptance, stakeholder approval, or a committed 45-state regression baseline. The shared Vercel/Neon demo does not satisfy those real-production gates, and real child data remains disabled.
 
 ## 1. Resolve Live-Integration Contracts
@@ -356,7 +358,7 @@ Unchecked boxes are intentionally retained wherever the task's completion criter
   - _Screens: 05, 24, 37, 42_
   - _Requirements: R5, R8, NFR-1, NFR-3_
 
-- [ ] 8.4 Implement every approved editor action (3-4 hours)
+- [x] 8.4 Implement every approved editor action (3-4 hours)
   - Implement one primary credit, accept/override/independent score, note, dismiss, discard, and save with dirty/pending/saved states.
   - Render add-on flags only after Task 1.4 approves them and the server feature gate accepts them.
   - Guard navigation away from dirty state and remove any unsupported prototype control.
@@ -381,7 +383,7 @@ Unchecked boxes are intentionally retained wherever the task's completion criter
   - _Screen: 37_
   - _Requirements: R5, NFR-1, NFR-5_
 
-- [ ] 8.8 Build mobile review editor mode (3-4 hours)
+- [x] 8.8 Build mobile review editor mode (3-4 hours)
   - Implement full-height editor, back guard, skill/evidence summary, credit choices, gated flags, note, dismiss/discard, save, validation, and non-occluding bottom actions.
   - Test longest approved labels at 360 px and 200% zoom.
   - _Screen: 38_

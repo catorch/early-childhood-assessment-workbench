@@ -1,7 +1,19 @@
 "use client";
 
 import { AlertTriangle, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 export function ConfirmDialog({
   open,
@@ -24,43 +36,47 @@ export function ConfirmDialog({
   readonly onCancel: () => void;
   readonly onConfirm: () => void;
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-      window.setTimeout(() => cancelRef.current?.focus(), 0);
-    } else if (!open && dialog.open) {
-      dialog.close();
-    }
-  }, [open]);
-
   return (
-    <dialog
-      aria-labelledby="confirmation-dialog-title"
-      aria-modal="true"
-      className="confirm-dialog"
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!pending) onCancel();
-      }}
-      ref={dialogRef}
-    >
-      <div className="dialog-heading">
-        <span className={`dialog-icon ${tone}`}><AlertTriangle aria-hidden="true" /></span>
-        <div><h2 id="confirmation-dialog-title">{title}</h2><p>{description}</p></div>
-        <button aria-label="Close dialog" className="icon-button" disabled={pending} onClick={onCancel} type="button"><X aria-hidden="true" /></button>
-      </div>
-      {details?.length ? <ul className="dialog-details">{details.map((detail) => <li key={detail}>{detail}</li>)}</ul> : null}
-      <div className="dialog-actions">
-        <button className="button secondary" disabled={pending} onClick={onCancel} ref={cancelRef} type="button">Cancel</button>
-        <button className={`button ${tone === "danger" ? "danger" : "primary"}`} disabled={pending} onClick={onConfirm} type="button">
-          {pending ? "Working..." : confirmLabel}
-        </button>
-      </div>
-    </dialog>
+    <AlertDialog open={open} onOpenChange={(nextOpen) => !nextOpen && !pending && onCancel()}>
+      <AlertDialogContent
+        className="max-h-[calc(100vh-2rem)] w-[calc(100%-1.25rem)] max-w-[520px] gap-0 overflow-y-auto rounded-md border border-border-strong bg-surface p-0 shadow-[0_24px_70px_rgba(13,35,47,.26)]"
+        onEscapeKeyDown={(event) => pending && event.preventDefault()}
+      >
+        <AlertDialogHeader className="grid grid-cols-[auto_1fr_auto] place-items-start gap-3 p-[22px] text-left max-sm:p-[18px_15px]">
+          <AlertDialogMedia
+            className={cn(
+              "mb-0 size-[38px] rounded-full",
+              tone === "danger" ? "bg-destructive-soft text-destructive" : "bg-accent text-primary"
+            )}
+          >
+            <AlertTriangle aria-hidden="true" className="size-5" />
+          </AlertDialogMedia>
+          <div className="min-w-0">
+            <AlertDialogTitle className="font-heading text-[21px] font-bold text-ink">{title}</AlertDialogTitle>
+            <AlertDialogDescription className="mt-1.5 text-[13px] leading-6 text-muted-foreground">{description}</AlertDialogDescription>
+          </div>
+          <AlertDialogCancel aria-label="Close dialog" disabled={pending} size="icon" variant="outline"><X aria-hidden="true" /></AlertDialogCancel>
+        </AlertDialogHeader>
+        {details?.length ? (
+          <ul className="mx-[22px] list-disc border-y border-border py-[15px] pr-5 pl-[38px] text-[13px] leading-6 text-muted-foreground max-sm:mx-[15px]">
+            {details.map((detail) => <li key={detail}>{detail}</li>)}
+          </ul>
+        ) : null}
+        <AlertDialogFooter className="m-0 flex-row justify-end gap-2 rounded-none border-0 bg-transparent p-[18px_22px] max-sm:flex-col-reverse max-sm:p-[15px]">
+          <AlertDialogCancel autoFocus disabled={pending} size="default" variant="secondary" className="max-sm:w-full">Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="max-sm:w-full"
+            disabled={pending}
+            onClick={(event) => {
+              event.preventDefault();
+              onConfirm();
+            }}
+            variant={tone === "danger" ? "destructive" : "default"}
+          >
+            {pending ? "Working..." : confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

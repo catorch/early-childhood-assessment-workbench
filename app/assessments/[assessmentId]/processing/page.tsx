@@ -6,8 +6,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { PageState } from "@/components/page-state";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { backLinkClass, Eyebrow, PageShell } from "@/components/ui/app-patterns";
+import { Button } from "@/components/ui/button";
 import { handleProtectedResponse, responseError } from "@/lib/help-review/client-http";
 import { formatDateTime } from "@/lib/help-review/presentation";
+import { cn } from "@/lib/utils";
 
 interface StatusProjection {
   readonly id: string;
@@ -75,38 +79,51 @@ export default function ProcessingPage() {
     }
   }
 
-  if (!assessment && error) return <main className="page-shell"><PageState description={error} kind="error" title="Status could not be loaded"><button className="button primary icon-text" onClick={() => void loadStatus(true)} type="button"><RefreshCw aria-hidden="true" size={16} /> Try again</button></PageState></main>;
-  if (!assessment) return <main className="page-shell"><PageState description="Checking the latest durable processing state." kind="loading" title="Loading processing status" /></main>;
+  if (!assessment && error) return <PageShell><PageState description={error} kind="error" title="Status could not be loaded"><Button onClick={() => void loadStatus(true)} type="button"><RefreshCw aria-hidden="true" size={16} /> Try again</Button></PageState></PageShell>;
+  if (!assessment) return <PageShell><PageState description="Checking the latest durable processing state." kind="loading" title="Loading processing status" /></PageShell>;
 
   const failed = assessment.status === "FAILED";
   const ready = assessment.ready;
   const analysisStarted = assessment.run?.status === "RUNNING" || assessment.run?.status === "COMPLETED" || assessment.run?.status === "FAILED";
 
   return (
-    <main className="processing-page">
-      <div className="processing-topbar"><Link className="back-link" href={`/children/${assessment.child.id}`}><ArrowLeft aria-hidden="true" size={16} /> {assessment.child.externalChildId}</Link><button className="button secondary compact icon-text" disabled={refreshing} onClick={() => void loadStatus(true)} type="button"><RefreshCw aria-hidden="true" className={refreshing ? "spin" : ""} size={15} /> Refresh status</button></div>
-      <section className={`processing-panel${failed ? " failed" : ready ? " ready" : ""}`} aria-live="polite">
-        <span className={`processing-mark ${failed ? "failed" : ready ? "ready" : "working"}`}>{failed ? <XCircle aria-hidden="true" /> : ready ? <CheckCircle2 aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}</span>
-        <span className="eyebrow">{failed ? "Processing failed" : ready ? "Analysis complete" : "Analysis in progress"}</span>
-        <h1>{failed ? assessment.error?.title ?? "We could not complete the analysis" : ready ? "Ready for review" : "Analyzing observation"}</h1>
-        <p>{failed ? assessment.error?.description : ready ? "The validated draft is ready for your professional review." : "You may leave this page. Processing continues without keeping the browser open."}</p>
+    <main className="mx-auto w-[min(calc(100%_-_40px),900px)] px-0 py-8 pb-16 max-sm:w-full max-sm:px-3 max-sm:py-[18px] max-sm:pb-[50px]">
+      <div className="flex items-start justify-between gap-4"><Link className={backLinkClass} href={`/children/${assessment.child.id}`}><ArrowLeft aria-hidden="true" size={16} /> {assessment.child.externalChildId}</Link><Button disabled={refreshing} onClick={() => void loadStatus(true)} size="sm" type="button" variant="secondary"><RefreshCw aria-hidden="true" className={cn(refreshing && "motion-safe:animate-spin")} size={15} /><span className="max-sm:sr-only">Refresh status</span></Button></div>
+      <section className="mx-auto max-w-[600px] pt-7 text-center max-sm:pt-5" aria-live="polite">
+        <span className={cn("mx-auto mb-5 grid size-[70px] place-items-center rounded-full [&_svg]:size-8", failed ? "bg-destructive-soft text-destructive" : ready ? "bg-success-soft text-success" : "bg-accent text-primary [&_svg]:motion-safe:animate-spin")}>
+          {failed ? <XCircle aria-hidden="true" /> : ready ? <CheckCircle2 aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
+        </span>
+        <Eyebrow>{failed ? "Processing failed" : ready ? "Analysis complete" : "Analysis in progress"}</Eyebrow>
+        <h1 className="mt-2 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[29px]">{failed ? assessment.error?.title ?? "We could not complete the analysis" : ready ? "Ready for review" : "Analyzing observation"}</h1>
+        <p className="mx-auto mt-3 max-w-[560px] leading-relaxed text-muted-foreground">{failed ? assessment.error?.description : ready ? "The validated draft is ready for your professional review." : "You may leave this page. Processing continues without keeping the browser open."}</p>
 
-        <ol className="processing-timeline" aria-label="Processing progress">
-          <li className="complete"><span><Check aria-hidden="true" /></span><div><strong>Video uploaded</strong><small>{assessment.video?.originalFilename}</small></div></li>
-          <li className="complete"><span><ShieldCheck aria-hidden="true" /></span><div><strong>Security check complete</strong><small>Private video access confirmed</small></div></li>
-          <li className={failed ? "failed" : ready ? "complete" : "current"}><span>{failed ? <XCircle aria-hidden="true" /> : ready ? <Check aria-hidden="true" /> : <Clock3 aria-hidden="true" />}</span><div><strong>{failed ? "Analysis failed" : ready ? "Analysis complete" : "Analysis in progress"}</strong><small>Attempt {assessment.run?.attempt ?? 1}</small></div></li>
-          <li className={ready ? "complete" : "pending"}><span>{ready ? <Check aria-hidden="true" /> : <Circle aria-hidden="true" />}</span><div><strong>Review ready</strong><small>{ready ? `${assessment.suggestionCount} validated suggestions` : "Pending valid result"}</small></div></li>
+        <ol className="mx-auto my-7 grid max-w-[440px] text-left" aria-label="Processing progress">
+          <TimelineItem detail={assessment.video?.originalFilename} icon={<Check aria-hidden="true" />} state="complete" title="Video uploaded" />
+          <TimelineItem detail="Private video access confirmed" icon={<ShieldCheck aria-hidden="true" />} state="complete" title="Security check complete" />
+          <TimelineItem detail={`Attempt ${assessment.run?.attempt ?? 1}`} icon={failed ? <XCircle aria-hidden="true" /> : ready ? <Check aria-hidden="true" /> : <Clock3 aria-hidden="true" />} state={failed ? "failed" : ready ? "complete" : "current"} title={failed ? "Analysis failed" : ready ? "Analysis complete" : "Analysis in progress"} />
+          <TimelineItem detail={ready ? `${assessment.suggestionCount} validated suggestions` : "Pending valid result"} icon={ready ? <Check aria-hidden="true" /> : <Circle aria-hidden="true" />} state={ready ? "complete" : "pending"} title="Review ready" />
         </ol>
 
-        <div className="processing-file"><FileVideo2 aria-hidden="true" /><span><strong>{assessment.video?.originalFilename ?? "Video unavailable"}</strong><small>{assessment.video ? `${(assessment.video.byteSize / 1024 / 1024).toFixed(1)} MB` : "No available asset"} · updated {formatDateTime(assessment.updatedAt)}</small></span></div>
-        {ready ? <div className="ready-counts"><span><strong>{assessment.suggestionCount}</strong> skill suggestions</span><span><strong>{assessment.needsReviewCount}</strong> need independent review</span></div> : null}
-        {error ? <div className="notice error" role="alert">{error}</div> : null}
-        <div className="processing-actions">
-          <Link className="button secondary" href="/children">Return to children</Link>
-          {failed ? <><Link className="button secondary icon-text" href={`/assessments/new?childId=${assessment.child.id}&assessmentId=${assessment.id}`}><RotateCcw aria-hidden="true" size={16} /> Replace video</Link><button className="button primary icon-text" disabled={retrying || !assessment.error?.retryable} onClick={() => void retry()} type="button"><RefreshCw aria-hidden="true" size={17} /> {retrying ? "Retrying..." : "Retry processing"}</button></> : ready ? <Link className="button primary icon-text" href={`/assessments/${assessmentId}/review`}>Start review <ArrowRight aria-hidden="true" size={17} /></Link> : null}
+        <div className="mx-auto flex max-w-[520px] items-center gap-3 rounded-md border border-border bg-surface p-3 text-left"><FileVideo2 aria-hidden="true" className="shrink-0 text-primary" /><span className="grid min-w-0 gap-1"><strong className="truncate">{assessment.video?.originalFilename ?? "Video unavailable"}</strong><small className="text-xs text-muted-foreground">{assessment.video ? `${(assessment.video.byteSize / 1024 / 1024).toFixed(1)} MB` : "No available asset"} · updated {formatDateTime(assessment.updatedAt)}</small></span></div>
+        {ready ? <div className="mx-auto mt-4 grid max-w-[520px] grid-cols-2 divide-x divide-border rounded-md border border-border bg-surface max-sm:divide-x-0 max-sm:divide-y"><span className="grid gap-1 p-3 text-xs text-muted-foreground"><strong className="text-xl text-ink">{assessment.suggestionCount}</strong> skill suggestions</span><span className="grid gap-1 p-3 text-xs text-muted-foreground"><strong className="text-xl text-ink">{assessment.needsReviewCount}</strong> need independent review</span></div> : null}
+        {error ? <Alert className="mt-5 text-left" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
+        <div className="mt-6 flex flex-wrap justify-center gap-2.5 max-sm:flex-col">
+          <Button asChild className="max-sm:w-full" variant="secondary"><Link href="/children">Return to children</Link></Button>
+          {failed ? <><Button asChild className="max-sm:w-full" variant="secondary"><Link href={`/assessments/new?childId=${assessment.child.id}&assessmentId=${assessment.id}`}><RotateCcw aria-hidden="true" size={16} /> Replace video</Link></Button><Button className="max-sm:w-full" disabled={retrying || !assessment.error?.retryable} onClick={() => void retry()} type="button"><RefreshCw aria-hidden="true" size={17} /> {retrying ? "Retrying..." : "Retry processing"}</Button></> : ready ? <Button asChild className="max-sm:w-full"><Link href={`/assessments/${assessmentId}/review`}>Start review <ArrowRight aria-hidden="true" size={17} /></Link></Button> : null}
         </div>
-        {!ready && !failed && !analysisStarted ? <p className="quiet-status"><Clock3 aria-hidden="true" size={14} /> Queued at {assessment.run ? formatDateTime(assessment.run.requestedAt) : "now"}</p> : null}
+        {!ready && !failed && !analysisStarted ? <p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><Clock3 aria-hidden="true" size={14} /> Queued at {assessment.run ? formatDateTime(assessment.run.requestedAt) : "now"}</p> : null}
       </section>
     </main>
+  );
+}
+
+function TimelineItem({ title, detail, icon, state }: { readonly title: string; readonly detail?: string | null; readonly icon: React.ReactNode; readonly state: "complete" | "current" | "failed" | "pending" }) {
+  return (
+    <li className="grid grid-cols-[32px_1fr] gap-3 pb-5 last:pb-0">
+      <span className={cn("relative z-10 grid size-8 place-items-center rounded-full border bg-surface after:absolute after:top-8 after:left-1/2 after:h-5 after:w-px after:-translate-x-1/2 after:bg-border last:after:hidden [&_svg]:size-4", state === "complete" && "border-success bg-success text-white", state === "current" && "border-warning bg-warning-soft text-warning", state === "failed" && "border-destructive bg-destructive-soft text-destructive", state === "pending" && "border-border-strong text-muted-foreground")}>
+        {icon}
+      </span>
+      <div className="grid content-start gap-1 pt-1"><strong className="text-sm text-ink">{title}</strong><small className="text-xs text-muted-foreground">{detail}</small></div>
+    </li>
   );
 }
