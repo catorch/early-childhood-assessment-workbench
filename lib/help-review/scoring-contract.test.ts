@@ -8,7 +8,7 @@ import {
   ScoringResultSchema,
   validateScoringResultForRequest
 } from "./scoring-contract";
-import { FakeScoringGateway, GeminiScoringGateway } from "./scoring-gateway";
+import { FakeScoringGateway, GeminiScoringGateway, VertexScoringGateway } from "./scoring-gateway";
 
 function request() {
   return ScoringRequestSchema.parse({
@@ -165,5 +165,84 @@ describe("scoring contract v0", () => {
 
     await expect(gateway.score(request(), { kind: "bytes", bytes: new Uint8Array([1, 2, 3]), contentType: "video/mp4" }))
       .rejects.toMatchObject({ safeCode: "INVALID_RESULT", retryable: false });
+  });
+
+  it("sends the canonical GCS object to Vertex and validates its structured result", async () => {
+    const generateContent = vi.fn().mockResolvedValue({
+      text: JSON.stringify({
+        outcome: "VALID",
+        suggestions: [{
+          sourceSkillId: "help-4.68",
+          draftCredit: "PRESENT",
+          confidence: 0.92,
+          uncertaintyReason: null,
+          evidence: [{ timestampSeconds: 8, explanation: "Two cubes remain stacked." }]
+        }]
+      })
+    });
+    const gateway = new VertexScoringGateway({
+      project: "test-project",
+      location: "us-central1",
+      model: "gemini-test",
+      client: { models: { generateContent } }
+    });
+
+    const result = await gateway.score(request(), {
+      kind: "gcs",
+      uri: "gs://private-bucket/videos/source.mp4",
+      generation: "123",
+      contentType: "video/mp4"
+    });
+
+    expect(result.suggestions[0]).toMatchObject({ sourceSkillId: "help-4.68", draftCredit: "PRESENT" });
+    expect(generateContent).toHaveBeenCalledOnce();
+    const submitted = generateContent.mock.calls[0]![0];
+    expect(submitted.contents).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        parts: expect.arrayContaining([
+          { fileData: { fileUri: "gs://private-bucket/videos/source.mp4", mimeType: "video/mp4" } }
+        ])
+      })
+    ]));
+    expect((submitted.config?.responseJsonSchema as { properties: { suggestions: object } })
+      .properties.suggestions).not.toHaveProperty("maxItems");
+  });
+
+  it("rejects a non-GCS media source before calling Vertex", async () => {
+    const generateContent = vi.fn();
+    const gateway = new VertexScoringGateway({
+      project: "test-project",
+      location: "us-central1",
+      model: "gemini-test",
+      client: { models: { generateContent } }
+    });
+
+    await expect(gateway.score(request(), {
+      kind: "bytes",
+      bytes: new Uint8Array([1, 2, 3]),
+      contentType: "video/mp4"
+    })).rejects.toMatchObject({ safeCode: "VIDEO_UNAVAILABLE", retryable: false });
+    expect(generateContent).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [403, "SCORING_AUTHENTICATION_FAILED", false],
+    [429, "SCORING_RATE_LIMITED", true],
+    [504, "SCORING_TIMEOUT", true],
+    [400, "SCORING_UNAVAILABLE", false]
+  ] as const)("maps Vertex status %s to a safe failure", async (status, safeCode, retryable) => {
+    const generateContent = vi.fn().mockRejectedValue(Object.assign(new Error("provider details"), { status }));
+    const gateway = new VertexScoringGateway({
+      project: "test-project",
+      location: "us-central1",
+      model: "gemini-test",
+      client: { models: { generateContent } }
+    });
+
+    await expect(gateway.score(request(), {
+      kind: "gcs",
+      uri: "gs://private-bucket/videos/source.mp4",
+      contentType: "video/mp4"
+    })).rejects.toMatchObject({ safeCode, retryable });
   });
 });

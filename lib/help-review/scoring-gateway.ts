@@ -349,6 +349,15 @@ interface VertexGatewayOptions {
   readonly location: string;
   readonly model: string;
   readonly timeoutMs?: number;
+  readonly client?: VertexModelClient;
+}
+
+interface VertexModelClient {
+  readonly models: {
+    generateContent(
+      parameters: Parameters<GoogleGenAI["models"]["generateContent"]>[0]
+    ): Promise<{ readonly text?: string }>;
+  };
 }
 
 function modelResult(
@@ -410,10 +419,10 @@ function vertexFailure(error: unknown): ScoringGatewayError {
 /** Production scoring adapter. Vertex reads the canonical private GCS object in place. */
 export class VertexScoringGateway implements ScoringGateway {
   readonly name = "vertex";
-  private readonly client: GoogleGenAI;
+  private readonly client: VertexModelClient;
 
   constructor(private readonly options: VertexGatewayOptions) {
-    this.client = new GoogleGenAI({
+    this.client = options.client ?? new GoogleGenAI({
       vertexai: true,
       project: options.project,
       location: options.location,
@@ -442,6 +451,7 @@ export class VertexScoringGateway implements ScoringGateway {
         }],
         config: {
           temperature: 0.1,
+          maxOutputTokens: 8_192,
           responseMimeType: "application/json",
           responseJsonSchema: responseSchema(),
           httpOptions: { timeout: this.options.timeoutMs ?? 180_000 }

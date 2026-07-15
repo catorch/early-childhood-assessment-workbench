@@ -10,6 +10,7 @@ import {
   type ProcessingTriggerContext
 } from "../lib/help-review/processing-coordinator";
 import { runIdFromProcessingMarker } from "../lib/help-review/processing-dispatcher";
+import { assertRuntimeConfiguration } from "../lib/help-review/runtime-config";
 
 interface StorageEventData {
   readonly bucket?: string;
@@ -119,6 +120,7 @@ async function route(request: IncomingMessage, response: ServerResponse): Promis
 
 export function createProcessorServer() {
   process.env.HELP_REVIEW_SERVICE_ROLE = "processor";
+  assertRuntimeConfiguration();
   return createServer((request, response) => {
     void route(request, response).catch((error) => {
       const retryable = error instanceof RetryableProcessingError;

@@ -1,0 +1,6 @@
+terraform {
+  backend "gcs" {
+    bucket = "organization-managed-terraform-state"
+    prefix = "help-review/environment-name"
+  }
+}

@@ -72,7 +72,7 @@ pnpm test:visual
 pnpm build
 ```
 
-The July 14 engineering acceptance record is `docs/specs/help-review-production-platform/acceptance-evidence.md`. It records 112 unit/service checks, 18 behavioral browser checks, 6 accessibility/reflow checks, and 52 visual checks covering screens 01-45, 4 stress states, and 3 smoke baselines.
+The July 14 engineering acceptance record is `docs/specs/help-review-production-platform/acceptance-evidence.md`. It records 119 unit/service checks, 18 behavioral browser checks, 6 accessibility/reflow checks, and 52 visual checks covering screens 01-45, 4 stress states, and 3 smoke baselines.
 
 ## Sanitized Google Cloud Deployment
 

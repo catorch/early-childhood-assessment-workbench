@@ -1297,7 +1297,8 @@ function responseSchema() {
       outcome: { type: "string", enum: ["VALID", "NO_VALID_RESULTS"] },
       suggestions: {
         type: "array",
-        maxItems: 500,
+        // Vertex rejects maxItems on this nested response schema. The Zod
+        // contract and one-megabyte result limit enforce the same bound.
         items: {
           type: "object",
           additionalProperties: false,
@@ -1556,7 +1557,7 @@ function vertexFailure(error) {
 var VertexScoringGateway = class {
   constructor(options) {
     this.options = options;
-    this.client = new GoogleGenAI({
+    this.client = options.client ?? new GoogleGenAI({
       vertexai: true,
       project: options.project,
       location: options.location,
@@ -1587,6 +1588,7 @@ var VertexScoringGateway = class {
         }],
         config: {
           temperature: 0.1,
+          maxOutputTokens: 8192,
           responseMimeType: "application/json",
           responseJsonSchema: responseSchema(),
           httpOptions: { timeout: this.options.timeoutMs ?? 18e4 }
@@ -2247,6 +2249,7 @@ async function route(request, response) {
 }
 function createProcessorServer() {
   process.env.HELP_REVIEW_SERVICE_ROLE = "processor";
+  assertRuntimeConfiguration();
   return createServer((request, response) => {
     void route(request, response).catch((error) => {
       const retryable = error instanceof RetryableProcessingError;

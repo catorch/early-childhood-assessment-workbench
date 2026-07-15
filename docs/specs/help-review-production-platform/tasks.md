@@ -21,11 +21,11 @@ Screen catalogue: `docs/specs/help-review-production-platform/ui-ux-screens/SCRE
 
 ## Implementation Status
 
-As of July 14, 2026, **68 of 91 tasks are engineering-complete** against the current sanitized/synthetic boundary. The complete Educator journey and minimal Admin workflow are implemented: signed provisioned sessions, assignment-scoped navigation, direct verified Cloud Storage upload, Eventarc-delivered browser-independent processing, a private Cloud Run processor, Vertex AI scoring against the canonical `gs://` video, secure byte-range playback, every approved review decision path and origin, revision conflicts, server-derived summary/finalization, access and assignment changes, and failed/stuck processing retry.
+As of July 14, 2026, **69 of 91 tasks are engineering-complete** against the current sanitized/synthetic boundary. The complete Educator journey and minimal Admin workflow are implemented: signed provisioned sessions, assignment-scoped navigation, direct verified Cloud Storage upload, Eventarc-delivered browser-independent processing, a private Cloud Run processor, Vertex AI scoring against the canonical `gs://` video, secure byte-range playback, every approved review decision path and origin, revision conflicts, server-derived summary/finalization, access and assignment changes, and failed/stuck processing retry.
 
-The architecture now uses injectable identity, authorization, repository, child, assessment, video, processing, scoring, review, Admin, and support boundaries. Browser responses use explicit public projections and exclude storage keys, checksums, uploader/requester IDs, temporary URLs, unrestricted provider payloads, and protected runtime configuration. Production-mode configuration fails closed unless durable Neon/private-Blob adapters, strong secrets, and the explicit sanitized acknowledgement are present; real-data mode rejects sandbox identity and fake/Gemini scoring.
+The architecture now uses injectable identity, authorization, repository, child, assessment, video, dispatch, processing, scoring, review, Admin, and support boundaries. Browser responses use explicit public projections and exclude storage keys, checksums, uploader/requester IDs, temporary URLs, unrestricted provider payloads, and protected runtime configuration. Production-mode configuration fails closed unless durable Neon/GCS/Eventarc adapters, strong secrets, and the explicit sanitized acknowledgement are present; real-data mode rejects sandbox identity and unaccepted scoring configuration.
 
-Current automated evidence is green: TypeScript, ESLint, 20 Vitest files with 112 tests, 18 behavioral browser tests, 6 accessibility/reflow tests, and 52 visual tests. The visual suite covers every accepted screen ID 01-45, four dense/long/localized stress states, and three smoke baselines. Prisma validates and all four migrations are current on the sanitized Neon database. Evidence and limits are mapped in `acceptance-evidence.md`.
+Current automated evidence is green: TypeScript, ESLint, 20 Vitest files with 119 tests, 18 behavioral browser tests, 6 accessibility/reflow tests, and 52 visual tests. The visual suite covers every accepted screen ID 01-45, four dense/long/localized stress states, and three smoke baselines. Prisma validates and all four migrations are current on the sanitized Neon database. Evidence and limits are mapped in `acceptance-evidence.md`.
 
 The Google Cloud development environment remains a **sanitized deployment**, not organization-approved real-data production. The public web service, private processor, GCS bucket, Eventarc trigger, Vertex gateway, Secret Manager configuration, Artifact Registry images, and Neon migration are deployed in project `help-review-dev-20260714`; live-path evidence is in `deployment-evidence.md`. Real child data remains disabled.
 
@@ -40,7 +40,7 @@ Unchecked tasks are not missing repository work disguised as progress. They reta
   - Verify the scientist owner accepts all-or-nothing application validation and safe diagnostic references.
   - _Artifacts: approved contract record and versioned sanitized fixtures_
   - _Requirements: R4, R5, R7, NFR-2, NFR-4, NFR-6_
-  - **Status (July 14):** `help-scoring-v0`, all required deterministic fixtures, a fake gateway, and a synthetic Gemini emulator are implemented. Closure is blocked only on the scientist-owned package/service contract, authentication, accepted fixtures, retry/timeout policy, and dated owner approval (D-001, D-002, D-015).
+  - **Status (July 14):** `help-scoring-v0`, all required deterministic fixtures, fake/Gemini adapters, the Vertex GCS gateway, safe error/timeout mapping, and live synthetic delivery are implemented. Closure is blocked only on the scientist-owned acceptance package or replacement service, accepted fixtures, model/prompt criteria, and dated owner approval (D-001, D-002, D-015, D-017).
 
 - [ ] 1.2 Confirm roster, identifier, assignment, and context inputs (2-4 hours)
   - Record the stable child identifier, age source, approved disability/IFSP/support context, processing-permission source, Educator identity mapping, assignment source, update cadence, and deactivation behavior.
@@ -105,7 +105,7 @@ Unchecked tasks are not missing repository work disguised as progress. They reta
   - Generate and validate migration SQL, then test apply and forward/rollback recovery against an approved non-production database.
   - _Files: `prisma/schema.prisma`, migrations, schema tests_
   - _Requirements: R1-R8, NFR-2, NFR-4, NFR-6_
-  - **Status (July 14):** the lean constrained schema and all three migrations validate and are current on sanitized Neon. The checkbox remains open solely because the task requires an approved provider backup/restore and forward/rollback recovery exercise, which the shared demo cannot authorize.
+  - **Status (July 14):** the lean constrained schema and all four migrations validate and are current on sanitized Neon. The checkbox remains open solely because the task requires an approved provider backup/restore and forward/rollback recovery exercise, which the development deployment cannot self-authorize.
 
 - [x] 2.5 Keep the HELP domain lean and deterministic (2-3 hours)
   - Retain two roles, four canonical credits, four decision origins, state validation, sanitized fixtures, and no speculative manual-add origin.
@@ -306,11 +306,11 @@ Unchecked tasks are not missing repository work disguised as progress. They reta
   - _Screen: 36_
   - _Requirements: R4, NFR-1, NFR-5_
 
-- [ ] 6.8 Verify processing contracts and recovery (3-4 hours)
+- [x] 6.8 Verify processing contracts and recovery (3-4 hours)
   - Run fake and selected-provider contract tests for submit, completion, invalid/empty payload, timeout, duplicate callbacks/polls, restart, concurrent retry, and safe error redaction.
   - Capture screen fixtures 04, 21, 22, and 36.
   - _Requirements: R4, R7, R8, NFR-2, NFR-4, NFR-6_
-  - **Status (July 14):** fake/Gemini schemas, invalid/empty/slow/failure cases, checksum rejection, serialization, restart recovery, duplicate/concurrent retry, safe redaction, and all four screens pass. A live Vertex synthetic-video call and Eventarc delivery pass; the checkbox remains open for a repeatable selected-provider failure/timeout suite and scientist acceptance fixtures.
+  - **Status (July 14):** fake/Gemini fixtures and injected Vertex contract tests cover valid, invalid, empty, slow, authentication, rate-limit, timeout, unavailable, non-GCS, checksum, serialization, restart, duplicate/concurrent retry, and redaction behavior. Live Vertex synthetic-video, browser-exit Eventarc, duplicate delivery, no-valid-results, and GCS playback smokes pass. Scientist model acceptance remains Task 1.1/12.8 rather than missing engineering verification.
 
 ## 7. Implement Review, Video, And Decision Services
 
@@ -555,7 +555,7 @@ Unchecked tasks are not missing repository work disguised as progress. They reta
   - Fail CI on schema drift, production fake/local adapter selection, missing conditional gates, or newly reachable out-of-scope routes.
   - Publish concise artifacts for failed screen IDs and contract cases without sensitive payloads.
   - _Requirements: R1-R8, NFR-1-NFR-6_
-  - **Status (July 14):** CI installs PostgreSQL/Chromium and gates diff hygiene, types, lint, 106 unit/service tests, schema/migrations, 18 browser tests, 6 a11y tests, 52 visual tests, the sanitized production build, and safe Playwright diagnostics. It remains open only for selected identity/scientist provider contract jobs and organization CI acceptance.
+  - **Status (July 14):** CI installs PostgreSQL/Chromium and gates diff hygiene, types, lint, 119 unit/service tests, schema/migrations, 18 browser tests, 6 a11y tests, 52 visual tests, the sanitized production build, and safe Playwright diagnostics. It remains open only for selected identity/scientist provider contract jobs and organization CI acceptance.
 
 - [x] 11.7 Audit scope and conditional-feature closure (2-3 hours)
   - Confirm no dashboard, batch, reliability, prompt/model manager, research roles, rubric editor, DAL, manual skill entry, PDF/export, amendment, public signup, parallel auth, native/offline/live recording, or generalized audit product is reachable.

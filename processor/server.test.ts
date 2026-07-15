@@ -11,6 +11,13 @@ describe("standalone processor HTTP boundary", () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
+  it("fails startup when production configuration is not acknowledged", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("HELP_REVIEW_SANITIZED_PRODUCTION_ACK", "false");
+
+    expect(() => createProcessorServer()).toThrow("not approved for production");
+  });
+
   it("serves health, ignores unrelated events, and protects internal dispatch", async () => {
     const server = createProcessorServer();
     server.listen(0, "127.0.0.1");

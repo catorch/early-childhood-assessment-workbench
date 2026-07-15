@@ -46,22 +46,33 @@ jobs:
       - run: pnpm db:validate
       - run: pnpm db:migrate
       - run: pnpm db:status
+      - run: pnpm build:processor
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=infra/gcp fmt -check -recursive
+      - run: terraform -chdir=infra/gcp init -backend=false
+      - run: terraform -chdir=infra/gcp validate
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
       - run: pnpm test:a11y
       - run: pnpm test:visual
-      - name: Production build with acknowledged sanitized adapters
+      - name: Production web build with acknowledged GCP adapters
         run: pnpm build
         env:
           HELP_REVIEW_SANITIZED_PRODUCTION_ACK: "true"
+          HELP_REVIEW_REAL_DATA_ENABLED: "false"
           HELP_REVIEW_STATE_ADAPTER: neon
-          HELP_REVIEW_VIDEO_ADAPTER: vercel-blob
-          HELP_REVIEW_SCORING_ADAPTER: fake
+          HELP_REVIEW_VIDEO_ADAPTER: gcs
+          HELP_REVIEW_PROCESSING_ADAPTER: gcs-event
+          HELP_REVIEW_SCORING_ADAPTER: vertex
           HELP_REVIEW_IDENTITY_ADAPTER: sandbox
+          GCS_VIDEO_BUCKET: ci-private-video-bucket
+          GOOGLE_CLOUD_PROJECT: help-review-ci
+          VERTEX_AI_LOCATION: us-central1
+          VERTEX_AI_MODEL: gemini-2.5-flash
           HELP_REVIEW_SESSION_SECRET: ci-session-secret-with-at-least-32-characters
           HELP_REVIEW_PLAYBACK_GRANT_SECRET: ci-playback-secret-with-at-least-32-characters
-          CRON_SECRET: ci-cron-secret-with-at-least-32-characters
-          BLOB_READ_WRITE_TOKEN: vercel_blob_rw_ci-placeholder
+          HELP_REVIEW_UPLOAD_GRANT_SECRET: ci-upload-secret-with-at-least-32-characters
+          HELP_REVIEW_WORKER_SECRET: ci-worker-secret-with-at-least-32-characters
       - name: Publish Playwright diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4

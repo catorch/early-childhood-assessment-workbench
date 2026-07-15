@@ -9,10 +9,10 @@ describe("processing dispatch contract", () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it("selects only supported dispatch adapters", () => {
-    expect(selectedProcessingDispatchAdapter({})).toBe("inline");
-    expect(selectedProcessingDispatchAdapter({ HELP_REVIEW_PROCESSING_ADAPTER: "http" })).toBe("http");
-    expect(selectedProcessingDispatchAdapter({ HELP_REVIEW_PROCESSING_ADAPTER: "gcs-event" })).toBe("gcs-event");
-    expect(() => selectedProcessingDispatchAdapter({ HELP_REVIEW_PROCESSING_ADAPTER: "unknown" })).toThrow("Unsupported");
+    expect(selectedProcessingDispatchAdapter({ NODE_ENV: "test" })).toBe("inline");
+    expect(selectedProcessingDispatchAdapter({ NODE_ENV: "test", HELP_REVIEW_PROCESSING_ADAPTER: "http" })).toBe("http");
+    expect(selectedProcessingDispatchAdapter({ NODE_ENV: "test", HELP_REVIEW_PROCESSING_ADAPTER: "gcs-event" })).toBe("gcs-event");
+    expect(() => selectedProcessingDispatchAdapter({ NODE_ENV: "test", HELP_REVIEW_PROCESSING_ADAPTER: "unknown" })).toThrow("Unsupported");
   });
 
   it("accepts only run markers under the configured request prefix", () => {

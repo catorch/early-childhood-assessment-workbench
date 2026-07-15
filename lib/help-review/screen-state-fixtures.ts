@@ -20,6 +20,10 @@ const fixedCreatedAt = "2026-07-14T13:00:00.000Z";
 const fixedUpdatedAt = "2026-07-14T14:00:00.000Z";
 const videoSlugs = ["upload-ready", "processing", "failed", "ready", "complete", "incomplete", "final", "no-results", "stuck"];
 
+function activeRunRequestedAt(): string {
+  return new Date().toISOString();
+}
+
 export async function ensureScreenFixtureVideos(): Promise<VideoFixtureMetadata> {
   const source = path.join(process.cwd(), "tests", "fixtures", "synthetic-observation.mp4");
   const bytes = await readFile(source);
@@ -156,7 +160,7 @@ export function createScreenFixtureState(screenId: string, metadata: VideoFixtur
 
   state.assessments = [
     assessment("upload-ready", metadata, { status: "DRAFT", runs: [], suggestions: [], video: video("upload-ready", metadata), observationDate: "2026-07-07" }),
-    assessment("processing", metadata, { status: "PROCESSING", runs: [run("processing", "RUNNING", "2026-07-14T23:50:00.000Z")], observationDate: "2026-07-08" }),
+    assessment("processing", metadata, { status: "PROCESSING", runs: [run("processing", "RUNNING", activeRunRequestedAt())], observationDate: "2026-07-08" }),
     assessment("failed", metadata, { status: "FAILED", runs: [run("failed", "FAILED", fixedCreatedAt, "SCORING_UNAVAILABLE")], observationDate: "2026-07-09" }),
     assessment("ready", metadata, { status: "READY_FOR_REVIEW", runs: [run("ready", "COMPLETED")], suggestions: readySuggestions, observationDate: "2026-07-10" }),
     assessment("complete", metadata, { status: "IN_REVIEW", runs: [run("complete", "COMPLETED")], suggestions: completeSuggestions, decisions: decisionsFor(completeSuggestions), observationDate: "2026-07-11" }),

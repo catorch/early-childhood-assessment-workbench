@@ -3,6 +3,7 @@ node_modules
 .next-e2e
 .turbo
 dist
+dist-processor
 coverage
 test-results
 playwright-report

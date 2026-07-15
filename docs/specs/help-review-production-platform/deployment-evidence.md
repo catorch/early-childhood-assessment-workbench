@@ -2,18 +2,48 @@
 
 Updated: July 14, 2026
 
-## Sanitized Shared Environment
+## Current Sanitized GCP Environment
 
 | Dependency | Current evidence | Boundary |
 |---|---|---|
-| Web | Linked Vercel project `early_childhood_assessment`; existing URL `https://earlychildhoodassessment.vercel.app` | Sanitized demo, not real-data production |
+| Web | Public Cloud Run `help-review-web`; `https://help-review-web-2xa56y735q-uc.a.run.app` | Sanitized development, not real-data production |
 | Database | Neon PostgreSQL via pooled runtime and direct migration URLs | Sanitized records only |
-| Storage | Authenticated private Vercel Blob adapter | Synthetic/sanitized videos only |
-| Worker | Persisted queue plus Next.js `after()` and authenticated scheduled recovery endpoint | Fake or synthetic Gemini scoring only |
+| Storage | Private GCS bucket with public-access prevention, uniform access, resumable upload, immutable generations, and lifecycle rules | Synthetic/sanitized videos only |
+| Worker | IAM-private `help-review-processor` Cloud Run service invoked by Eventarc object-finalized delivery | Vertex synthetic development only |
+| Scoring | Gemini 2.5 Flash on Vertex AI through processor ADC; canonical `gs://` input | Contract/transport evaluation, not scientist acceptance |
 | Identity | Eight-hour HMAC-signed, HTTP-only sandbox sessions checked against active provision and assignment | No HELP Connect claim |
-| Playback | Five-minute HMAC grant tied to assessment, video, viewer, and purpose; metadata-only access record | Current assignment/session required |
+| Playback | Five-minute application grant followed by a generation-bound V4 GCS signed URL; metadata-only access record | Current assignment/session required |
+| Delivery | Cloud Build images in Artifact Registry and Terraform-managed APIs/IAM/services/trigger | Local state pending organization backend handoff |
 
-## July 14 Sanitized Release
+## July 14 Google Cloud Release
+
+| Field | Evidence |
+|---|---|
+| Project / region | `help-review-dev-20260714` / `us-central1` |
+| Web image | `help-review/web:20260714-gcp8` |
+| Processor image | `help-review/processor:20260714-gcp7` |
+| Cloud Run revisions | Web `help-review-web-00006-qtd`; processor `help-review-processor-00006-zzx`; both Ready |
+| Eventarc | `help-review-processing-requests` targets `/events/storage` on the private processor |
+| Storage | `help-review-dev-20260714-help-review-videos`; public access prevention and uniform bucket access enabled |
+| Secrets | Database, session, playback, upload, and worker values injected from Secret Manager; no values recorded |
+| Runtime scoring | Restored to `vertex` after a bounded fake-scoring playback smoke |
+
+The live GCP smoke used the 64,256-byte synthetic MP4 through ordinary browser controls:
+
+- Public health and sign-in returned `200`; the processor reported Ready and unauthenticated public health access resolved only to a generic `404` because ingress/IAM is private.
+- The browser created an assessment and uploaded directly to GCS. A first smoke exposed Cloud Run's internal origin leaking into the resumable session; the validated browser-facing origin fix is retained in the final `gcp8` web image and the completion command passes.
+- Completion persisted the opaque GCS name, bucket, immutable generation, CRC32C, and verified metadata without returning a storage key or upload URL to ordinary projections.
+- Start processing persisted a run and marker. Eventarc invoked the processor after the initiating page closed. Vertex read the canonical GCS object and returned `NO_VALID_RESULTS`; the application stored the safe all-or-nothing no-partial-result state.
+- Re-finalizing the same run marker returned `204` without creating another attempt or suggestion set.
+- A controlled fake-scoring smoke produced four suggestions to exercise the downstream media path. The source video loaded as 320x180, a signed `bytes=0-31` request returned `206` with exactly 32 bytes, and selecting evidence `0:03` moved the player to 3 seconds.
+- Desktop 1440x1000 and mobile 390x844 review states were visually inspected. The mobile document width equaled the viewport; no overlapping controls, horizontal overflow, clipped video, or illegible labels were observed.
+- The deployment was returned to Vertex immediately after the playback smoke.
+- The final `gcp8`/`gcp7` state was reached through in-place Cloud Run image updates, with zero creates or destroys. A post-rollout Eventarc marker reached processor revision `00006-zzx` at `/events/storage` and returned `204`; a subsequent Terraform plan reported no changes.
+- `pnpm dev:stack` independently started Next.js on 3000 and the processor on 8081. A local Start command returned `202`, the processor logged a completed fake run, and the UI reached eight validated suggestions.
+
+## Historical Vercel Release
+
+### July 14 Sanitized Vercel Release
 
 | Field | Evidence |
 |---|---|
@@ -27,7 +57,7 @@ Updated: July 14, 2026
 
 ## Migration Evidence
 
-On July 14, 2026, `prisma migrate deploy` applied `20260714144000_contract_versions_and_security` to the sanitized Neon database. `prisma migrate status` then reported all three migrations current. The migration adds immutable assessment content/scoring contract versions and a non-empty constraint.
+On July 14, 2026, `prisma migrate deploy` applied the GCP processing runtime migration after the earlier contract migration. `prisma migrate status` reports all four migrations current. The latest migration adds GCS object metadata and Eventarc delivery/idempotency fields.
 
 Provider backup/restore and organization-approved rollback evidence remain external gates; applying this forward, additive migration does not satisfy them.
 
@@ -37,8 +67,8 @@ Provider backup/restore and organization-approved rollback evidence remain exter
 |---|---|
 | TypeScript | pass |
 | ESLint | pass |
-| Vitest | 17 files, 106 tests pass |
-| Prisma schema/migrations | schema valid; three migrations current on sanitized Neon |
+| Vitest | 20 files, 119 tests pass |
+| Prisma schema/migrations | schema valid; four migrations current on sanitized Neon |
 | Behavioral browser contracts | 18 tests pass: 14 workflow contracts, 3 route/UI smoke checks, and 1 performance/payload budget |
 | Accessibility/reflow | 6 representative keyboard/focus/zoom checks pass; every accepted screen receives serious/critical axe audit |
 | Accepted visual states | screens 01-45 pass deterministic baselines |
@@ -46,7 +76,7 @@ Provider backup/restore and organization-approved rollback evidence remain exter
 | Visual total | 52 tests pass |
 | Security/privacy | forged session, unsafe return, cross-origin mutation, role/assignment substitution, grant tampering, payload exclusion, and health redaction pass |
 
-## Production Smoke Evidence
+## Historical Vercel Smoke Evidence
 
 The July 14 release was exercised with a new synthetic 64,256-byte MP4 through ordinary browser controls:
 
@@ -63,6 +93,6 @@ The July 14 release was exercised with a new synthetic 64,256-byte MP4 through o
 
 ## Release Candidate State
 
-The latest repository candidate is deployed at the production alias with distinct session, playback, and cron secrets plus explicit fake-scoring, sandbox-identity, and real-data-disabled configuration. No secret value is recorded here. This is a verified sanitized product demonstration, not permissioned staging or real-data production.
+The latest repository candidate is deployed on Google Cloud with distinct session, playback, upload, and worker secrets plus explicit Vertex scoring, sandbox identity, and real-data-disabled configuration. No secret value is recorded here. The older Vercel alias remains historical evidence, not the selected forward architecture. This is a verified sanitized development deployment, not permissioned staging or real-data production.
 
 Real-data production acceptance remains closed by `external-launch-gates.md`.

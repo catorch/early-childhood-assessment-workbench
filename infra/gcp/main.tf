@@ -135,6 +135,16 @@ resource "google_project_iam_member" "eventarc_receiver" {
   member  = "serviceAccount:${google_service_account.eventarc.email}"
 }
 
+# Make the API-created Eventarc service agent role explicit so a first deploy
+# does not race eventual IAM propagation while the trigger is created.
+resource "google_project_iam_member" "eventarc_service_agent" {
+  project = var.project_id
+  role    = "roles/eventarc.serviceAgent"
+  member  = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-eventarc.iam.gserviceaccount.com"
+
+  depends_on = [google_project_service.required["eventarc.googleapis.com"]]
+}
+
 resource "google_service_account_iam_member" "web_signer" {
   service_account_id = google_service_account.web.name
   role               = "roles/iam.serviceAccountTokenCreator"
@@ -402,6 +412,7 @@ resource "google_eventarc_trigger" "processing" {
   depends_on = [
     google_cloud_run_v2_service_iam_member.eventarc_processor,
     google_project_iam_member.eventarc_receiver,
+    google_project_iam_member.eventarc_service_agent,
     google_project_iam_member.gcs_pubsub,
     google_project_service.required["eventarc.googleapis.com"]
   ]
