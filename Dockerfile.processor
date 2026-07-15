@@ -1,0 +1,24 @@
+FROM node:24-bookworm-slim AS builder
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY package.json pnpm-lock.yaml prisma.config.ts ./
+COPY prisma ./prisma
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm db:generate && pnpm build:processor && pnpm prune --prod --ignore-scripts
+
+FROM node:24-bookworm-slim AS runner
+ENV NODE_ENV=production
+ENV PORT=8080
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
+RUN groupadd --system --gid 1001 processor && useradd --system --uid 1001 --gid processor processor
+COPY --from=builder --chown=processor:processor /app/package.json ./package.json
+COPY --from=builder --chown=processor:processor /app/node_modules ./node_modules
+COPY --from=builder --chown=processor:processor /app/dist-processor ./dist-processor
+USER processor
+EXPOSE 8080
+CMD ["node", "dist-processor/server.mjs"]

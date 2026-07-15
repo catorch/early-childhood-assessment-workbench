@@ -58,7 +58,7 @@ export function materializeCompletedRun(assessment: PilotAssessment, now = new D
   assessment.updatedAt = now.toISOString();
 }
 
-export function reviewProjection(state: PilotState, assessment: PilotAssessment) {
+export function reviewProjection(state: PilotState, assessment: PilotAssessment, playbackUrl?: string) {
   const child = state.children.find((candidate) => candidate.id === assessment.childId);
   if (!child) throw new Error(`Assessment ${assessment.id} references a missing child.`);
   return {
@@ -76,7 +76,7 @@ export function reviewProjection(state: PilotState, assessment: PilotAssessment)
           id: assessment.video.id,
           originalFilename: assessment.video.originalFilename,
           contentType: assessment.video.contentType,
-          playbackUrl: `/api/assessments/${assessment.id}/video`
+          playbackUrl: playbackUrl ?? `/api/assessments/${assessment.id}/video`
         }
       : null,
     suggestions: assessment.suggestions,
@@ -95,7 +95,7 @@ export function safeProcessingError(errorCode: string | null): {
     return {
       title: "Review is not available",
       description: "The analysis result could not be validated, so no partial draft was shown.",
-      retryable: true
+      retryable: false
     };
   }
   if (errorCode === "PROCESSING_STUCK") {
@@ -103,6 +103,27 @@ export function safeProcessingError(errorCode: string | null): {
       title: "Processing needs technical follow-up",
       description: "The processing attempt stopped updating. The private source video is still available for an authorized retry.",
       retryable: true
+    };
+  }
+  if (errorCode === "VIDEO_UNAVAILABLE") {
+    return {
+      title: "The source video is unavailable",
+      description: "The private video could not be verified. Replace it before starting a new analysis.",
+      retryable: false
+    };
+  }
+  if (errorCode === "SCORING_AUTHENTICATION_FAILED") {
+    return {
+      title: "Processing needs technical follow-up",
+      description: "The scoring service configuration must be corrected before another attempt.",
+      retryable: false
+    };
+  }
+  if (errorCode === "RESULT_REPLACEMENT_BLOCKED") {
+    return {
+      title: "Existing review work was preserved",
+      description: "A processing result was not applied because Educator review work already exists.",
+      retryable: false
     };
   }
   return {

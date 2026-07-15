@@ -1,0 +1,17 @@
+.git
+.github
+.next
+.next-e2e
+.data
+.env
+.env.*
+node_modules
+coverage
+docs
+playwright-report
+test-results
+tests
+*.log
+*.tsbuildinfo
+infra/gcp/.terraform
+infra/gcp/*.tfstate*

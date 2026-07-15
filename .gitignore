@@ -1,5 +1,6 @@
 node_modules
 .next
+.next-e2e
 .turbo
 dist
 coverage
@@ -16,3 +17,7 @@ playwright-report
 prisma/dev.db
 .vercel
 .data
+.terraform
+*.tfstate
+*.tfstate.*
+*.tfplan

@@ -2,11 +2,17 @@ import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
 import { createSanitizedPilotState } from "./fixtures";
-import { AccessError, activeUserFromState, hasActiveAssignment, SESSION_COOKIE } from "./server-auth";
+import {
+  AccessError,
+  activeUserFromState,
+  hasActiveAssignment,
+  sandboxIdentity,
+  SESSION_COOKIE
+} from "./server-auth";
 
 function requestFor(userId?: string): NextRequest {
   return new NextRequest("http://localhost/api/test", {
-    headers: userId ? { cookie: `${SESSION_COOKIE}=${userId}` } : undefined
+    headers: userId ? { cookie: `${SESSION_COOKIE}=${sandboxIdentity.issue(userId)}` } : undefined
   });
 }
 
@@ -36,5 +42,16 @@ describe("assignment-aware sandbox authorization", () => {
 
   it("rejects a missing session", () => {
     expect(() => activeUserFromState(requestFor(), createSanitizedPilotState())).toThrow("valid sandbox session");
+  });
+
+  it("rejects a forged or expired session", () => {
+    const state = createSanitizedPilotState();
+    const valid = sandboxIdentity.issue("user-educator-1", new Date("2026-07-14T12:00:00.000Z"));
+    const forged = `${valid.slice(0, -1)}x`;
+    const forgedRequest = new NextRequest("http://localhost/api/test", {
+      headers: { cookie: `${SESSION_COOKIE}=${forged}` }
+    });
+    expect(() => activeUserFromState(forgedRequest, state)).toThrow(AccessError);
+    expect(sandboxIdentity.resolve(valid, new Date("2026-07-15T12:00:00.000Z"))).toBeNull();
   });
 });

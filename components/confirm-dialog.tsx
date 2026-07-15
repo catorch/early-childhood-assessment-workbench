@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, X } from "lucide-react";
+import { useRef, type RefObject } from "react";
 
 import {
   AlertDialog,
@@ -23,6 +24,7 @@ export function ConfirmDialog({
   confirmLabel,
   pending = false,
   tone = "danger",
+  returnFocusRef,
   onCancel,
   onConfirm
 }: {
@@ -33,14 +35,27 @@ export function ConfirmDialog({
   readonly confirmLabel: string;
   readonly pending?: boolean;
   readonly tone?: "danger" | "primary";
+  readonly returnFocusRef?: RefObject<HTMLElement | null>;
   readonly onCancel: () => void;
   readonly onConfirm: () => void;
 }) {
+  const returnFocusRefInternal = useRef<HTMLElement | null>(null);
   return (
     <AlertDialog open={open} onOpenChange={(nextOpen) => !nextOpen && !pending && onCancel()}>
       <AlertDialogContent
         className="max-h-[calc(100vh-2rem)] w-[calc(100%-1.25rem)] max-w-[520px] gap-0 overflow-y-auto rounded-md border border-border-strong bg-surface p-0 shadow-[0_24px_70px_rgba(13,35,47,.26)]"
+        onCloseAutoFocus={(event) => {
+          const returnTarget = returnFocusRef?.current ?? returnFocusRefInternal.current;
+          if (!returnTarget?.isConnected) return;
+          event.preventDefault();
+          window.requestAnimationFrame(() => returnTarget.focus());
+        }}
         onEscapeKeyDown={(event) => pending && event.preventDefault()}
+        onOpenAutoFocus={() => {
+          returnFocusRefInternal.current = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+        }}
       >
         <AlertDialogHeader className="grid grid-cols-[auto_1fr_auto] place-items-start gap-3 p-[22px] text-left max-sm:p-[18px_15px]">
           <AlertDialogMedia

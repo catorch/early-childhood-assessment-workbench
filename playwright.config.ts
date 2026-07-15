@@ -1,6 +1,6 @@
 import { defineConfig } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3100";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -23,7 +23,7 @@ export default defineConfig({
     screenshot: "only-on-failure"
   },
   webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
-    command: "HELP_REVIEW_STATE_ADAPTER=local HELP_REVIEW_VIDEO_ADAPTER=local pnpm dev --hostname 127.0.0.1 --port 3000",
+    command: "NEXT_DIST_DIR=.next-e2e HELP_REVIEW_STATE_ADAPTER=local HELP_REVIEW_VIDEO_ADAPTER=local pnpm dev --hostname 127.0.0.1 --port 3100",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000

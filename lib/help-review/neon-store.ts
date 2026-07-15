@@ -2,7 +2,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { SkillSuggestionSchema } from "./domain";
 import { createSanitizedPilotState } from "./fixtures";
-import type { PilotAssessment, PilotState } from "./models";
+import type { AssessmentContextSnapshot, PilotAssessment, PilotState } from "./models";
 import { databaseClient } from "./prisma";
 
 type DatabaseExecutor = Prisma.TransactionClient;
@@ -30,6 +30,33 @@ function contextLabel(value: Prisma.JsonValue | null): string | null {
   return typeof label === "string" ? label : null;
 }
 
+function assessmentContextSnapshot(value: Prisma.JsonValue | null): AssessmentContextSnapshot | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") return undefined;
+  const snapshot = value as Record<string, Prisma.JsonValue>;
+  const ageMonthsAtObservation = snapshot.ageMonthsAtObservation;
+  const supportContext = snapshot.supportContext;
+  const context = snapshot.contextLabel;
+  const processingAllowedAtCreation = snapshot.processingAllowedAtCreation;
+  const capturedAt = snapshot.capturedAt;
+  const source = snapshot.source;
+  if (
+    typeof ageMonthsAtObservation !== "number" ||
+    !["NONE_REPORTED", "IFSP", "DISABILITY", "IFSP_AND_DISABILITY", "UNKNOWN"].includes(String(supportContext)) ||
+    !(typeof context === "string" || context === null) ||
+    typeof processingAllowedAtCreation !== "boolean" ||
+    typeof capturedAt !== "string" ||
+    !["SANITIZED_ADMIN", "ROSTER_ADAPTER"].includes(String(source))
+  ) return undefined;
+  return {
+    ageMonthsAtObservation,
+    supportContext: supportContext as AssessmentContextSnapshot["supportContext"],
+    contextLabel: context,
+    processingAllowedAtCreation,
+    capturedAt,
+    source: source as AssessmentContextSnapshot["source"]
+  };
+}
+
 async function lockState(transaction: DatabaseExecutor): Promise<void> {
   await transaction.$queryRaw`SELECT 1 AS "locked" FROM pg_advisory_xact_lock(${DATABASE_LOCK_KEY})`;
 }
@@ -55,6 +82,7 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
     orderBy: { createdAt: "asc" }
   });
   const supportEvents = await database.supportEvent.findMany({ orderBy: { occurredAt: "asc" } });
+  const videoAccessGrants = await database.videoAccessGrantRecord.findMany({ orderBy: { issuedAt: "asc" } });
   const userBySubject = new Map(users.map((user) => [user.externalSubject, user]));
   const userByEmail = new Map(
     users.filter((user) => user.email).map((user) => [user.email!.toLowerCase(), user])
@@ -128,15 +156,23 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
         childId: assessment.childId,
         educatorId: assessment.educatorId,
         observationDate: observationDate(assessment.observationDate),
+        contextSnapshot: assessmentContextSnapshot(assessment.contextSnapshot),
+        contentCatalogVersion: assessment.contentCatalogVersion,
+        scoringContractVersion: assessment.scoringContractVersion,
         status: assessment.status,
         video: availableVideo
           ? {
               id: availableVideo.id,
+              storageProvider: availableVideo.storageProvider as "local" | "vercel-blob" | "gcs",
               storageKey: availableVideo.storageKey,
+              storageBucket: availableVideo.storageBucket,
+              storageGeneration: availableVideo.storageGeneration,
               originalFilename: availableVideo.originalFilename ?? "observation-video",
               contentType: availableVideo.contentType ?? "application/octet-stream",
               byteSize: Number(availableVideo.byteSize ?? 0n),
               durationSeconds: availableVideo.durationSeconds,
+              checksumSha256: availableVideo.checksumSha256,
+              checksumCrc32c: availableVideo.checksumCrc32c,
               uploadedAt: availableVideo.createdAt.toISOString(),
               uploadedById: availableVideo.uploadedById
             }
@@ -150,12 +186,16 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
             externalJobId: run.externalJobId ?? `sandbox-job-${run.id}`,
             requestedAt,
             requestedById: run.requestedById,
-            readyAt:
-              run.status === "QUEUED" || run.status === "RUNNING"
-                ? new Date(date(requestedAt).getTime() + 4_000).toISOString()
-                : null,
+            startedAt: run.startedAt?.toISOString() ?? null,
+            readyAt: null,
             completedAt: run.completedAt?.toISOString() ?? null,
-            safeErrorCode: run.safeErrorCode
+            safeErrorCode: run.safeErrorCode,
+            scoringConfigurationReference: run.scoringConfigurationReference,
+            retryOfRunId: run.retryOfRunId,
+            triggerEventId: run.triggerEventId,
+            triggerObjectGeneration: run.triggerObjectGeneration,
+            deliveryCount: run.deliveryCount,
+            lastDispatchedAt: run.lastDispatchedAt?.toISOString() ?? null
           };
         }),
         suggestions,
@@ -192,6 +232,15 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
       assessmentId: event.assessmentId ?? undefined,
       subjectId: event.subjectId ?? undefined,
       referenceId: event.referenceId ?? undefined
+    })),
+    videoAccessGrants: videoAccessGrants.map((grant) => ({
+      id: grant.id,
+      assessmentId: grant.assessmentId,
+      videoAssetId: grant.videoAssetId,
+      viewerId: grant.viewerId,
+      purpose: "EDUCATOR_REVIEW" as const,
+      issuedAt: grant.issuedAt.toISOString(),
+      expiresAt: grant.expiresAt.toISOString()
     }))
   };
 }
@@ -293,9 +342,8 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
   }
 
   for (const assessment of state.assessments) {
-    const child = state.children.find((candidate) => candidate.id === assessment.childId);
-    const contextSnapshot = child?.contextLabel
-      ? ({ label: child.contextLabel } as Prisma.InputJsonValue)
+    const contextSnapshot = assessment.contextSnapshot
+      ? (assessment.contextSnapshot as unknown as Prisma.InputJsonValue)
       : Prisma.JsonNull;
     await database.assessment.upsert({
       where: { id: assessment.id },
@@ -305,6 +353,8 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
         educatorId: assessment.educatorId,
         observationDate: date(`${assessment.observationDate}T00:00:00.000Z`),
         contextSnapshot,
+        contentCatalogVersion: assessment.contentCatalogVersion ?? "help-2-provisional-2026-07",
+        scoringContractVersion: assessment.scoringContractVersion ?? "help-scoring-v0",
         status: assessment.status,
         finalizedById: assessment.finalizedById,
         finalizedAt: assessment.finalizedAt ? date(assessment.finalizedAt) : null,
@@ -317,6 +367,8 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
       update: {
         observationDate: date(`${assessment.observationDate}T00:00:00.000Z`),
         contextSnapshot,
+        contentCatalogVersion: assessment.contentCatalogVersion ?? "help-2-provisional-2026-07",
+        scoringContractVersion: assessment.scoringContractVersion ?? "help-scoring-v0",
         status: assessment.status,
         finalizedById: assessment.finalizedById,
         finalizedAt: assessment.finalizedAt ? date(assessment.finalizedAt) : null,
@@ -346,21 +398,31 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
           id: assessment.video.id,
           assessmentId: assessment.id,
           status: "AVAILABLE",
+          storageProvider: assessment.video.storageProvider ?? "local",
           storageKey: assessment.video.storageKey,
+          storageBucket: assessment.video.storageBucket,
+          storageGeneration: assessment.video.storageGeneration,
           originalFilename: assessment.video.originalFilename,
           contentType: assessment.video.contentType,
           byteSize: BigInt(assessment.video.byteSize),
           durationSeconds: assessment.video.durationSeconds,
+          checksumSha256: assessment.video.checksumSha256,
+          checksumCrc32c: assessment.video.checksumCrc32c,
           uploadedById: assessment.video.uploadedById,
           createdAt: date(assessment.video.uploadedAt)
         },
         update: {
           status: "AVAILABLE",
+          storageProvider: assessment.video.storageProvider ?? "local",
           storageKey: assessment.video.storageKey,
+          storageBucket: assessment.video.storageBucket,
+          storageGeneration: assessment.video.storageGeneration,
           originalFilename: assessment.video.originalFilename,
           contentType: assessment.video.contentType,
           byteSize: BigInt(assessment.video.byteSize),
           durationSeconds: assessment.video.durationSeconds,
+          checksumSha256: assessment.video.checksumSha256,
+          checksumCrc32c: assessment.video.checksumCrc32c,
           uploadedById: assessment.video.uploadedById,
           deletedAt: null
         }
@@ -390,23 +452,33 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
           attempt: run.attempt,
           status: run.status,
           externalJobId: run.externalJobId,
-          scoringConfigurationReference: "sandbox-v1",
+          scoringConfigurationReference: run.scoringConfigurationReference,
           safeErrorCode: run.safeErrorCode,
+          retryOfRunId: run.retryOfRunId,
           requestedById: run.requestedById,
           submittedAt: requestedAt,
-          startedAt: run.status === "QUEUED" ? null : requestedAt,
-          completedAt: run.completedAt ? date(run.completedAt) : null
+          startedAt: run.startedAt ? date(run.startedAt) : null,
+          completedAt: run.completedAt ? date(run.completedAt) : null,
+          triggerEventId: run.triggerEventId,
+          triggerObjectGeneration: run.triggerObjectGeneration,
+          deliveryCount: run.deliveryCount ?? 0,
+          lastDispatchedAt: run.lastDispatchedAt ? date(run.lastDispatchedAt) : null
         },
         update: {
           attempt: run.attempt,
           status: run.status,
           externalJobId: run.externalJobId,
-          scoringConfigurationReference: "sandbox-v1",
+          scoringConfigurationReference: run.scoringConfigurationReference,
           safeErrorCode: run.safeErrorCode,
+          retryOfRunId: run.retryOfRunId,
           requestedById: run.requestedById,
           submittedAt: requestedAt,
-          startedAt: run.status === "QUEUED" ? null : requestedAt,
-          completedAt: run.completedAt ? date(run.completedAt) : null
+          startedAt: run.startedAt ? date(run.startedAt) : null,
+          completedAt: run.completedAt ? date(run.completedAt) : null,
+          triggerEventId: run.triggerEventId,
+          triggerObjectGeneration: run.triggerObjectGeneration,
+          deliveryCount: run.deliveryCount ?? 0,
+          lastDispatchedAt: run.lastDispatchedAt ? date(run.lastDispatchedAt) : null
         }
       });
     }
@@ -520,6 +592,25 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
       }
     });
   }
+
+  for (const grant of state.videoAccessGrants ?? []) {
+    await database.videoAccessGrantRecord.upsert({
+      where: { id: grant.id },
+      create: {
+        id: grant.id,
+        assessmentId: grant.assessmentId,
+        videoAssetId: grant.videoAssetId,
+        viewerId: grant.viewerId,
+        purpose: grant.purpose,
+        issuedAt: date(grant.issuedAt),
+        expiresAt: date(grant.expiresAt)
+      },
+      update: {
+        purpose: grant.purpose,
+        expiresAt: date(grant.expiresAt)
+      }
+    });
+  }
 }
 
 async function seedDatabase(): Promise<void> {
@@ -535,7 +626,7 @@ async function seedDatabase(): Promise<void> {
       process.env.HELP_REVIEW_SEED_SANITIZED_DATA === "true" || process.env.NODE_ENV !== "production";
     if (!seedApproved) {
       throw new Error(
-        "The Neon database has no sanitized pilot seed. Set HELP_REVIEW_SEED_SANITIZED_DATA=true only for an approved demo."
+        "The PostgreSQL database has no sanitized pilot seed. Set HELP_REVIEW_SEED_SANITIZED_DATA=true only for an approved demo."
       );
     }
     await persistState(transaction, createSanitizedPilotState());

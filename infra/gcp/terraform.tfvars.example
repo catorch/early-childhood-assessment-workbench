@@ -1,0 +1,9 @@
+project_id           = "help-review-dev-example"
+region               = "us-central1"
+video_retention_days = 30
+deploy_services      = false
+
+# Set these after Cloud Build publishes the images.
+# deploy_services = true
+# web_image       = "us-central1-docker.pkg.dev/help-review-dev-example/help-review/web:git-sha"
+# processor_image = "us-central1-docker.pkg.dev/help-review-dev-example/help-review/processor:git-sha"

@@ -7,19 +7,19 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { PilotUser } from "@/lib/help-review/models";
+import type { SessionUser } from "@/lib/help-review/models";
 import { cn } from "@/lib/utils";
 
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<PilotUser | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const isSignIn = pathname === "/sign-in";
 
   useEffect(() => {
     if (pathname === "/sign-in" || pathname === "/") return;
     void fetch("/api/session", { cache: "no-store" }).then(async (response) => {
-      if (response.ok) setUser((await response.json()).user as PilotUser);
+      if (response.ok) setUser((await response.json()).user as SessionUser);
       else setUser(null);
     }).catch(() => setUser(null));
   }, [pathname]);

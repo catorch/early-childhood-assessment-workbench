@@ -6,13 +6,13 @@ Generated with the Kiro spec-driven workflow.
 
 The sources are authoritative in this order:
 
-1. The latest explicit stakeholder follow-ups for the subject they address, including the Carlos Torres/Supraja Narayanaswamy authentication and AWS-ownership exchange
+1. The latest explicit stakeholder follow-ups for the subject they address, including the HELP Connect authentication discussion and the July 14 selection of a Google Cloud runtime
 2. `docs/meeting-transcripts/July-10-meeting-transcript.md`
 3. The HELP Review Lovable prototype at `https://draft-review-helper.lovable.app/` and the supplied screenshot, for review-screen interaction and visual hierarchy only
 4. Other decisions explicitly confirmed after the meeting, including the two core application roles
 5. Earlier RFP, milestone, and reliability-workbench documents, for background only
 
-The July 10 meeting describes a scope change and therefore supersedes conflicting earlier material. The later authentication exchange supersedes the earlier magic-link preference: the preferred path is to reuse HELP Connect's current sign-in when practical, with administrator-provisioned email/password as the fallback. The exact method remains a decision gate until HELP Connect's identity interface and the target AWS ownership model are confirmed.
+The July 10 meeting describes a scope change and therefore supersedes conflicting earlier material. The later authentication exchange supersedes the earlier magic-link preference: the preferred path is to reuse HELP Connect's current sign-in when practical, with administrator-provisioned email/password as the fallback. The July 14 engineering decision selects Google Cloud Run, Cloud Storage, Eventarc, Vertex AI, and Secret Manager as the deployable runtime, with Neon PostgreSQL retained behind Prisma for the current development environment. Final organization ownership still requires acceptance.
 
 The Lovable prototype is not a complete application: it does not define authentication, child assignment, upload, durable processing, persistence, or production infrastructure, and some of its visible controls are placeholders. Prototype behavior SHALL NOT become a requirement unless it matches the meeting or is explicitly listed here.
 
@@ -63,13 +63,13 @@ The prototype also shows the add-on flags `ATYPICAL` and `FAMILY_CONCERN`. Their
 
 ### R1. Provisioning, Sign-In, And Authorization
 
-**User Story:** As an admin, I want only approved staff to enter the pilot through an authentication path that can transfer into HELP Connect and AWS ownership, so that child records are protected without creating a disposable identity system.
+**User Story:** As an admin, I want only approved staff to enter the pilot through an authentication path that can transfer into HELP Connect and the organization-owned Google Cloud environment, so that child records are protected without creating a disposable identity system.
 
 **Acceptance Criteria:**
 
 1. BEFORE implementing live authentication, the team SHALL document HELP Connect's current sign-in provider or protocol, stable user identifier, session/logout behavior, account lifecycle, available non-production environment, and integration owner.
 2. WHEN HELP Connect authentication is available and approved for the pilot THEN the system SHALL reuse it and map the authenticated identity to the pilot's local role and child assignments without collecting a second password.
-3. IF HELP Connect authentication cannot support the standalone pilot within the agreed schedule THEN the system SHALL use administrator-provisioned email/password through an approved managed identity service that is compatible with the target AWS and ownership model.
+3. IF HELP Connect authentication cannot support the standalone pilot within the agreed schedule THEN the system SHALL use administrator-provisioned email/password through an approved managed identity service that is compatible with the target Google Cloud ownership model.
 4. WHEN an Admin provisions a staff member THEN the system SHALL create or activate pilot access for the exact external identity or email and either the `EDUCATOR` or `ADMIN` role.
 5. IF the email/password fallback is selected THEN the identity service SHALL support secure initial setup, email verification where required, password recovery, session revocation, rate limiting, and protection against brute-force and credential-stuffing attempts.
 6. WHEN a person without provisioned pilot access attempts sign-in or recovery THEN the system SHALL not grant access or disclose whether a pilot account exists.
@@ -320,8 +320,8 @@ Every accepted screen is an acceptance state of an existing route, not a separat
 2. External scoring responses SHALL be validated before they enter review state.
 3. The standalone pilot SHALL expose a stable final-assessment data shape that can later be mapped into Acelero's existing platform.
 4. Development fixtures SHALL use synthetic or sanitized data only.
-5. Authentication and deployment configuration SHALL be transferable to the confirmed HELP Connect/AWS owners without depending on a developer's personal account.
-6. The selected technology and handoff documentation SHALL support deployment in the confirmed AWS environment without replacing the educator workflow.
+5. Authentication and deployment configuration SHALL be transferable to the confirmed HELP Connect/Google Cloud owners without depending on a developer's personal account.
+6. The selected technology and handoff documentation SHALL support deployment in the confirmed Google Cloud environment without replacing the educator workflow.
 7. Each production dependency SHALL have a named technical owner, budget owner, and documented cost/transfer responsibility before pilot handoff.
 
 ### NFR-5. Responsive And Visual Integrity
@@ -363,7 +363,7 @@ Every accepted screen is an acceptance state of an existing route, not a separat
 
 | Requirement | Basis |
 |---|---|
-| R1 | Latest authentication/AWS-ownership follow-up plus the confirmed two-role decision |
+| R1 | Latest authentication/Google Cloud ownership follow-up plus the confirmed two-role decision |
 | R2 | July 10 assigned-child login flow |
 | R3 | July 10 one-video educator upload flow |
 | R4 | July 10 scientist-owned model and multi-minute processing discussion |
@@ -380,7 +380,7 @@ A feature without one of these bases requires an explicit requirements change be
 
 1. HELP Connect's current authentication provider/protocol and whether the pilot can reuse its non-production and production identity interfaces.
 2. If reuse is not feasible, the approved managed email/password provider and the migration or federation path into HELP Connect.
-3. The target AWS environment, account and service ownership, deployment constraints, secret ownership, and handoff expectations.
+3. The target Google Cloud organization/project, service and budget ownership, deployment constraints, secret ownership, and handoff expectations.
 4. Scientist API request, response, authentication, completion, retry, and error contract.
 5. Exact child roster source, identifier, assignment method, and approved context fields.
 6. Video permission rule, storage provider/location, upload limits, retention period, and deletion owner.
@@ -402,4 +402,4 @@ A feature without one of these bases requires an explicit requirements change be
 
 ## Definition Of Done
 
-Version 1 is done when an approved Educator can sign in through the selected HELP Connect or managed email/password path, see only assigned children, upload one approved video, leave and return during processing, review every valid suggestion using real video evidence, save each supported action, finalize the assessment, and reopen the final summary. An unassigned Educator must be unable to access the child or assessment through either the UI or direct requests. The selected identity and deployment path must have an accepted HELP Connect/AWS ownership handoff, the scientist integration must pass against its agreed sandbox, and the unresolved privacy/storage decisions must be approved before real child data is enabled.
+Version 1 is done when an approved Educator can sign in through the selected HELP Connect or managed email/password path, see only assigned children, upload one approved video, leave and return during processing, review every valid suggestion using real video evidence, save each supported action, finalize the assessment, and reopen the final summary. An unassigned Educator must be unable to access the child or assessment through either the UI or direct requests. The selected identity and deployment path must have an accepted HELP Connect/Google Cloud ownership handoff, the scientist integration must pass against its agreed sandbox, and the unresolved privacy/storage decisions must be approved before real child data is enabled.

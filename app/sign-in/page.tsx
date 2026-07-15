@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { safeRelativeReturnPath } from "@/lib/help-review/return-path";
 import { cn } from "@/lib/utils";
 
 type SandboxUserId = "user-educator-1" | "user-educator-2" | "user-admin-1";
@@ -45,16 +46,18 @@ const profiles: ReadonlyArray<{
 
 function safeReturnPath(defaultPath: string): string {
   const candidate = new URLSearchParams(window.location.search).get("returnTo");
-  return candidate && candidate.startsWith("/") && !candidate.startsWith("//") ? candidate : defaultPath;
+  return safeRelativeReturnPath(candidate, defaultPath);
 }
 
 export default function SignInPage() {
   const router = useRouter();
   const [pending, setPending] = useState<SandboxUserId | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
+      setHydrated(true);
       const reason = new URLSearchParams(window.location.search).get("reason");
       if (reason === "expired") setError("Your session ended. Sign in again to continue securely.");
       if (reason === "unavailable") setError("We could not confirm access. Try again or contact the pilot administrator.");
@@ -98,7 +101,7 @@ export default function SignInPage() {
             return (
               <button
                 className="group grid min-h-[62px] w-full grid-cols-[38px_minmax(0,1fr)_20px] items-center gap-3 rounded-md border border-border bg-surface px-2.5 py-2 text-left transition-colors hover:border-primary hover:bg-surface-soft focus-visible:ring-3 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-55"
-                disabled={pending !== null}
+                disabled={!hydrated || pending !== null}
                 key={profile.id}
                 onClick={() => signIn(profile.id, profile.destination)}
                 type="button"

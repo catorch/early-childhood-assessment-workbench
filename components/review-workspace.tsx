@@ -88,6 +88,7 @@ function reviewValues(suggestion: SkillSuggestion, decision: SavedReviewDecision
 export function ReviewWorkspace() {
   const { assessmentId } = useParams<{ assessmentId: string }>();
   const router = useRouter();
+  const scrollStorageKey = `help-review:review-scroll:${assessmentId}`;
   const videoRef = useRef<HTMLVideoElement>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
   const [data, setData] = useState<ReviewProjection | null>(null);
@@ -151,6 +152,30 @@ export function ReviewWorkspace() {
     const timeout = window.setTimeout(() => { void loadProjection(); }, 0);
     return () => window.clearTimeout(timeout);
   }, [loadProjection]);
+
+  useEffect(() => {
+    const savePosition = () => {
+      window.sessionStorage.setItem(scrollStorageKey, String(Math.max(0, Math.round(window.scrollY))));
+    };
+    window.addEventListener("pagehide", savePosition);
+    return () => {
+      savePosition();
+      window.removeEventListener("pagehide", savePosition);
+    };
+  }, [scrollStorageKey]);
+
+  useEffect(() => {
+    if (!data) return;
+    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    if (navigation?.type !== "reload" && navigation?.type !== "back_forward") return;
+    const stored = Number(window.sessionStorage.getItem(scrollStorageKey));
+    if (!Number.isFinite(stored) || stored <= 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      const maximum = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      window.scrollTo({ top: Math.min(stored, maximum) });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [data, scrollStorageKey]);
 
   const selected = data?.suggestions.find((suggestion) => suggestion.id === selectedId) ?? null;
   const selectedDecision = data?.decisions.find((decision) => decision.suggestionId === selectedId);
@@ -262,6 +287,9 @@ export function ReviewWorkspace() {
     setDraftCredit(values.credit);
     setDraftNote(values.note);
     setSaveError(null);
+    const url = new URL(window.location.href);
+    url.searchParams.set("skill", suggestion.id);
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
     if (openEditor) {
       if (videoRef.current) {
         setLastVideoTime(videoRef.current.currentTime);
@@ -300,9 +328,24 @@ export function ReviewWorkspace() {
     void activeVideo.play().catch(() => undefined);
   }
 
-  function restoreVideo() {
-    setVideoUnavailable(false);
-    setVideoVersion((current) => current + 1);
+  async function restoreVideo() {
+    try {
+      const response = await fetch(`/api/assessments/${assessmentId}/video/grant`, { method: "POST" });
+      if (handleProtectedResponse(response, router, `/assessments/${assessmentId}/review`)) return;
+      if (!response.ok) {
+        setSaveError("Secure video access could not be restored. Your review changes are still here.");
+        return;
+      }
+      const grant = await response.json() as { readonly playbackUrl: string };
+      setData((current) => current?.video ? {
+        ...current,
+        video: { ...current.video, playbackUrl: grant.playbackUrl }
+      } : current);
+      setVideoUnavailable(false);
+      setVideoVersion((current) => current + 1);
+    } catch {
+      setSaveError("Secure video access could not be restored. Your review changes are still here.");
+    }
   }
 
   if (noValidResults) {
@@ -505,7 +548,7 @@ export function ReviewWorkspace() {
                 onTimeUpdate={(event) => setLastVideoTime(event.currentTarget.currentTime)}
                 preload="metadata"
                 ref={videoRef}
-                src={`${data.video.playbackUrl}?grant=${videoVersion}`}
+                src={`${data.video.playbackUrl}&v=${videoVersion}`}
               >
                 Your browser does not support video playback.
               </video>
@@ -514,7 +557,7 @@ export function ReviewWorkspace() {
                 <CircleHelp aria-hidden="true" className="size-[34px] text-[#b9d5df]" />
                 <strong className="text-base">Video access unavailable</strong>
                 <span className="max-w-[290px] text-xs leading-relaxed text-[#d8e6eb]">Restore secure access to continue playback. Your review changes are still here.</span>
-                {data.video ? <Button onClick={restoreVideo} size="sm" type="button"><RefreshCw aria-hidden="true" size={15} /> Restore video access</Button> : null}
+                {data.video ? <Button onClick={() => void restoreVideo()} size="sm" type="button"><RefreshCw aria-hidden="true" size={15} /> Restore video access</Button> : null}
               </div>
             )}
             <div className="flex min-w-0 items-center justify-between gap-2.5 px-3 py-2.5 text-xs text-navy max-md:hidden"><span className="min-w-0 truncate">{data.video?.originalFilename ?? "No video"}</span><small className="inline-flex items-center gap-1 whitespace-nowrap text-muted-foreground"><ShieldCheck aria-hidden="true" size={13} /> Private assessment video</small></div>
@@ -547,7 +590,7 @@ export function ReviewWorkspace() {
                       onTimeUpdate={(event) => setLastVideoTime(event.currentTarget.currentTime)}
                       preload="metadata"
                       ref={mobileVideoRef}
-                      src={`${data.video.playbackUrl}?grant=${videoVersion}`}
+                      src={`${data.video.playbackUrl}&v=${videoVersion}`}
                     />
                   ) : (
                     <div className="grid aspect-video w-full place-items-center gap-1 rounded-md bg-navy text-center text-[9px] text-white"><CircleHelp aria-hidden="true" /><span>Video access unavailable</span></div>

@@ -2,7 +2,7 @@
 
 import { ArrowRight, CheckCircle2, Filter, Plus, RefreshCw, Search, UserRoundCheck, UserRoundX, UsersRound } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PageState } from "@/components/page-state";
@@ -41,6 +41,7 @@ function AdminAccessContent() {
   const [provisionEmail, setProvisionEmail] = useState("");
   const [provisionRole, setProvisionRole] = useState<Role>("EDUCATOR");
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const confirmationTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const load = useCallback(async () => {
     setData(null);
@@ -164,7 +165,7 @@ function AdminAccessContent() {
               {selectedAccess?.active
                 ? selected.id === data.actorId
                   ? <span className="whitespace-nowrap text-xs font-extrabold text-muted-foreground">Current session</span>
-                  : <Button disabled={pendingKey === "access"} onClick={() => setConfirmation({ kind: "DEACTIVATE", staffMember: selected })} type="button" variant="destructive-outline">Deactivate</Button>
+                  : <Button disabled={pendingKey === "access"} onClick={(event) => { confirmationTriggerRef.current = event.currentTarget; setConfirmation({ kind: "DEACTIVATE", staffMember: selected }); }} type="button" variant="destructive-outline">Deactivate</Button>
                 : <Button disabled={pendingKey === "access"} onClick={() => void mutate({ action: "SET_ACCESS", userId: selected.id, active: true }, "access")} type="button">Activate access</Button>}
             </div>
             {selected.role === "EDUCATOR" ? <>
@@ -176,7 +177,7 @@ function AdminAccessContent() {
                   <span className={cn("grid size-5 place-items-center rounded-full border border-border-strong text-white [&_svg]:size-3", active && "border-success bg-success")}>{active ? <CheckCircle2 aria-hidden="true" /> : null}</span>
                   <span className="grid gap-1"><strong>{child.externalChildId}</strong><small className="text-xs text-muted-foreground">{child.ageMonths} months{child.contextLabel ? ` · ${child.contextLabel}` : ""}</small></span>
                   {active
-                    ? <Button className="max-sm:col-start-2 max-sm:justify-self-start" disabled={pendingKey === child.id} onClick={() => setConfirmation({ kind: "UNASSIGN", staffMember: selected, child })} size="sm" type="button" variant="destructive-outline">Remove</Button>
+                    ? <Button className="max-sm:col-start-2 max-sm:justify-self-start" disabled={pendingKey === child.id} onClick={(event) => { confirmationTriggerRef.current = event.currentTarget; setConfirmation({ kind: "UNASSIGN", staffMember: selected, child }); }} size="sm" type="button" variant="destructive-outline">Remove</Button>
                     : <Button className="max-sm:col-start-2 max-sm:justify-self-start" disabled={pendingKey === child.id || !selectedAccess?.active} onClick={() => void mutate({ action: "SET_ASSIGNMENT", userId: selected.id, childId: child.id, active: true }, child.id)} size="sm" type="button" variant="secondary">Assign</Button>}
                 </div>;
               })}</div>
@@ -184,7 +185,7 @@ function AdminAccessContent() {
           </section> : null}
         </div>
       </> : null}
-      <ConfirmDialog confirmLabel={confirmation?.kind === "DEACTIVATE" ? "Deactivate access" : "Remove assignment"} description={confirmation?.kind === "DEACTIVATE" ? `${confirmation.staffMember.displayName} will no longer be able to sign in to the pilot.` : confirmation ? `${confirmation.staffMember.displayName} will immediately lose access to ${confirmation.child.externalChildId}.` : ""} details={confirmation?.kind === "DEACTIVATE" ? ["Active sessions will be rejected", "Existing assignments remain recorded", "Assessment records are retained"] : ["Direct child and assessment requests will be denied", "Saved assessment records are retained", "Only this assignment is removed"]} onCancel={() => setConfirmation(null)} onConfirm={confirmMutation} open={confirmation !== null} pending={pendingKey !== null} title={confirmation?.kind === "DEACTIVATE" ? "Deactivate pilot access?" : "Remove child assignment?"} />
+      <ConfirmDialog confirmLabel={confirmation?.kind === "DEACTIVATE" ? "Deactivate access" : "Remove assignment"} description={confirmation?.kind === "DEACTIVATE" ? `${confirmation.staffMember.displayName} will no longer be able to sign in to the pilot.` : confirmation ? `${confirmation.staffMember.displayName} will immediately lose access to ${confirmation.child.externalChildId}.` : ""} details={confirmation?.kind === "DEACTIVATE" ? ["Active sessions will be rejected", "Existing assignments remain recorded", "Assessment records are retained"] : ["Direct child and assessment requests will be denied", "Saved assessment records are retained", "Only this assignment is removed"]} onCancel={() => setConfirmation(null)} onConfirm={confirmMutation} open={confirmation !== null} pending={pendingKey !== null} returnFocusRef={confirmationTriggerRef} title={confirmation?.kind === "DEACTIVATE" ? "Deactivate pilot access?" : "Remove child assignment?"} />
     </PageShell>
   );
 }

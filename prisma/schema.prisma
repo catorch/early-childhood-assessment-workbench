@@ -150,6 +150,8 @@ model Assessment {
   educatorId      String
   observationDate DateTime
   contextSnapshot Json?
+  contentCatalogVersion String       @default("help-2-provisional-2026-07")
+  scoringContractVersion String      @default("help-scoring-v0")
   status          AssessmentStatus @default(DRAFT)
   finalizedById   String?
   finalizedAt     DateTime?
@@ -176,11 +178,15 @@ model VideoAsset {
   assessmentId     String
   status           VideoAssetStatus @default(PENDING_UPLOAD)
   storageKey       String           @unique
+  storageProvider  String           @default("local")
+  storageBucket    String?
+  storageGeneration String?
   originalFilename String?
   contentType      String?
   byteSize         BigInt?
   durationSeconds  Int?
   checksumSha256   String?
+  checksumCrc32c   String?
   uploadedById     String
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -223,6 +229,10 @@ model ProcessingRun {
   submittedAt                   DateTime?
   startedAt                     DateTime?
   completedAt                   DateTime?
+  triggerEventId                String?             @unique
+  triggerObjectGeneration       String?
+  deliveryCount                 Int                 @default(0)
+  lastDispatchedAt              DateTime?
   createdAt                     DateTime            @default(now())
   updatedAt                     DateTime            @updatedAt
 

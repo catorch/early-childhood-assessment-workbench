@@ -10,7 +10,7 @@ This design implements the July 10 pilot workflow, not the earlier Assessment Re
 
 The Lovable application supplies the interaction reference for the review and summary screens. It is intentionally not copied as application logic: its video player is simulated, several visible actions are not wired, and its summary uses preset data rather than the current session state. Production code must make those interactions real and persistent.
 
-The design avoids choosing infrastructure that stakeholders have not approved. Authentication now follows a selection rule rather than the earlier magic-link assumption: first reuse HELP Connect's current sign-in if its interface and ownership model support the pilot; otherwise use administrator-provisioned email/password through an approved managed identity service that can transfer into the target AWS environment. Only one path is implemented.
+Authentication follows a selection rule rather than the earlier magic-link assumption: first reuse HELP Connect's current sign-in if its interface and ownership model support the pilot; otherwise use administrator-provisioned email/password through one approved managed identity service. The selected deployment architecture is Google Cloud Run, Cloud Storage, Eventarc, Vertex AI, Artifact Registry, and Secret Manager, with Neon PostgreSQL retained behind Prisma in the current environment.
 
 The accepted images in `ui-ux-screens/` are the visual-state catalogue for this design. Their composition, interaction hierarchy, responsive intent, and feedback states are implementation targets. Their synthetic values, unresolved labels, conditional flags, and fallback sign-in fields are not production data contracts. The requirements document wins whenever an image conflicts with authorization, privacy, or a decision gate.
 
@@ -24,29 +24,28 @@ The accepted images in `ui-ux-screens/` are the visual-state catalogue for this 
 6. Keep identity, object storage, and scoring integrations replaceable at a narrow boundary, without building unused provider frameworks.
 7. Ship only approved content contracts. Conditional controls are absent, not disabled teasers.
 
-Storage, persistence, and scoring still use small interfaces so the pilot can run in the approved current environment and later move behind Acelero's existing platform or AWS without rewriting the educator workflow.
+Storage, persistence, dispatch, identity, and scoring use small interfaces so local development and the Google Cloud deployment exercise the same educator workflow without making the browser aware of provider details.
 
 ## System Architecture
 
 ```mermaid
 flowchart LR
-    Educator[Educator] --> App[Next.js application]
-    Admin[Admin] --> App
+    Educator[Educator] --> Web[Public Next.js Cloud Run service]
+    Admin[Admin] --> Web
 
-    App --> Auth[Authentication adapter]
-    App --> DB[(Application database)]
-    App --> Storage[Private video storage]
-    App --> Coordinator[Processing coordinator]
-    Coordinator --> DB
-    Coordinator --> Queue[Durable job trigger]
-    Queue --> Worker[Processing observer]
-    Worker --> Gateway[Scoring gateway]
+    Web --> Auth[Authentication adapter]
+    Web --> DB[(Neon PostgreSQL via Prisma)]
+    Web --> Storage[Private Cloud Storage bucket]
+    Web --> Marker[Idempotent processing-request object]
+    Marker --> Eventarc[Eventarc finalized-object trigger]
+    Eventarc --> Worker[Private processor Cloud Run service]
     Worker --> DB
+    Worker --> Storage
+    Worker --> Gateway[Vertex scoring gateway]
+    Gateway --> Vertex[Gemini on Vertex AI]
+    Vertex --> Storage
     Auth -. preferred .-> HelpConnect[HELP Connect identity]
     Auth -. fallback .-> ManagedIdentity[Managed email/password identity]
-    Gateway --> Scientist[Scientist-owned scoring service]
-
-    Scientist --> Gateway
 ```
 
 The diagram shows alternatives, not two simultaneous sign-in systems. The application owns:
@@ -57,24 +56,24 @@ The diagram shows alternatives, not two simultaneous sign-in systems. The applic
 - Validation and persistence of scoring results.
 - Educator review decisions and the final summary.
 
-The scientist-owned service owns:
+The current Vertex gateway owns:
 
 - Prompt and model execution.
 - HELP skill detection and draft scoring.
 - Confidence, uncertainty, evidence, and other output fields agreed in the service contract.
 
-The browser never calls the scientist service directly.
+The browser never calls Vertex AI or the processor directly. It uploads the source video to the private bucket through a server-issued resumable session and reads only persisted application status.
 
-`Durable job trigger` is a required capability, not a predetermined vendor. It may be an approved queue, scheduled worker, workflow service, or the scientist's authenticated callback contract. Processing observation must continue without an open browser request, serialize by processing run, survive application restarts, and be transferable to the confirmed production owner. If callbacks are selected, the callback handler authenticates the sender and enqueues result validation/persistence rather than trusting or processing an unrestricted body inline.
+The durable trigger is deliberately small: Start processing first persists one `QUEUED` run, then creates `processing-requests/{runId}.json` with a generation-zero precondition. Eventarc delivers the Cloud Storage finalization event to the IAM-private processor. Duplicate object events and repeated Start commands resolve to the same run, and the processor transactionally claims work before invoking Vertex. This avoids a separate queue product while retaining durable delivery, retry, browser independence, and independent processor scaling.
 
-## HELP Connect And AWS Ownership Boundary
+## HELP Connect And Google Cloud Ownership Boundary
 
 - Confirm HELP Connect's current identity provider or protocol before designing credential tables or sign-in routes.
 - Prefer the same stable user identity and sign-in experience already used by HELP Connect when the pilot can consume it safely.
 - If a standalone credential path is required, use an approved managed email/password identity service rather than implementing password hashing and recovery in the application.
 - Keep roles and child assignments in the pilot authorization layer unless HELP Connect explicitly supplies an equivalent contract.
-- Keep environment configuration, secrets, deployment artifacts, data migration instructions, cost visibility, and operational runbooks transferable to the named HELP Connect/AWS technical and budget owners rather than a developer's personal account.
-- Treat AWS compatibility as an ownership and integration constraint, not blanket approval for speculative AWS services. Exact compute, identity, storage, and database services remain selection decisions.
+- Keep environment configuration, Terraform, container artifacts, data migration instructions, cost visibility, and operational runbooks transferable to the named HELP Connect/Google Cloud technical and budget owners rather than a developer's personal account.
+- The current development project proves the topology but does not itself constitute organization acceptance for real child data. Project/folder ownership, billing, region, retention, incident response, and named operators remain handoff gates.
 
 ## Existing Repository Disposition
 
@@ -473,21 +472,22 @@ The exact wire contract is a launch dependency. Application code depends on a sm
 
 ```ts
 interface ScoringGateway {
-  submit(input: ScoringSubmission): Promise<ScoringSubmissionReceipt>;
-  getStatus(externalJobId: string): Promise<ScoringJobStatus>;
+  readonly name: string;
+  score(input: ScoringRequest, media: ScoringMedia): Promise<ScoringResult>;
 }
 
-type ScoringSubmission = {
+type ScoringMedia =
+  | { kind: "bytes"; bytes: Uint8Array; contentType: ApprovedVideoType }
+  | { kind: "gcs"; uri: `gs://${string}`; generation?: string; contentType: ApprovedVideoType };
+
+type ScoringRequest = {
   contractVersion: string;
   runId: string;
   idempotencyKey: string;
-  videoTransfer: { kind: "SIGNED_REFERENCE"; value: string; expiresAt: string };
-  childContext: { ageMonths: number; approvedContext?: unknown };
-};
-
-type ScoringSubmissionReceipt = {
-  externalJobId: string;
-  acceptedAt: string;
+  catalogVersion: string;
+  observation: { observationDate: string; ageMonthsAtObservation: number; supportContext: SupportContext };
+  video: { videoAssetId: string; contentType: ApprovedVideoType; byteSize: number; durationSeconds: number | null };
+  candidates: ScoringCandidate[];
 };
 
 type ScoringSuggestion = {
@@ -508,10 +508,10 @@ type ScoringSuggestion = {
 };
 ```
 
-The minimum submission contains:
+The minimum request contains:
 
 - Internal assessment/run identifiers or an agreed idempotency key.
-- A time-limited private video reference or another approved transfer mechanism.
+- The canonical private `gs://` video URI and immutable object generation. Vertex reads that same object; no second provider-file upload is created.
 - Child age and only other approved context required by scoring.
 
 The minimum successful result contains:
@@ -521,27 +521,26 @@ The minimum successful result contains:
 - Optional model/configuration references for traceability.
 - A list of skill suggestions with stable skill identifier, display fields, optional draft credit, optional confidence, uncertainty reason/boundary, evidence timestamps/explanation, and proposed add-on flags when supported.
 
-All results are validated before persistence. Polling versus callback, service authentication, timeouts, and retry rules must be filled in from the scientist's actual interface rather than guessed.
+All results are validated before persistence. The selected Vertex request uses Cloud Run service-account credentials, an explicit timeout, structured JSON output, an allowlisted candidate catalogue, safe provider error mapping, and no unrestricted response persistence. A future scientist package or service must satisfy this same gateway contract before replacing Vertex.
 
 Validation is all-or-nothing for one successful run. It checks the confirmed contract/schema version, matching run/job identity, unique source suggestion IDs, approved credit codes, non-empty skill identity, finite ordered evidence times within verified video duration, uncertainty requirements, flag allowlist, payload/body limits, and absence of unexpected executable or markup content. The application stores normalized fields needed by review and a safe diagnostic reference; it does not persist an unrestricted provider payload by default.
 
 ## Upload And Video Access
 
-- Store videos in approved private object storage behind a `VideoStorage` interface.
-- Persist object identifiers, not temporary access URLs.
-- Issue short-lived video access only after checking the current user and child assignment.
-- Keep child identifiers out of object names where practical.
-- Support byte-range playback so evidence seeking is usable.
-- Apply the approved retention/deletion policy once Acelero supplies it; do not encode an invented default.
-
-The implementation may use direct-to-storage upload if required by real video sizes. It should not add multipart orchestration until the confirmed limits make it necessary.
+- The web service creates an expiring, assessment-bound resumable Cloud Storage session after authorization and metadata validation.
+- The browser uploads directly to the private bucket and reports progress without proxying video bytes through Cloud Run.
+- Completion is a separate signed command. The server verifies bucket, object name, generation, content type, size, CRC32C, server-owned metadata, and container signature before attaching the object to the assessment.
+- Persist the provider, opaque object name, bucket, immutable generation, and verified metadata, never a temporary upload or playback URL.
+- Issue five-minute V4 signed playback only after checking the current session, assignment, video, and assessment state. Redirect range requests to Cloud Storage so evidence seeking does not download the whole file first.
+- Replacement/removal deletes the superseded object. Uncommitted objects remain in the private bucket and are handled by the accepted incomplete-upload lifecycle policy.
+- The development bucket has an explicit 30-day synthetic-video lifecycle and a one-day processing-marker lifecycle. Replace the video duration with the approved organization policy before real data.
 
 ## Authentication And Authorization
 
 ### Authentication Selection
 
 1. Discover HELP Connect's current provider or protocol, stable subject identifier, environment access, login/callback/logout behavior, deactivation behavior, and integration owner.
-2. Reuse HELP Connect identity when it is available, approved, and compatible with the pilot schedule and target AWS ownership.
+2. Reuse HELP Connect identity when it is available, approved, and compatible with the pilot schedule and target Google Cloud ownership.
 3. Otherwise select one approved managed email/password identity service with a documented path to future HELP Connect federation or migration.
 4. Do not implement both alternatives, and do not implement magic links unless the selected HELP Connect contract itself requires them.
 
@@ -692,20 +691,21 @@ The final view reads the finalized assessment and persisted decisions. It never 
 
 ## Production Runtime And Operations
 
-The deployable unit is vendor-neutral until Task 1 confirms the target account and approved services, but production must provide these capabilities:
+The selected deployable topology is concrete while product-facing boundaries remain replaceable:
 
 | Capability | Production design |
 |---|---|
-| Web runtime | Stateless Next.js instances behind TLS; no production state in local files or process memory |
-| Relational persistence | Managed PostgreSQL-compatible database for the lean Prisma schema, transactional commands, indexed assignment/status queries, backups, and tested restore |
-| Video storage | Private object storage with upload verification, byte-range reads, short-lived authorization, encryption, lifecycle behavior matching the approved policy, and organization ownership |
-| Background work | Durable queue/scheduler/callback ingestion plus a worker that can retry safely and continue without browser presence |
+| Web runtime | Public stateless Next.js container on Cloud Run; no deployed state in local files or process memory |
+| Relational persistence | Neon PostgreSQL through pooled Prisma runtime connections and a direct migration connection; organization backup/restore acceptance remains required |
+| Video storage | Uniform-access, public-access-prevented Cloud Storage bucket; direct resumable upload, immutable generation, signed range playback, and lifecycle rules |
+| Background work | Idempotent Cloud Storage marker, Eventarc finalization delivery, and an IAM-private Cloud Run processor with concurrency 1 per instance |
+| Scoring | Gemini on Vertex AI through Application Default Credentials; Vertex reads the canonical `gs://` source object |
 | Identity | Exactly one approved external identity path with non-production and production configuration separated |
-| Secrets | Organization-controlled secret store/injection; never `.env` in source, client bundles, screenshots, or logs |
-| Telemetry | Structured safe logs, metrics for request/run outcomes and latency, health signals, and alert routing to the named support owner |
-| Delivery | Reproducible build, schema migration gate, environment-specific configuration validation, smoke tests, rollback procedure, and dependency/cost ownership record |
+| Secrets | Secret Manager injection into least-privilege web and processor service accounts; never `.env` in images, client bundles, screenshots, or logs |
+| Telemetry | Cloud Logging structured request/run outcomes, safe health routes, and alert routing once the organization owner is named |
+| Delivery | Cloud Build container images in Artifact Registry plus Terraform for APIs, IAM, storage, secrets, Cloud Run, and Eventarc |
 
-Development uses sanitized fixtures, the test identity adapter, local/private storage adapter, and fake scoring gateway. Staging uses only approved permissioned data and the selected provider sandboxes. Production configuration fails closed when identity, database, storage, scoring, or permission-policy values are absent. Local file-backed state and fake scoring are rejected by production startup validation.
+Local development runs the same two process boundary with `pnpm dev:stack`: Next.js on port 3000 dispatches over authenticated HTTP to the standalone processor on port 8081, while local file storage and deterministic fake scoring keep tests fast. The Google Cloud development environment uses Neon, GCS/Eventarc, the private processor, and Vertex. Production configuration fails closed when identity, database, storage, scoring, or permission-policy values are absent. Local file-backed state and fake scoring are rejected by production startup validation.
 
 Health endpoints expose only process/dependency readiness and a safe build identifier. They do not query or return child, assessment, video, or scoring payload data. Database migrations are reviewed, applied before incompatible application code, and tested for rollback or forward recovery against a non-production copy. Backups and restoration are verified before real child data is enabled.
 
@@ -798,11 +798,11 @@ Health endpoints expose only process/dependency readiness and a safe build ident
 
 **Rationale:** The old dashboard, prompt, reliability, batch, export, and multi-role concepts are the main path by which outdated scope can leak into the pilot. Git history is a sufficient archive.
 
-### Keep Providers Replaceable
+### Select A GCP-Native Processing Path
 
-**Decision:** Do not hard-code Vercel Workflows, Neon, S3, Resend, Terraform, Render, or another vendor into the product design before the current environment and scientist contract are confirmed.
+**Decision:** Deploy the web and processor as separate Cloud Run services, store one canonical private video in Cloud Storage, trigger processing with Eventarc, and let Gemini on Vertex AI read that same `gs://` object. Keep state, video, dispatch, and scoring behind narrow interfaces.
 
-**Rationale:** The meeting says the model work is currently in Google and may move to AWS later, while the latest stakeholder follow-up prioritizes eventual AWS and HELP Connect ownership. Provider interfaces reduce rework without building a speculative portability framework.
+**Rationale:** This is the smallest production-shaped Google Cloud architecture that preserves direct browser upload, durable browser-independent processing, independent worker scaling, and evidence replay without adding Cloud Tasks, Redis, or a second video copy.
 
 ### Use Two Roles And Resource Assignments
 
@@ -812,11 +812,11 @@ Health endpoints expose only process/dependency readiness and a safe build ident
 
 ### Reuse HELP Connect Identity Before Adding Credentials
 
-**Decision:** First determine whether the pilot can reuse HELP Connect's current sign-in. If it cannot, use one administrator-provisioned managed email/password identity service compatible with the target AWS ownership model. Do not build a custom password store or a parallel magic-link system.
+**Decision:** First determine whether the pilot can reuse HELP Connect's current sign-in. If it cannot, use one administrator-provisioned managed email/password identity service compatible with the target Google Cloud ownership model. Do not build a custom password store or a parallel magic-link system.
 
-**Rationale:** Supraja's latest guidance favors email/password or the sign-in HELP Connect already uses because the system must transfer cleanly into longer-term AWS, technical, and budget ownership. Reusing the existing identity is the lowest-migration path; a managed password fallback avoids making the application itself a credential system.
+**Rationale:** Reusing the existing identity is the lowest-migration path; a managed password fallback avoids making the application itself a credential system and can be configured for the organization-owned Google Cloud environment.
 
-**Status:** The selection remains blocked until the HELP Connect identity interface and target AWS ownership constraints are documented.
+**Status:** The selection remains blocked until the HELP Connect identity interface and target Google Cloud ownership constraints are documented.
 
 ### Keep Finalization Simple
 
@@ -846,4 +846,4 @@ Health endpoints expose only process/dependency readiness and a safe build ident
 
 Implementation can proceed against sanitized fixtures, a fake scoring gateway, test-only identity, local development storage, and the full screen-state fixture catalogue. The current repository is a sanitized spike, not evidence that production identity, durable storage, background processing, or database persistence is complete.
 
-Live authentication is blocked until the HELP Connect identity contract, fallback decision, and target AWS ownership constraints are confirmed. Other live integration remains blocked until the scientist API, roster/assignment source, video permission rule, approved storage environment, retention policy, and final report format are confirmed. These blocks do not prevent implementation of provider interfaces, domain rules, authorized route projections, responsive UI, deterministic states, or tests. They do prevent enabling real child data and declaring the production platform complete.
+Live authentication is blocked until the HELP Connect identity contract, fallback decision, and target Google Cloud ownership constraints are confirmed. The GCP development topology is implemented and deployable; real-data use remains blocked until the scientist contract, roster/assignment source, video permission rule, organization project ownership, retention policy, incident owner, and final report format are confirmed. These gates do not prevent end-to-end synthetic development and testing.

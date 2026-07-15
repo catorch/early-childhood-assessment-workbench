@@ -1,4 +1,5 @@
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 const globalDatabase = globalThis as typeof globalThis & {
@@ -8,9 +9,13 @@ const globalDatabase = globalThis as typeof globalThis & {
 function createDatabaseClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL is required when the Neon state adapter is selected.");
+    throw new Error("DATABASE_URL is required when a PostgreSQL state adapter is selected.");
   }
-  const adapter = new PrismaNeon({ connectionString });
+  const databaseAdapter = process.env.HELP_REVIEW_DATABASE_ADAPTER ??
+    (process.env.HELP_REVIEW_STATE_ADAPTER === "pg" ? "pg" : "neon");
+  const adapter = databaseAdapter === "pg"
+    ? new PrismaPg({ connectionString })
+    : new PrismaNeon({ connectionString });
   return new PrismaClient({ adapter });
 }
 

@@ -37,13 +37,45 @@ export interface ChildAssignment {
 
 export interface StoredVideo {
   readonly id: string;
+  readonly storageProvider?: "local" | "vercel-blob" | "gcs";
   readonly storageKey: string;
+  readonly storageBucket?: string | null;
+  readonly storageGeneration?: string | null;
   readonly originalFilename: string;
   readonly contentType: string;
   readonly byteSize: number;
   readonly durationSeconds?: number | null;
+  readonly checksumSha256?: string | null;
+  readonly checksumCrc32c?: string | null;
   readonly uploadedAt: string;
   readonly uploadedById: string;
+}
+
+/** Browser-safe video metadata. Storage paths, checksums, and uploader identifiers stay server-side. */
+export interface ClientVideo {
+  readonly id: string;
+  readonly originalFilename: string;
+  readonly contentType: string;
+  readonly byteSize: number;
+  readonly durationSeconds: number | null;
+  readonly uploadedAt: string;
+}
+
+export interface SessionUser {
+  readonly id: string;
+  readonly displayName: string;
+  readonly role: Role;
+}
+
+export interface AssessmentHistoryItem {
+  readonly id: string;
+  readonly childId: string;
+  readonly observationDate: string;
+  readonly status: AssessmentStatus;
+  readonly updatedAt: string;
+  readonly actionHref: string;
+  readonly actionLabel: string;
+  readonly video: ClientVideo | null;
 }
 
 export interface ProcessingRun {
@@ -53,9 +85,36 @@ export interface ProcessingRun {
   readonly externalJobId: string;
   readonly requestedAt: string;
   readonly requestedById: string;
+  startedAt?: string | null;
   readyAt: string | null;
   completedAt: string | null;
   safeErrorCode: string | null;
+  scoringConfigurationReference?: string | null;
+  retryOfRunId?: string | null;
+  triggerEventId?: string | null;
+  triggerObjectGeneration?: string | null;
+  deliveryCount?: number;
+  lastDispatchedAt?: string | null;
+}
+
+export interface ClientProcessingRun {
+  readonly id: string;
+  readonly attempt: number;
+  readonly status: ProcessingRun["status"];
+  readonly requestedAt: string;
+  readonly startedAt: string | null;
+  readonly completedAt: string | null;
+  readonly safeErrorCode: string | null;
+  readonly retryOfRunId: string | null;
+}
+
+export interface AssessmentContextSnapshot {
+  readonly ageMonthsAtObservation: number;
+  readonly supportContext: "NONE_REPORTED" | "IFSP" | "DISABILITY" | "IFSP_AND_DISABILITY" | "UNKNOWN";
+  readonly contextLabel: string | null;
+  readonly processingAllowedAtCreation: boolean;
+  readonly capturedAt: string;
+  readonly source: "SANITIZED_ADMIN" | "ROSTER_ADAPTER";
 }
 
 export interface PilotAssessment {
@@ -63,6 +122,9 @@ export interface PilotAssessment {
   readonly childId: string;
   readonly educatorId: string;
   readonly observationDate: string;
+  readonly contextSnapshot?: AssessmentContextSnapshot;
+  readonly contentCatalogVersion?: string;
+  readonly scoringContractVersion?: string;
   status: AssessmentStatus;
   video: StoredVideo | null;
   runs: ProcessingRun[];
@@ -95,6 +157,17 @@ export interface PilotState {
   assessments: PilotAssessment[];
   access: AccessProvision[];
   supportEvents?: SupportEvent[];
+  videoAccessGrants?: VideoAccessGrantRecord[];
+}
+
+export interface VideoAccessGrantRecord {
+  readonly id: string;
+  readonly assessmentId: string;
+  readonly videoAssetId: string;
+  readonly viewerId: string;
+  readonly purpose: "EDUCATOR_REVIEW";
+  readonly issuedAt: string;
+  readonly expiresAt: string;
 }
 
 export interface SupportEvent {

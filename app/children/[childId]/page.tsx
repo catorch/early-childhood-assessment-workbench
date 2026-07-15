@@ -11,13 +11,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { backLinkClass, Eyebrow, PageShell } from "@/components/ui/app-patterns";
 import { Button } from "@/components/ui/button";
 import { handleProtectedResponse } from "@/lib/help-review/client-http";
-import type { PilotAssessment, PilotChild } from "@/lib/help-review/models";
-import { assessmentActionLabel, assessmentDestination, assessmentStatusPresentation, formatDate, formatDateTime } from "@/lib/help-review/presentation";
+import type { AssessmentHistoryItem, PilotChild } from "@/lib/help-review/models";
+import { assessmentStatusPresentation, formatDate, formatDateTime } from "@/lib/help-review/presentation";
 
 export default function ChildPage() {
   const { childId } = useParams<{ childId: string }>();
   const router = useRouter();
-  const [data, setData] = useState<{ child: PilotChild; assessments: PilotAssessment[] } | null>(null);
+  const [data, setData] = useState<{ child: PilotChild; assessments: AssessmentHistoryItem[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -60,11 +60,11 @@ export default function ChildPage() {
         {data.assessments.length === 0 ? <div className="border-t border-border py-7 text-muted-foreground">No observations have been started for this child.</div> : (
           <div className="border-t border-border">
             {data.assessments.map((assessment) => (
-              <Link href={assessmentDestination(assessment)} className="grid min-h-[76px] grid-cols-[auto_1fr_auto_auto] items-center gap-3.5 border-b border-border px-2 py-3 no-underline hover:bg-surface max-sm:grid-cols-[auto_1fr_auto]" key={assessment.id}>
+              <Link href={assessment.actionHref} className="grid min-h-[76px] grid-cols-[auto_1fr_auto_auto] items-center gap-3.5 border-b border-border px-2 py-3 no-underline hover:bg-surface max-sm:grid-cols-[auto_1fr_auto]" key={assessment.id}>
                 <CalendarDays aria-hidden="true" className="text-primary" size={18} />
                 <span className="grid gap-1"><strong>Observation {formatDate(assessment.observationDate)}</strong><small className="text-xs text-muted-foreground">Updated {formatDateTime(assessment.updatedAt)}</small></span>
                 <StatusBadge status={assessment.status} label={assessmentStatusPresentation[assessment.status].label} />
-                <span className="inline-flex items-center gap-1 text-sm font-bold text-primary-strong max-sm:sr-only">{assessmentActionLabel(assessment)} <ArrowRight aria-hidden="true" size={18} /></span>
+                <span className="inline-flex items-center gap-1 text-sm font-bold text-primary-strong max-sm:sr-only">{assessment.actionLabel} <ArrowRight aria-hidden="true" size={18} /></span>
               </Link>
             ))}
           </div>

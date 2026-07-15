@@ -11,7 +11,24 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: help_review
+          POSTGRES_PASSWORD: help_review_ci
+          POSTGRES_DB: help_review
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U help_review -d help_review"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://help_review:help_review_ci@127.0.0.1:5432/help_review
+      DIRECT_URL: postgresql://help_review:help_review_ci@127.0.0.1:5432/help_review
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -22,8 +39,35 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: git diff --check
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm db:validate
-      - run: pnpm build
+      - run: pnpm db:migrate
+      - run: pnpm db:status
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - run: pnpm test:a11y
+      - run: pnpm test:visual
+      - name: Production build with acknowledged sanitized adapters
+        run: pnpm build
+        env:
+          HELP_REVIEW_SANITIZED_PRODUCTION_ACK: "true"
+          HELP_REVIEW_STATE_ADAPTER: neon
+          HELP_REVIEW_VIDEO_ADAPTER: vercel-blob
+          HELP_REVIEW_SCORING_ADAPTER: fake
+          HELP_REVIEW_IDENTITY_ADAPTER: sandbox
+          HELP_REVIEW_SESSION_SECRET: ci-session-secret-with-at-least-32-characters
+          HELP_REVIEW_PLAYBACK_GRANT_SECRET: ci-playback-secret-with-at-least-32-characters
+          CRON_SECRET: ci-cron-secret-with-at-least-32-characters
+          BLOB_READ_WRITE_TOKEN: vercel_blob_rw_ci-placeholder
+      - name: Publish Playwright diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

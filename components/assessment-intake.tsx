@@ -13,17 +13,60 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { handleProtectedResponse, responseError } from "@/lib/help-review/client-http";
-import type { PilotAssessment, PilotChild, StoredVideo } from "@/lib/help-review/models";
-import { assessmentDestination } from "@/lib/help-review/presentation";
+import type { AssessmentHistoryItem, ClientVideo, PilotChild } from "@/lib/help-review/models";
+import {
+  VIDEO_CONTENT_TYPES,
+  VIDEO_MAX_BYTES,
+  VIDEO_MAX_DURATION_SECONDS
+} from "@/lib/help-review/video-policy";
 
-const acceptedTypes = ["video/mp4", "video/webm", "video/quicktime"];
-const maxBytes = 100 * 1024 * 1024;
+const acceptedTypes: readonly string[] = VIDEO_CONTENT_TYPES;
+const maxBytes = VIDEO_MAX_BYTES;
+const maxDurationSeconds = VIDEO_MAX_DURATION_SECONDS;
+
+interface VideoMetadata {
+  readonly durationSeconds: number;
+  readonly checksumSha256: string;
+}
+
+async function inspectVideo(file: File): Promise<VideoMetadata> {
+  const checksum = await window.crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  const checksumSha256 = [...new Uint8Array(checksum)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  const durationSeconds = await new Promise<number>((resolve, reject) => {
+    const video = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    const cleanup = () => {
+      URL.revokeObjectURL(url);
+      video.removeAttribute("src");
+      video.load();
+    };
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      const duration = Math.ceil(video.duration);
+      cleanup();
+      if (!Number.isFinite(duration) || duration <= 0) reject(new Error("The video duration could not be verified."));
+      else resolve(duration);
+    };
+    video.onerror = () => {
+      cleanup();
+      reject(new Error("The video metadata could not be read."));
+    };
+    video.src = url;
+  });
+  if (durationSeconds > maxDurationSeconds) {
+    throw new Error("The observation video must be 5 minutes or shorter.");
+  }
+  return { durationSeconds, checksumSha256 };
+}
 
 function uploadVideoThroughServer(
   assessmentId: string,
   file: File,
+  metadata: VideoMetadata,
   setProgress: (progress: number) => void
-): Promise<StoredVideo> {
+): Promise<ClientVideo> {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open("POST", `/api/assessments/${assessmentId}/upload`);
@@ -31,7 +74,7 @@ function uploadVideoThroughServer(
       if (event.lengthComputable) setProgress(Math.round((event.loaded / event.total) * 100));
     });
     request.addEventListener("load", () => {
-      let payload: { video?: StoredVideo; error?: string } = {};
+      let payload: { video?: ClientVideo; error?: string } = {};
       try { payload = JSON.parse(request.responseText) as typeof payload; } catch { /* safe fallback below */ }
       if (request.status >= 200 && request.status < 300 && payload.video) resolve(payload.video);
       else reject(new Error(payload.error ?? "The upload could not be completed."));
@@ -39,6 +82,8 @@ function uploadVideoThroughServer(
     request.addEventListener("error", () => reject(new Error("The network interrupted the upload. Your assessment draft is still available.")));
     const formData = new FormData();
     formData.set("video", file);
+    formData.set("durationSeconds", String(metadata.durationSeconds));
+    formData.set("checksumSha256", metadata.checksumSha256);
     request.send(formData);
   });
 }
@@ -51,44 +96,119 @@ function uploadExtension(file: File): string {
   return ".mp4";
 }
 
-async function waitForRecordedBlob(assessmentId: string, pathname: string): Promise<StoredVideo> {
+async function waitForRecordedBlob(assessmentId: string, videoId: string): Promise<ClientVideo> {
   for (let attempt = 0; attempt < 24; attempt += 1) {
     const response = await fetch(`/api/assessments/${assessmentId}/upload`, { cache: "no-store" });
-    const payload = await response.json() as { video?: StoredVideo | null; error?: string };
+    const payload = await response.json() as { video?: ClientVideo | null; error?: string };
     if (!response.ok) throw new Error(payload.error ?? "The completed upload could not be verified.");
-    if (payload.video?.storageKey === pathname) return payload.video;
+    if (payload.video?.id === videoId) return payload.video;
     await new Promise((resolve) => window.setTimeout(resolve, 500));
   }
   throw new Error("The video was uploaded, but its assessment record is still being verified. Refresh this draft shortly.");
 }
 
+function putGcsObject(
+  uploadUrl: string,
+  file: File,
+  setProgress: (progress: number) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("PUT", uploadUrl);
+    request.setRequestHeader("Content-Type", file.type);
+    request.setRequestHeader("Content-Range", `bytes 0-${file.size - 1}/${file.size}`);
+    request.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) setProgress(Math.round((event.loaded / event.total) * 95));
+    });
+    request.addEventListener("load", () => {
+      if (request.status >= 200 && request.status < 300) resolve();
+      else reject(new Error("Google Cloud Storage could not finalize the video upload."));
+    });
+    request.addEventListener("error", () => reject(new Error(
+      "The network interrupted the Google Cloud upload. You can retry from this draft."
+    )));
+    request.send(file);
+  });
+}
+
+async function uploadVideoToGcs(
+  assessmentId: string,
+  file: File,
+  metadata: VideoMetadata,
+  setProgress: (progress: number) => void
+): Promise<ClientVideo> {
+  const route = `/api/assessments/${assessmentId}/upload`;
+  const videoId = `video-${window.crypto.randomUUID()}`;
+  const initiationResponse = await fetch(route, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "initiate",
+      assessmentId,
+      videoId,
+      originalFilename: file.name,
+      contentType: file.type,
+      byteSize: file.size,
+      durationSeconds: metadata.durationSeconds,
+      checksumSha256: metadata.checksumSha256
+    })
+  });
+  const initiation = await initiationResponse.json() as {
+    readonly uploadUrl?: string;
+    readonly completionToken?: string;
+    readonly error?: string;
+  };
+  if (!initiationResponse.ok || !initiation.uploadUrl || !initiation.completionToken) {
+    throw new Error(initiation.error ?? "The Google Cloud upload could not be authorized.");
+  }
+  await putGcsObject(initiation.uploadUrl, file, setProgress);
+  setProgress(97);
+  const completionResponse = await fetch(route, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "complete", token: initiation.completionToken })
+  });
+  const completion = await completionResponse.json() as { readonly video?: ClientVideo; readonly error?: string };
+  if (!completionResponse.ok || !completion.video) {
+    throw new Error(completion.error ?? "The uploaded video could not be verified.");
+  }
+  setProgress(100);
+  return completion.video;
+}
+
 async function uploadVideo(
   assessmentId: string,
   file: File,
+  metadata: VideoMetadata,
   setProgress: (progress: number) => void
-): Promise<StoredVideo> {
+): Promise<ClientVideo> {
   const route = `/api/assessments/${assessmentId}/upload`;
   const configResponse = await fetch(route, { cache: "no-store" });
-  const config = await configResponse.json() as { uploadMode?: "blob" | "server"; error?: string };
+  const config = await configResponse.json() as { uploadMode?: "blob" | "gcs" | "server"; error?: string };
   if (!configResponse.ok) throw new Error(config.error ?? "The upload could not be authorized.");
-  if (config.uploadMode !== "blob") return uploadVideoThroughServer(assessmentId, file, setProgress);
+  if (config.uploadMode === "gcs") return uploadVideoToGcs(assessmentId, file, metadata, setProgress);
+  if (config.uploadMode !== "blob") return uploadVideoThroughServer(assessmentId, file, metadata, setProgress);
 
-  const pathname = `help-review/${assessmentId}/${window.crypto.randomUUID()}${uploadExtension(file)}`;
-  const blob = await uploadBlob(pathname, file, {
+  const videoId = `video-${window.crypto.randomUUID()}`;
+  const pathname = `help-review/${videoId}/${window.crypto.randomUUID()}${uploadExtension(file)}`;
+  await uploadBlob(pathname, file, {
     access: "private",
     contentType: file.type,
     handleUploadUrl: route,
     clientPayload: JSON.stringify({
       assessmentId,
+      videoId,
       originalFilename: file.name,
       contentType: file.type,
-      byteSize: file.size
+      byteSize: file.size,
+      durationSeconds: metadata.durationSeconds,
+      checksumSha256: metadata.checksumSha256
     }),
     multipart: file.size > 10 * 1024 * 1024,
     onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage))
   });
   setProgress(100);
-  return waitForRecordedBlob(assessmentId, blob.pathname);
+  return waitForRecordedBlob(assessmentId, videoId);
 }
 
 export function AssessmentIntake() {
@@ -102,7 +222,7 @@ export function AssessmentIntake() {
   const [assessmentId, setAssessmentId] = useState<string | null>(queryAssessmentId);
   const [observationDate, setObservationDate] = useState(new Date().toISOString().slice(0, 10));
   const [file, setFile] = useState<File | null>(null);
-  const [uploadedVideo, setUploadedVideo] = useState<StoredVideo | null>(null);
+  const [uploadedVideo, setUploadedVideo] = useState<ClientVideo | null>(null);
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState<"IDLE" | "UPLOADING" | "REMOVING" | "STARTING">("IDLE");
   const [error, setError] = useState<string | null>(childId ? null : "Choose an assigned child before starting an observation.");
@@ -119,7 +239,7 @@ export function AssessmentIntake() {
         setLoading(false);
         return;
       }
-      const payload = await response.json() as { child: PilotChild; assessments: PilotAssessment[] };
+      const payload = await response.json() as { child: PilotChild; assessments: AssessmentHistoryItem[] };
       setChild(payload.child);
       const existing = payload.assessments.find((assessment) => assessment.id === queryAssessmentId);
       if (queryAssessmentId && !existing) {
@@ -128,7 +248,7 @@ export function AssessmentIntake() {
       }
       if (existing) {
         if (!["DRAFT", "FAILED"].includes(existing.status)) {
-          router.replace(assessmentDestination(existing));
+          router.replace(existing.actionHref);
           return;
         }
         setObservationDate(existing.observationDate);
@@ -173,7 +293,7 @@ export function AssessmentIntake() {
     if (handleProtectedResponse(createResponse, router, `/assessments/new?childId=${encodeURIComponent(child.id)}`)) {
       throw new Error("Your session needs to be renewed.");
     }
-    const created = await createResponse.json() as { assessment?: PilotAssessment; error?: string };
+    const created = await createResponse.json() as { assessment?: { readonly id: string }; error?: string };
     if (!createResponse.ok || !created.assessment) throw new Error(created.error ?? "The assessment draft could not be created.");
     const nextId = created.assessment.id;
     setAssessmentId(nextId);
@@ -186,8 +306,9 @@ export function AssessmentIntake() {
     setError(null);
     setStep("UPLOADING");
     try {
+      const metadata = await inspectVideo(file);
       const currentAssessmentId = await ensureAssessment();
-      const stored = await uploadVideo(currentAssessmentId, file, setProgress);
+      const stored = await uploadVideo(currentAssessmentId, file, metadata, setProgress);
       setUploadedVideo(stored);
       setFile(null);
       setProgress(100);
@@ -260,7 +381,7 @@ export function AssessmentIntake() {
           <Input className="w-full max-w-[260px]" id="observation-date" type="date" value={observationDate} onChange={(event) => setObservationDate(event.target.value)} disabled={Boolean(assessmentId)} />
 
           <div className="mt-8 mb-[18px] flex items-center gap-2.5"><span className="grid size-[26px] place-items-center rounded-full bg-navy text-xs font-extrabold text-white">2</span><h2 className="text-lg font-normal">Observation video</h2></div>
-          <input accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={chooseFile} ref={fileInputRef} type="file" />
+          <input aria-label="Choose observation video" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={chooseFile} ref={fileInputRef} type="file" />
           {file ? (
             <div className="overflow-hidden rounded-md border border-border bg-surface">
               <video className="block max-h-[360px] w-full bg-navy" controls preload="metadata" src={previewUrl ?? undefined} />

@@ -114,6 +114,8 @@ export function createSanitizedPilotState(): PilotState {
         updatedAt: NOW,
         updatedById: "user-admin-1"
       }
-    ]
+    ],
+    supportEvents: [],
+    videoAccessGrants: []
   };
 }

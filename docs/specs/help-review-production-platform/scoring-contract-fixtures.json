@@ -1,0 +1,14 @@
+{
+  "contractVersion": "help-scoring-v0",
+  "catalogVersion": "help-2-provisional-2026-07",
+  "fixtures": [
+    { "id": "accepted", "expected": "VALID", "description": "One or more allowlisted, scored suggestions with timestamped evidence." },
+    { "id": "uncertain", "expected": "VALID", "description": "At least one suggestion has null credit and a non-empty uncertainty reason." },
+    { "id": "invalid-credit", "expected": "REJECTED", "description": "A provider returns a credit outside the canonical allowlist." },
+    { "id": "invalid-evidence", "expected": "REJECTED", "description": "Evidence is empty, outside duration, or has an end before its start." },
+    { "id": "empty-result", "expected": "NO_VALID_RESULTS", "description": "No partial suggestions are committed." },
+    { "id": "slow", "expected": "FAILED_RETRYABLE", "safeCode": "SCORING_TIMEOUT" },
+    { "id": "retryable-failure", "expected": "FAILED_RETRYABLE", "safeCode": "SCORING_UNAVAILABLE" },
+    { "id": "terminal-failure", "expected": "FAILED_TERMINAL", "safeCode": "INVALID_RESULT" }
+  ]
+}

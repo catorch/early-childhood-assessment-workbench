@@ -1,11 +1,92 @@
-/** Test identity adapter used only with sanitized local pilot records. */
+/** Identity and authorization boundary for the sanitized pilot adapter. */
 
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
 
 import type { PilotState, PilotUser, Role } from "./models";
 import { readPilotState } from "./server-store";
 
-export const SESSION_COOKIE = "help_review_sandbox_user";
+export const SESSION_COOKIE = "help_review_session";
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
+
+interface SessionClaims {
+  readonly version: 1;
+  readonly subject: string;
+  readonly sessionId: string;
+  readonly issuedAt: number;
+  readonly expiresAt: number;
+}
+
+export interface IdentityAdapter {
+  readonly name: string;
+  issue(userId: string, now?: Date): string;
+  resolve(token: string | undefined, now?: Date): SessionClaims | null;
+}
+
+function sessionSecret(environment: NodeJS.ProcessEnv = process.env): string {
+  const configured = environment.HELP_REVIEW_SESSION_SECRET;
+  if (configured) return configured;
+  if (environment.NODE_ENV === "production") {
+    throw new Error("HELP_REVIEW_SESSION_SECRET is required in production.");
+  }
+  return "help-review-local-session-secret-not-for-production";
+}
+
+function encode(value: string): string {
+  return Buffer.from(value, "utf8").toString("base64url");
+}
+
+function signature(payload: string, secret = sessionSecret()): string {
+  return createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+function equalSignature(left: string, right: string): boolean {
+  const leftBytes = Buffer.from(left);
+  const rightBytes = Buffer.from(right);
+  return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes);
+}
+
+export class SandboxIdentityAdapter implements IdentityAdapter {
+  readonly name = "sandbox";
+
+  issue(userId: string, now = new Date()): string {
+    const issuedAt = Math.floor(now.getTime() / 1_000);
+    const claims: SessionClaims = {
+      version: 1,
+      subject: userId,
+      sessionId: randomUUID(),
+      issuedAt,
+      expiresAt: issuedAt + SESSION_MAX_AGE_SECONDS
+    };
+    const payload = encode(JSON.stringify(claims));
+    return `${payload}.${signature(payload)}`;
+  }
+
+  resolve(token: string | undefined, now = new Date()): SessionClaims | null {
+    if (!token) return null;
+    const [payload, suppliedSignature, extra] = token.split(".");
+    if (!payload || !suppliedSignature || extra || !equalSignature(signature(payload), suppliedSignature)) return null;
+    try {
+      const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Partial<SessionClaims>;
+      const current = Math.floor(now.getTime() / 1_000);
+      if (
+        claims.version !== 1 ||
+        typeof claims.subject !== "string" ||
+        typeof claims.sessionId !== "string" ||
+        typeof claims.issuedAt !== "number" ||
+        typeof claims.expiresAt !== "number" ||
+        claims.issuedAt > current + 60 ||
+        claims.expiresAt <= current ||
+        claims.expiresAt - claims.issuedAt > SESSION_MAX_AGE_SECONDS
+      ) return null;
+      return claims as SessionClaims;
+    } catch {
+      return null;
+    }
+  }
+}
+
+export const sandboxIdentity = new SandboxIdentityAdapter();
 
 export class AccessError extends Error {
   constructor(
@@ -17,7 +98,7 @@ export class AccessError extends Error {
 }
 
 export function activeUserFromState(request: NextRequest, state: PilotState): PilotUser {
-  const userId = request.cookies.get(SESSION_COOKIE)?.value;
+  const userId = sandboxIdentity.resolve(request.cookies.get(SESSION_COOKIE)?.value)?.subject;
   const user = state.users.find((candidate) => candidate.id === userId && candidate.isActive);
   if (!user) throw new AccessError("A valid sandbox session is required.", 401);
   const activeProvision = state.access.some((provision) => provision.userId === user.id && provision.active);

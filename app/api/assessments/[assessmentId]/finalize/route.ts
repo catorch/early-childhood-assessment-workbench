@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { deriveReviewSummary } from "@/lib/help-review/domain";
-import { activeUserFromState } from "@/lib/help-review/server-auth";
-import { recordSupportEvent } from "@/lib/help-review/server-events";
-import { assertSameOrigin, routeError, validationError } from "@/lib/help-review/server-http";
-import { requireAssessment, reviewProjection } from "@/lib/help-review/server-workflow";
-import { updatePilotState } from "@/lib/help-review/server-store";
+import { reviewService } from "@/lib/help-review/review-service";
+import { assertSameOrigin, enforceRateLimit, readJsonBody, routeError, validationError } from "@/lib/help-review/server-http";
 
 const FinalizationMutationSchema = z.object({
   expectedRevision: z.number().int().nonnegative(),
@@ -16,34 +12,11 @@ const FinalizationMutationSchema = z.object({
 export async function POST(request: NextRequest, context: { params: Promise<{ assessmentId: string }> }) {
   try {
     assertSameOrigin(request);
+    enforceRateLimit(request, "assessment-finalize", { limit: 20 });
     const { assessmentId } = await context.params;
-    const parsed = FinalizationMutationSchema.safeParse(await request.json());
+    const parsed = FinalizationMutationSchema.safeParse(await readJsonBody(request, 8 * 1024));
     if (!parsed.success) return validationError("The final confirmation is invalid. Refresh the summary and try again.");
-    const result = await updatePilotState((state) => {
-      const actor = activeUserFromState(request, state);
-      const assessment = requireAssessment(state, actor, assessmentId);
-      if (assessment.status === "FINALIZED") return { finalized: true as const, projection: reviewProjection(state, assessment) };
-      if ((assessment.revision ?? 0) !== parsed.data.expectedRevision) {
-        return { finalized: false as const, remaining: 0, stale: true as const };
-      }
-      const summary = deriveReviewSummary(assessment.suggestions, assessment.decisions);
-      if (summary.progress.total === 0) return { finalized: false as const, remaining: 0, invalid: true as const };
-      if (summary.progress.remaining > 0) return { finalized: false as const, remaining: summary.progress.remaining };
-      const finalizedAt = new Date().toISOString();
-      assessment.status = "FINALIZED";
-      assessment.finalizedAt = finalizedAt;
-      assessment.finalizedById = actor.id;
-      assessment.finalizationKey = parsed.data.requestId;
-      assessment.updatedAt = finalizedAt;
-      assessment.revision = (assessment.revision ?? 0) + 1;
-      recordSupportEvent(state, {
-        type: "ASSESSMENT_FINALIZED",
-        actorId: actor.id,
-        assessmentId: assessment.id,
-        occurredAt: finalizedAt
-      });
-      return { finalized: true as const, projection: reviewProjection(state, assessment) };
-    });
+    const result = await reviewService.finalize(request, assessmentId, parsed.data);
     if (!result.finalized) {
       return NextResponse.json(
         {

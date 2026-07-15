@@ -45,6 +45,7 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
   const [finalizing, setFinalizing] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const finalizationRequestId = useRef<string | null>(null);
+  const finalizationTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const load = useCallback(async () => {
     const endpoint = finalView ? "final" : "review";
@@ -143,7 +144,7 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
         </SummarySection>
 
         <SummarySection eyebrow="By domain" id="domain-summary-title" title="Domain summary">
-          <div className="overflow-x-auto rounded-md border border-border" role="table" aria-label="Credits by HELP domain">
+          <div className="overflow-x-auto rounded-md border border-border outline-none focus-visible:ring-3 focus-visible:ring-ring/35" role="table" aria-label="Credits by HELP domain" tabIndex={0}>
             <div className="grid min-w-[560px] grid-cols-[minmax(220px,1fr)_repeat(4,70px)] bg-surface-soft px-4 py-2.5 text-[10px] font-extrabold uppercase text-muted-foreground" role="row"><span role="columnheader">Domain</span>{credits.map((credit) => <span className="text-center" role="columnheader" key={credit.key}>{credit.symbol}</span>)}</div>
             {data.summary.domains.map((domain) => <div className="grid min-w-[560px] grid-cols-[minmax(220px,1fr)_repeat(4,70px)] border-t border-border bg-surface px-4 py-3 text-sm" role="row" key={domain.domain}><strong role="cell">{domain.domain}</strong>{credits.map((credit) => <span className="text-center" role="cell" key={credit.key}>{domain.credits[credit.key]}</span>)}</div>)}
           </div>
@@ -160,12 +161,12 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
         <footer className="mt-10 flex justify-end gap-2.5 border-t border-border pt-5 max-sm:flex-col-reverse">
           {finalView ? <Button asChild className="max-sm:w-full" variant="secondary"><Link href={`/children/${data.child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Return to child</Link></Button> : <>
             <Button asChild className="max-sm:w-full" variant="secondary"><Link href={`/assessments/${assessmentId}/review`}><RotateCcw aria-hidden="true" size={16} /> Return to review</Link></Button>
-            <Button className="max-sm:w-full" disabled={remaining.length > 0 || finalizing} onClick={() => setConfirmOpen(true)} type="button"><LockKeyhole aria-hidden="true" size={16} /> {finalizing ? "Confirming..." : "Confirm final assessment"}</Button>
+            <Button className="max-sm:w-full" disabled={remaining.length > 0 || finalizing} onClick={() => setConfirmOpen(true)} ref={finalizationTriggerRef} type="button"><LockKeyhole aria-hidden="true" size={16} /> {finalizing ? "Confirming..." : "Confirm final assessment"}</Button>
           </>}
         </footer>
         {error ? <Alert className="mt-6" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
       </div>
-      <ConfirmDialog confirmLabel="Confirm final assessment" description="This creates the read-only human-approved record. Ordinary review edits will no longer be available." details={[`${data.summary.included.length} included skills`, `${data.summary.dismissed.length} dismissed suggestions`, "All educator decisions will be locked"]} onCancel={() => setConfirmOpen(false)} onConfirm={() => void finalize()} open={confirmOpen} pending={finalizing} title="Finalize this assessment?" tone="primary" />
+      <ConfirmDialog confirmLabel="Confirm final assessment" description="This creates the read-only human-approved record. Ordinary review edits will no longer be available." details={[`${data.summary.included.length} included skills`, `${data.summary.dismissed.length} dismissed suggestions`, "All educator decisions will be locked"]} onCancel={() => setConfirmOpen(false)} onConfirm={() => void finalize()} open={confirmOpen} pending={finalizing} returnFocusRef={finalizationTriggerRef} title="Finalize this assessment?" tone="primary" />
     </main>
   );
 }

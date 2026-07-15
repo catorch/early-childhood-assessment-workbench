@@ -3,10 +3,11 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/app-patterns";
+import { safeRelativeReturnPath } from "@/lib/help-review/return-path";
 
 function safeReturnTo(value: string | string[] | undefined): string {
   const candidate = Array.isArray(value) ? value[0] : value;
-  return candidate && candidate.startsWith("/") && !candidate.startsWith("//") ? candidate : "/children";
+  return safeRelativeReturnPath(candidate, "/children");
 }
 
 export default async function SessionExpiredPage({

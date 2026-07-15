@@ -1,15 +1,16 @@
 import { expect, test } from "@playwright/test";
 
-import { expectNoHorizontalOverflow, expectNoSeriousAccessibilityViolations, signIn } from "./helpers";
+import { expectNoHorizontalOverflow, expectNoSeriousAccessibilityViolations, resetScreenFixture, signIn } from "./helpers";
 
 test("educator navigation and review decision editing work", async ({ page }, testInfo) => {
+  await resetScreenFixture(page, "02");
   await signIn(page);
   await expect(page.getByRole("heading", { name: "Assigned children", exact: true })).toBeVisible();
   await expect(page.getByText("Child 1001", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await expectNoSeriousAccessibilityViolations(page, testInfo);
 
-  await page.getByRole("link", { name: "Continue review" }).click();
+  await page.getByRole("link", { name: "Continue review" }).first().click();
   await expect(page.getByRole("heading", { name: "Review AI draft" })).toBeVisible();
   await page.getByRole("button", { name: "What the AI noticed" }).first().click();
   await page.getByRole("button", { name: "Emerging" }).last().click();
@@ -21,8 +22,9 @@ test("educator navigation and review decision editing work", async ({ page }, te
 
 test("mobile review opens the full-screen decision editor", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
+  await resetScreenFixture(page, "37");
   await signIn(page);
-  await page.getByRole("link", { name: "Continue review" }).click();
+  await page.goto("/assessments/assessment-ready/review");
   await expect(page.getByRole("button", { name: "Open decision editor" })).toBeVisible();
   await page.getByRole("button", { name: "Open decision editor" }).click();
   await expect(page.getByRole("button", { name: "Back to items" })).toBeVisible();
@@ -31,6 +33,7 @@ test("mobile review opens the full-screen decision editor", async ({ page }) => 
 });
 
 test("administrator can inspect access and jobs without overflow", async ({ page }, testInfo) => {
+  await resetScreenFixture(page, "08");
   await signIn(page, "Casey Rivera");
   await expect(page.getByRole("heading", { name: "Pilot access", exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
