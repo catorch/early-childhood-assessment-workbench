@@ -1,4 +1,4 @@
-/** Identity and authorization boundary for the sanitized pilot adapter. */
+/** Signed application sessions and authorization for each selected identity boundary. */
 
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
@@ -8,9 +8,12 @@ import { readPilotState } from "./server-store";
 
 export const SESSION_COOKIE = "help_review_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
+export const IDENTITY_PLATFORM_SESSION_MAX_AGE_SECONDS = 60 * 60;
+export type IdentityAdapterName = "sandbox" | "identity-platform";
 
 interface SessionClaims {
-  readonly version: 1;
+  readonly version: 2;
+  readonly issuer: IdentityAdapterName;
   readonly subject: string;
   readonly sessionId: string;
   readonly issuedAt: number;
@@ -18,7 +21,8 @@ interface SessionClaims {
 }
 
 export interface IdentityAdapter {
-  readonly name: string;
+  readonly name: IdentityAdapterName;
+  readonly sessionMaxAgeSeconds: number;
   issue(userId: string, now?: Date): string;
   resolve(token: string | undefined, now?: Date): SessionClaims | null;
 }
@@ -46,17 +50,21 @@ function equalSignature(left: string, right: string): boolean {
   return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes);
 }
 
-export class SandboxIdentityAdapter implements IdentityAdapter {
-  readonly name = "sandbox";
+class SignedSessionIdentityAdapter implements IdentityAdapter {
+  constructor(
+    readonly name: IdentityAdapterName,
+    readonly sessionMaxAgeSeconds: number
+  ) {}
 
   issue(userId: string, now = new Date()): string {
     const issuedAt = Math.floor(now.getTime() / 1_000);
     const claims: SessionClaims = {
-      version: 1,
+      version: 2,
+      issuer: this.name,
       subject: userId,
       sessionId: randomUUID(),
       issuedAt,
-      expiresAt: issuedAt + SESSION_MAX_AGE_SECONDS
+      expiresAt: issuedAt + this.sessionMaxAgeSeconds
     };
     const payload = encode(JSON.stringify(claims));
     return `${payload}.${signature(payload)}`;
@@ -70,14 +78,15 @@ export class SandboxIdentityAdapter implements IdentityAdapter {
       const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Partial<SessionClaims>;
       const current = Math.floor(now.getTime() / 1_000);
       if (
-        claims.version !== 1 ||
+        claims.version !== 2 ||
+        claims.issuer !== this.name ||
         typeof claims.subject !== "string" ||
         typeof claims.sessionId !== "string" ||
         typeof claims.issuedAt !== "number" ||
         typeof claims.expiresAt !== "number" ||
         claims.issuedAt > current + 60 ||
         claims.expiresAt <= current ||
-        claims.expiresAt - claims.issuedAt > SESSION_MAX_AGE_SECONDS
+        claims.expiresAt - claims.issuedAt > this.sessionMaxAgeSeconds
       ) return null;
       return claims as SessionClaims;
     } catch {
@@ -86,7 +95,27 @@ export class SandboxIdentityAdapter implements IdentityAdapter {
   }
 }
 
+export class SandboxIdentityAdapter extends SignedSessionIdentityAdapter {
+  constructor() {
+    super("sandbox", SESSION_MAX_AGE_SECONDS);
+  }
+}
+
+export class IdentityPlatformSessionAdapter extends SignedSessionIdentityAdapter {
+  constructor() {
+    super("identity-platform", IDENTITY_PLATFORM_SESSION_MAX_AGE_SECONDS);
+  }
+}
+
 export const sandboxIdentity = new SandboxIdentityAdapter();
+export const identityPlatformIdentity = new IdentityPlatformSessionAdapter();
+
+export function selectedIdentityAdapter(environment: NodeJS.ProcessEnv = process.env): IdentityAdapter {
+  const selected = environment.HELP_REVIEW_IDENTITY_ADAPTER ?? "sandbox";
+  if (selected === "sandbox") return sandboxIdentity;
+  if (selected === "identity-platform") return identityPlatformIdentity;
+  throw new Error("The selected identity adapter is not supported.");
+}
 
 export class AccessError extends Error {
   constructor(
@@ -97,10 +126,14 @@ export class AccessError extends Error {
   }
 }
 
-export function activeUserFromState(request: NextRequest, state: PilotState): PilotUser {
-  const userId = sandboxIdentity.resolve(request.cookies.get(SESSION_COOKIE)?.value)?.subject;
+export function activeUserFromState(
+  request: NextRequest,
+  state: PilotState,
+  identity: IdentityAdapter = selectedIdentityAdapter()
+): PilotUser {
+  const userId = identity.resolve(request.cookies.get(SESSION_COOKIE)?.value)?.subject;
   const user = state.users.find((candidate) => candidate.id === userId && candidate.isActive);
-  if (!user) throw new AccessError("A valid sandbox session is required.", 401);
+  if (!user) throw new AccessError("A valid session is required.", 401);
   const activeProvision = state.access.some((provision) => provision.userId === user.id && provision.active);
   if (!activeProvision) throw new AccessError("Pilot access is inactive.", 401);
   return user;

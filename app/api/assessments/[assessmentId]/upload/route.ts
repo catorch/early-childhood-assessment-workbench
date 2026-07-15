@@ -367,7 +367,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ ass
 export async function POST(request: NextRequest, context: { params: Promise<{ assessmentId: string }> }) {
   try {
     assertSameOrigin(request);
-    enforceRateLimit(request, "assessment-upload", { limit: 30 });
+    await enforceRateLimit(request, "assessment-upload", { limit: 30 });
     const { assessmentId } = await context.params;
     if (gcsUploadsEnabled()) return handleGcsUpload(request, assessmentId);
     return blobUploadsEnabled() ? await handleBlobUpload(request, assessmentId) : await handleLocalUpload(request, assessmentId);
@@ -379,7 +379,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ as
 export async function DELETE(request: NextRequest, context: { params: Promise<{ assessmentId: string }> }) {
   try {
     assertSameOrigin(request);
-    enforceRateLimit(request, "assessment-upload-remove", { limit: 30 });
+    await enforceRateLimit(request, "assessment-upload-remove", { limit: 30 });
     const { assessmentId } = await context.params;
     const result = await videoAssetService.remove(request, assessmentId);
     if (result.blocked) return validationError(result.reason);

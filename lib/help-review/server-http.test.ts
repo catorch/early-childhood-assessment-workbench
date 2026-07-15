@@ -117,12 +117,12 @@ describe("safe HTTP failure handling", () => {
     expect(response.status).toBe(413);
   });
 
-  it("rate limits a hashed request identity without exposing it", () => {
+  it("rate limits a hashed request identity without exposing it", async () => {
     const request = new NextRequest("https://pilot.example.test/api/command", {
       headers: { "x-forwarded-for": "203.0.113.22" }
     });
     const scope = `test-${crypto.randomUUID()}`;
-    expect(() => enforceRateLimit(request, scope, { limit: 1 }, 1_000)).not.toThrow();
-    expect(() => enforceRateLimit(request, scope, { limit: 1 }, 1_001)).toThrow(RequestError);
+    await expect(enforceRateLimit(request, scope, { limit: 1 }, 1_000)).resolves.toBeUndefined();
+    await expect(enforceRateLimit(request, scope, { limit: 1 }, 1_001)).rejects.toBeInstanceOf(RequestError);
   });
 });

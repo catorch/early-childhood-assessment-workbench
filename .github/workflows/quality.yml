@@ -43,9 +43,11 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      - run: pnpm catalog:validate content/help-catalog.sanitized.json
       - run: pnpm db:validate
       - run: pnpm db:migrate
       - run: pnpm db:status
+      - run: pnpm db:rate-limit-drill -- --confirm-sanitized-database
       - run: pnpm build:processor
       - uses: hashicorp/setup-terraform@v3
       - run: terraform -chdir=infra/gcp fmt -check -recursive
@@ -64,7 +66,13 @@ jobs:
           HELP_REVIEW_VIDEO_ADAPTER: gcs
           HELP_REVIEW_PROCESSING_ADAPTER: gcs-event
           HELP_REVIEW_SCORING_ADAPTER: vertex
-          HELP_REVIEW_IDENTITY_ADAPTER: sandbox
+          HELP_REVIEW_IDENTITY_ADAPTER: identity-platform
+          HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID: help-review-ci
+          HELP_REVIEW_IDENTITY_PLATFORM_API_KEY: restricted-ci-browser-key
+          HELP_REVIEW_HELP_CATALOG_PATH: content/help-catalog.sanitized.json
+          HELP_REVIEW_HELP_CATALOG_VERSION: help-2-provisional-2026-07
+          HELP_REVIEW_HELP_CATALOG_SHA256: 7d604579d6c8f8fdf5ac0f3d0ef0643a1d4479806d6d6be38cb1bc2f92c451d2
+          NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL: ci-support@help-review.dev
           GCS_VIDEO_BUCKET: ci-private-video-bucket
           GOOGLE_CLOUD_PROJECT: help-review-ci
           VERTEX_AI_LOCATION: us-central1

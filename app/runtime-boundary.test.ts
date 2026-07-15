@@ -17,7 +17,17 @@ const removedRuntimeFiles = [
   "app/api/reliability/route.ts",
   "app/api/review-overrides/route.ts",
   "app/api/rubric/route.ts",
-  "app/api/videos/route.ts"
+  "app/api/videos/route.ts",
+  "app/parents/page.tsx",
+  "app/analytics/page.tsx",
+  "app/reports/page.tsx",
+  "app/catalog/page.tsx",
+  "app/integrations/help-connect/page.tsx",
+  "app/api/parents/route.ts",
+  "app/api/analytics/route.ts",
+  "app/api/reports/route.ts",
+  "app/api/catalog/route.ts",
+  "app/api/integrations/help-connect/route.ts"
 ];
 
 describe("pilot runtime boundary", () => {

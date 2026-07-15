@@ -23,7 +23,7 @@ export default defineConfig({
     screenshot: "only-on-failure"
   },
   webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
-    command: "NEXT_DIST_DIR=.next-e2e HELP_REVIEW_STATE_ADAPTER=local HELP_REVIEW_VIDEO_ADAPTER=local pnpm dev --hostname 127.0.0.1 --port 3100",
+    command: "NEXT_DIST_DIR=.next-e2e HELP_REVIEW_STATE_ADAPTER=local HELP_REVIEW_VIDEO_ADAPTER=local NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL=pilot-support@help-review.dev pnpm dev --hostname 127.0.0.1 --port 3100",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000

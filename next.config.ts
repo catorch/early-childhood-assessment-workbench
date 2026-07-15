@@ -10,7 +10,7 @@ const contentSecurityPolicy = [
   "media-src 'self' blob: https://storage.googleapis.com",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self' https://vercel.com https://*.blob.vercel-storage.com https://storage.googleapis.com",
+  "connect-src 'self' https://vercel.com https://*.blob.vercel-storage.com https://storage.googleapis.com https://identitytoolkit.googleapis.com",
   "font-src 'self'"
 ].join("; ");
 

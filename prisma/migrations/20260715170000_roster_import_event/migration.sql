@@ -1,0 +1,1 @@
+ALTER TYPE "SupportEventType" ADD VALUE 'ROSTER_IMPORTED';

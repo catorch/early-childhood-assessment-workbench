@@ -200,12 +200,91 @@ describe("scoring contract v0", () => {
     expect(submitted.contents).toEqual(expect.arrayContaining([
       expect.objectContaining({
         parts: expect.arrayContaining([
-          { fileData: { fileUri: "gs://private-bucket/videos/source.mp4", mimeType: "video/mp4" } }
+          expect.objectContaining({
+            fileData: { fileUri: "gs://private-bucket/videos/source.mp4", mimeType: "video/mp4" },
+            videoMetadata: { fps: 2 }
+          })
         ])
       })
     ]));
     expect((submitted.config?.responseJsonSchema as { properties: { suggestions: object } })
       .properties.suggestions).not.toHaveProperty("maxItems");
+  });
+
+  it("runs separate grounded observation and catalogue-classification stages on Vertex", async () => {
+    const generateContent = vi.fn()
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          targetChildTrackable: true,
+          limitations: [],
+          events: [{
+            eventId: "event-1",
+            startSecond: 8,
+            endSecond: 10,
+            actor: "TARGET_CHILD",
+            modality: "VISUAL",
+            eventKind: "BEHAVIOR",
+            supportLevel: "NONE_OBSERVED",
+            behavior: "The child places one cube on another and releases it.",
+            context: null
+          }]
+        })
+      })
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          evaluations: [{
+            sourceSkillId: "help-4.68",
+            draftCredit: "PRESENT",
+            confidence: 0.92,
+            uncertaintyReason: null,
+            evidenceEventIds: ["event-1"]
+          }]
+        })
+      });
+    const gateway = new VertexScoringGateway({
+      project: "test-project",
+      location: "us-central1",
+      model: "gemini-fallback",
+      observerModel: "gemini-observer",
+      adjudicatorModel: "gemini-adjudicator",
+      pipeline: "evidence-first-v1",
+      videoFps: 3,
+      client: { models: { generateContent } }
+    });
+
+    const result = await gateway.score(request(), {
+      kind: "gcs",
+      uri: "gs://private-bucket/videos/source.mp4",
+      contentType: "video/mp4"
+    });
+
+    expect(result.suggestions[0]).toMatchObject({
+      sourceSkillId: "help-4.68",
+      draftCredit: "PRESENT",
+      evidence: [{ timestampSeconds: 8, endTimestampSeconds: 10 }]
+    });
+    expect(result.scoringConfigurationReference).toContain(
+      "gemini-observer+gemini-adjudicator:help-reference-evidence-v1"
+    );
+    expect(generateContent).toHaveBeenCalledTimes(2);
+    expect(generateContent.mock.calls[0]![0]).toMatchObject({
+      model: "gemini-observer",
+      contents: [{
+        parts: [
+          expect.objectContaining({
+            fileData: { fileUri: "gs://private-bucket/videos/source.mp4", mimeType: "video/mp4" },
+            videoMetadata: { fps: 3 }
+          }),
+          expect.objectContaining({ text: expect.stringContaining("direct-observation ledger") })
+        ]
+      }],
+      config: { systemInstruction: expect.stringContaining("evidence-observation stage") }
+    });
+    expect(generateContent.mock.calls[1]![0]).toMatchObject({
+      model: "gemini-adjudicator",
+      contents: [{ parts: [{ text: expect.stringContaining("<OBSERVATION_LEDGER>") }] }],
+      config: { systemInstruction: expect.stringContaining("rubric-mapping stage") }
+    });
   });
 
   it("rejects a non-GCS media source before calling Vertex", async () => {

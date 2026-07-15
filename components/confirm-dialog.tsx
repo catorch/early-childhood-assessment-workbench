@@ -21,6 +21,7 @@ export function ConfirmDialog({
   title,
   description,
   details,
+  error,
   confirmLabel,
   pending = false,
   tone = "danger",
@@ -32,12 +33,13 @@ export function ConfirmDialog({
   readonly title: string;
   readonly description: string;
   readonly details?: readonly string[];
+  readonly error?: string | null;
   readonly confirmLabel: string;
   readonly pending?: boolean;
   readonly tone?: "danger" | "primary";
   readonly returnFocusRef?: RefObject<HTMLElement | null>;
   readonly onCancel: () => void;
-  readonly onConfirm: () => void;
+  readonly onConfirm: () => void | Promise<void>;
 }) {
   const returnFocusRefInternal = useRef<HTMLElement | null>(null);
   return (
@@ -77,6 +79,7 @@ export function ConfirmDialog({
             {details.map((detail) => <li key={detail}>{detail}</li>)}
           </ul>
         ) : null}
+        {error ? <p className="mx-[22px] mt-4 rounded-md border border-destructive-border bg-destructive-soft px-3 py-2 text-[13px] font-bold text-destructive max-sm:mx-[15px]" role="alert">{error}</p> : null}
         <AlertDialogFooter className="m-0 flex-row justify-end gap-2 rounded-none border-0 bg-transparent p-[18px_22px] max-sm:flex-col-reverse max-sm:p-[15px]">
           <AlertDialogCancel autoFocus disabled={pending} size="default" variant="secondary" className="max-sm:w-full">Cancel</AlertDialogCancel>
           <AlertDialogAction
@@ -84,7 +87,7 @@ export function ConfirmDialog({
             disabled={pending}
             onClick={(event) => {
               event.preventDefault();
-              onConfirm();
+              void onConfirm();
             }}
             variant={tone === "danger" ? "destructive" : "default"}
           >

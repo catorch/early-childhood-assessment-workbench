@@ -1,46 +1,188 @@
-import type { ScoringCandidate, SupportContext } from "./scoring-contract";
+import { createHash } from "node:crypto";
+import { readFileSync, statSync } from "node:fs";
+import path from "node:path";
 
-/**
- * Sanitized HELP 2 working catalogue. It is deliberately limited to the pilot
- * fixtures until the content owner supplies and approves the canonical source.
- */
-export const SANITIZED_HELP_CANDIDATES: readonly ScoringCandidate[] = [
-  { sourceSkillId: "help-1.52", skillCode: "1.52", skillName: "Looks for object that has fallen out of sight", domain: "Cognitive", strand: "Object permanence", minimumAgeMonths: 6, maximumAgeMonths: 18, sourceOrder: 0 },
-  { sourceSkillId: "help-1.58", skillCode: "1.58", skillName: "Stacks rings on post in any order", domain: "Cognitive", strand: "Means-end", minimumAgeMonths: 9, maximumAgeMonths: 24, sourceOrder: 1 },
-  { sourceSkillId: "help-2.18", skillCode: "2.18", skillName: "Responds to own name", domain: "Language Receptive", strand: "Auditory attention", minimumAgeMonths: 4, maximumAgeMonths: 15, sourceOrder: 2 },
-  { sourceSkillId: "help-2.41", skillCode: "2.41", skillName: "Follows simple one-step directions", domain: "Language Receptive", strand: "Comprehension", minimumAgeMonths: 12, maximumAgeMonths: 30, sourceOrder: 3 },
-  { sourceSkillId: "help-3.62", skillCode: "3.62", skillName: "Walks independently across room", domain: "Gross Motor", strand: "Locomotion", minimumAgeMonths: 9, maximumAgeMonths: 24, sourceOrder: 4 },
-  { sourceSkillId: "help-4.68", skillCode: "4.68", skillName: "Builds tower using two cubes", domain: "Fine Motor", strand: "Block construction", minimumAgeMonths: 12, maximumAgeMonths: 30, sourceOrder: 5 },
-  { sourceSkillId: "help-5.41", skillCode: "5.41", skillName: "Shares object spontaneously", domain: "Social-Emotional", strand: "Social interactions", minimumAgeMonths: 12, maximumAgeMonths: 36, sourceOrder: 6 },
-  { sourceSkillId: "help-6.22", skillCode: "6.22", skillName: "Drinks from open cup with assistance", domain: "Self-Help", strand: "Feeding", minimumAgeMonths: 9, maximumAgeMonths: 30, sourceOrder: 7 }
-];
+import { z } from "zod";
 
-/** Age-first selection with bounded downward expansion in the same ordered catalogue. */
+import { PrimaryCreditSchema } from "./domain";
+import {
+  HELP_CATALOG_VERSION,
+  ScoringCandidateSchema,
+  type ScoringCandidate,
+  type SupportContext
+} from "./scoring-contract";
+
+export const HELP_CATALOG_SCHEMA_VERSION = "help-catalog-v1" as const;
+export const DEFAULT_HELP_CATALOG_PATH = "content/help-catalog.sanitized.json";
+const MAX_CATALOG_BYTES = 10 * 1024 * 1024;
+
+const CreditDefinitionSchema = z.object({
+  value: PrimaryCreditSchema,
+  symbol: z.string().trim().min(1).max(8),
+  label: z.string().trim().min(1).max(120),
+  description: z.string().trim().min(1).max(2_000)
+}).strict();
+
+export const HelpCatalogSchema = z.object({
+  schemaVersion: z.literal(HELP_CATALOG_SCHEMA_VERSION),
+  catalogVersion: z.string().trim().min(1).max(160),
+  status: z.enum(["SANITIZED_FIXTURE", "AUTHORITATIVE"]),
+  sourceReference: z.string().trim().min(1).max(500),
+  creditDefinitions: z.array(CreditDefinitionSchema).length(4),
+  selectionPolicy: z.object({
+    ageRangeInclusive: z.literal(true),
+    standardDownwardWindowMonths: z.number().int().min(0).max(36),
+    supportedDownwardWindowMonths: z.number().int().min(0).max(36),
+    fallbackCandidateCount: z.number().int().min(1).max(500),
+    maximumCandidateCount: z.number().int().min(1).max(500),
+    twoMinusRule: z.object({
+      enabled: z.boolean(),
+      consecutiveNotObserved: z.number().int().min(1).max(10),
+      decisionReference: z.string().trim().min(1).max(500)
+    }).strict()
+  }).strict(),
+  skills: z.array(ScoringCandidateSchema).min(1).max(25_000)
+}).strict().superRefine((catalog, context) => {
+  const requiredCredits = new Set(["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"]);
+  const credits = new Set(catalog.creditDefinitions.map((definition) => definition.value));
+  if (credits.size !== requiredCredits.size || [...requiredCredits].some((credit) => !credits.has(credit as never))) {
+    context.addIssue({
+      code: "custom",
+      path: ["creditDefinitions"],
+      message: "The catalogue must define each supported credit exactly once."
+    });
+  }
+
+  const ids = new Set<string>();
+  const codes = new Set<string>();
+  const orders = new Set<number>();
+  for (const skill of catalog.skills) {
+    if (ids.has(skill.sourceSkillId) || codes.has(skill.skillCode) || orders.has(skill.sourceOrder)) {
+      context.addIssue({
+        code: "custom",
+        path: ["skills"],
+        message: "Skill identifiers, codes, and source order values must be unique."
+      });
+      return;
+    }
+    ids.add(skill.sourceSkillId);
+    codes.add(skill.skillCode);
+    orders.add(skill.sourceOrder);
+  }
+});
+
+export type HelpCatalog = z.infer<typeof HelpCatalogSchema>;
+
+export interface LoadedHelpCatalog {
+  readonly catalog: HelpCatalog;
+  readonly sha256: string;
+  readonly byteSize: number;
+  readonly absolutePath: string;
+}
+
+function absoluteCatalogPath(filePath: string): string {
+  return path.isAbsolute(filePath)
+    ? filePath
+    : path.resolve(/* turbopackIgnore: true */ process.cwd(), filePath);
+}
+
+export function loadHelpCatalogFile(
+  filePath: string,
+  expectedVersion?: string,
+  expectedSha256?: string
+): LoadedHelpCatalog {
+  const absolutePath = absoluteCatalogPath(filePath);
+  const metadata = statSync(absolutePath);
+  if (!metadata.isFile() || metadata.size <= 0 || metadata.size > MAX_CATALOG_BYTES) {
+    throw new Error("The HELP catalogue file is empty, unavailable, or exceeds the 10 MB limit.");
+  }
+  const bytes = readFileSync(absolutePath);
+  let unparsed: unknown;
+  try {
+    unparsed = JSON.parse(bytes.toString("utf8"));
+  } catch {
+    throw new Error("The HELP catalogue is not valid UTF-8 JSON.");
+  }
+  const catalog = HelpCatalogSchema.parse(unparsed);
+  if (expectedVersion && catalog.catalogVersion !== expectedVersion) {
+    throw new Error("The HELP catalogue version does not match the configured immutable version.");
+  }
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  if (expectedSha256 && sha256 !== expectedSha256.toLowerCase()) {
+    throw new Error("The HELP catalogue digest does not match the accepted immutable artifact.");
+  }
+  return {
+    catalog,
+    sha256,
+    byteSize: bytes.byteLength,
+    absolutePath
+  };
+}
+
+let configuredCache: { key: string; loaded: LoadedHelpCatalog } | null = null;
+
+/** Loads the single immutable catalogue selected for this application image. */
+export function configuredHelpCatalog(environment: NodeJS.ProcessEnv = process.env): HelpCatalog {
+  const filePath = environment.HELP_REVIEW_HELP_CATALOG_PATH ?? DEFAULT_HELP_CATALOG_PATH;
+  const expectedVersion = environment.HELP_REVIEW_HELP_CATALOG_VERSION ?? HELP_CATALOG_VERSION;
+  const expectedSha256 = environment.HELP_REVIEW_HELP_CATALOG_SHA256;
+  const key = `${absoluteCatalogPath(filePath)}\u0000${expectedVersion}\u0000${expectedSha256 ?? ""}`;
+  if (!configuredCache || configuredCache.key !== key) {
+    configuredCache = { key, loaded: loadHelpCatalogFile(filePath, expectedVersion, expectedSha256) };
+  }
+  return configuredCache.loaded.catalog;
+}
+
+export function assertConfiguredHelpCatalog(environment: NodeJS.ProcessEnv = process.env): void {
+  const catalog = configuredHelpCatalog(environment);
+  if (environment.HELP_REVIEW_REAL_DATA_ENABLED === "true" && catalog.status !== "AUTHORITATIVE") {
+    throw new Error("Real-data mode requires an authoritative HELP catalogue artifact.");
+  }
+}
+
+function selectionPolicyFor(
+  supportContext: SupportContext,
+  catalog: HelpCatalog
+): { downwardWindow: number; fallbackCount: number; maximumCount: number } {
+  return {
+    downwardWindow: supportContext === "NONE_REPORTED"
+      ? catalog.selectionPolicy.standardDownwardWindowMonths
+      : catalog.selectionPolicy.supportedDownwardWindowMonths,
+    fallbackCount: catalog.selectionPolicy.fallbackCandidateCount,
+    maximumCount: catalog.selectionPolicy.maximumCandidateCount
+  };
+}
+
+/** Age-first selection with bounded downward expansion in the immutable catalogue order. */
 export function selectScoringCandidates(
   ageMonths: number,
   supportContext: SupportContext,
-  candidates: readonly ScoringCandidate[] = SANITIZED_HELP_CANDIDATES
+  candidates?: readonly ScoringCandidate[],
+  policyCatalog?: HelpCatalog
 ): readonly ScoringCandidate[] {
-  const ageAppropriate = candidates.filter(
+  const catalog = policyCatalog ?? configuredHelpCatalog();
+  const source = candidates ?? catalog.skills;
+  const policy = selectionPolicyFor(supportContext, catalog);
+  const ageAppropriate = source.filter(
     (candidate) => ageMonths >= candidate.minimumAgeMonths && ageMonths <= candidate.maximumAgeMonths
   );
-  const downwardWindow = supportContext === "NONE_REPORTED" ? 6 : 12;
-  const downward = candidates.filter(
+  const downward = source.filter(
     (candidate) =>
       candidate.maximumAgeMonths < ageMonths &&
-      candidate.maximumAgeMonths >= Math.max(0, ageMonths - downwardWindow)
+      candidate.maximumAgeMonths >= Math.max(0, ageMonths - policy.downwardWindow)
   );
-  const closestLower = candidates
+  const closestLower = source
     .filter((candidate) => candidate.maximumAgeMonths < ageMonths)
     .sort((left, right) => right.maximumAgeMonths - left.maximumAgeMonths)
-    .slice(0, 8);
+    .slice(0, policy.fallbackCount);
   const selected = ageAppropriate.length > 0
     ? [...ageAppropriate, ...downward]
     : downward.length > 0
       ? downward
       : closestLower.length > 0
         ? closestLower
-        : candidates;
+        : source;
   return [...new Map(selected.map((candidate) => [candidate.sourceSkillId, candidate])).values()]
-    .sort((left, right) => left.sourceOrder - right.sourceOrder);
+    .sort((left, right) => left.sourceOrder - right.sourceOrder)
+    .slice(0, policy.maximumCount);
 }

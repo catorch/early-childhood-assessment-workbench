@@ -55,6 +55,7 @@ enum SupportEventType {
   PROCESSING_RETRIED
   ACCESS_CHANGED
   ASSIGNMENT_CHANGED
+  ROSTER_IMPORTED
   ASSESSMENT_FINALIZED
 }
 
@@ -109,6 +110,17 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
+}
+
+model RateLimitBucket {
+  scope        String   @db.VarChar(100)
+  identityHash String   @db.VarChar(64)
+  count        Int
+  resetAt      DateTime
+  updatedAt    DateTime @updatedAt
+
+  @@id([scope, identityHash])
+  @@index([resetAt])
 }
 
 model Child {

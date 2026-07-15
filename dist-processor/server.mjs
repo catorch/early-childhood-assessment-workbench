@@ -288,7 +288,7 @@ function createDatabaseClient() {
     throw new Error("DATABASE_URL is required when a PostgreSQL state adapter is selected.");
   }
   const databaseAdapter = process.env.HELP_REVIEW_DATABASE_ADAPTER ?? (process.env.HELP_REVIEW_STATE_ADAPTER === "pg" ? "pg" : "neon");
-  const adapter = databaseAdapter === "pg" ? new PrismaPg({ connectionString }) : new PrismaNeon({ connectionString });
+  const adapter = databaseAdapter === "pg" ? new PrismaPg({ connectionString, connectionTimeoutMillis: 15e3 }) : new PrismaNeon({ connectionString });
   return new PrismaClient({ adapter });
 }
 function databaseClient() {
@@ -325,19 +325,29 @@ function contextLabel(value) {
   const label = value["label"];
   return typeof label === "string" ? label : null;
 }
+function supportContext(value) {
+  if (!value || Array.isArray(value) || typeof value !== "object") return void 0;
+  const context = value["supportContext"];
+  return ["NONE_REPORTED", "IFSP", "DISABILITY", "IFSP_AND_DISABILITY", "UNKNOWN"].includes(String(context)) ? context : void 0;
+}
+function contextSource(value) {
+  if (!value || Array.isArray(value) || typeof value !== "object") return void 0;
+  const source = value["source"];
+  return ["SANITIZED_ADMIN", "ROSTER_ADAPTER"].includes(String(source)) ? source : void 0;
+}
 function assessmentContextSnapshot(value) {
   if (!value || Array.isArray(value) || typeof value !== "object") return void 0;
   const snapshot = value;
   const ageMonthsAtObservation = snapshot.ageMonthsAtObservation;
-  const supportContext = snapshot.supportContext;
+  const supportContext2 = snapshot.supportContext;
   const context = snapshot.contextLabel;
   const processingAllowedAtCreation = snapshot.processingAllowedAtCreation;
   const capturedAt = snapshot.capturedAt;
   const source = snapshot.source;
-  if (typeof ageMonthsAtObservation !== "number" || !["NONE_REPORTED", "IFSP", "DISABILITY", "IFSP_AND_DISABILITY", "UNKNOWN"].includes(String(supportContext)) || !(typeof context === "string" || context === null) || typeof processingAllowedAtCreation !== "boolean" || typeof capturedAt !== "string" || !["SANITIZED_ADMIN", "ROSTER_ADAPTER"].includes(String(source))) return void 0;
+  if (typeof ageMonthsAtObservation !== "number" || !["NONE_REPORTED", "IFSP", "DISABILITY", "IFSP_AND_DISABILITY", "UNKNOWN"].includes(String(supportContext2)) || !(typeof context === "string" || context === null) || typeof processingAllowedAtCreation !== "boolean" || typeof capturedAt !== "string" || !["SANITIZED_ADMIN", "ROSTER_ADAPTER"].includes(String(source))) return void 0;
   return {
     ageMonthsAtObservation,
-    supportContext,
+    supportContext: supportContext2,
     contextLabel: context,
     processingAllowedAtCreation,
     capturedAt,
@@ -388,6 +398,8 @@ async function loadState(database) {
       externalChildId: child.externalChildId,
       ageMonths: child.ageMonths,
       contextLabel: contextLabel(child.approvedContext),
+      supportContext: supportContext(child.approvedContext),
+      contextSource: contextSource(child.approvedContext),
       processingAllowed: child.processingAllowed === true,
       isActive: child.isActive
     })),
@@ -543,7 +555,11 @@ async function persistState(database, state) {
     });
   }
   for (const child of state.children) {
-    const approvedContext = child.contextLabel ? { label: child.contextLabel } : Prisma.JsonNull;
+    const approvedContext = child.contextLabel || child.supportContext || child.contextSource ? {
+      label: child.contextLabel,
+      supportContext: child.supportContext ?? "UNKNOWN",
+      source: child.contextSource ?? "SANITIZED_ADMIN"
+    } : Prisma.JsonNull;
     await database.child.upsert({
       where: { id: child.id },
       create: {
@@ -926,14 +942,18 @@ import "dotenv/config";
 import { createServer } from "node:http";
 import { timingSafeEqual } from "node:crypto";
 
-// lib/help-review/processing-coordinator.ts
-import { createHash as createHash3 } from "node:crypto";
+// lib/help-review/help-catalog.ts
+init_domain();
+import { createHash as createHash2 } from "node:crypto";
+import { readFileSync, statSync } from "node:fs";
+import path from "node:path";
+import { z as z3 } from "zod";
 
 // lib/help-review/scoring-contract.ts
 init_domain();
 import { z as z2 } from "zod";
 var SCORING_CONTRACT_VERSION = "help-scoring-v0";
-var HELP_CATALOG_VERSION = "help-2-provisional-2026-07";
+var HELP_CATALOG_VERSION = process.env.HELP_REVIEW_HELP_CATALOG_VERSION ?? "help-2-provisional-2026-07";
 var SupportContextSchema = z2.enum([
   "NONE_REPORTED",
   "IFSP",
@@ -1067,39 +1087,148 @@ var ScoringGatewayError = class extends Error {
 };
 
 // lib/help-review/help-catalog.ts
-var SANITIZED_HELP_CANDIDATES = [
-  { sourceSkillId: "help-1.52", skillCode: "1.52", skillName: "Looks for object that has fallen out of sight", domain: "Cognitive", strand: "Object permanence", minimumAgeMonths: 6, maximumAgeMonths: 18, sourceOrder: 0 },
-  { sourceSkillId: "help-1.58", skillCode: "1.58", skillName: "Stacks rings on post in any order", domain: "Cognitive", strand: "Means-end", minimumAgeMonths: 9, maximumAgeMonths: 24, sourceOrder: 1 },
-  { sourceSkillId: "help-2.18", skillCode: "2.18", skillName: "Responds to own name", domain: "Language Receptive", strand: "Auditory attention", minimumAgeMonths: 4, maximumAgeMonths: 15, sourceOrder: 2 },
-  { sourceSkillId: "help-2.41", skillCode: "2.41", skillName: "Follows simple one-step directions", domain: "Language Receptive", strand: "Comprehension", minimumAgeMonths: 12, maximumAgeMonths: 30, sourceOrder: 3 },
-  { sourceSkillId: "help-3.62", skillCode: "3.62", skillName: "Walks independently across room", domain: "Gross Motor", strand: "Locomotion", minimumAgeMonths: 9, maximumAgeMonths: 24, sourceOrder: 4 },
-  { sourceSkillId: "help-4.68", skillCode: "4.68", skillName: "Builds tower using two cubes", domain: "Fine Motor", strand: "Block construction", minimumAgeMonths: 12, maximumAgeMonths: 30, sourceOrder: 5 },
-  { sourceSkillId: "help-5.41", skillCode: "5.41", skillName: "Shares object spontaneously", domain: "Social-Emotional", strand: "Social interactions", minimumAgeMonths: 12, maximumAgeMonths: 36, sourceOrder: 6 },
-  { sourceSkillId: "help-6.22", skillCode: "6.22", skillName: "Drinks from open cup with assistance", domain: "Self-Help", strand: "Feeding", minimumAgeMonths: 9, maximumAgeMonths: 30, sourceOrder: 7 }
-];
-function selectScoringCandidates(ageMonths, supportContext, candidates = SANITIZED_HELP_CANDIDATES) {
-  const ageAppropriate = candidates.filter(
+var HELP_CATALOG_SCHEMA_VERSION = "help-catalog-v1";
+var DEFAULT_HELP_CATALOG_PATH = "content/help-catalog.sanitized.json";
+var MAX_CATALOG_BYTES = 10 * 1024 * 1024;
+var CreditDefinitionSchema = z3.object({
+  value: PrimaryCreditSchema,
+  symbol: z3.string().trim().min(1).max(8),
+  label: z3.string().trim().min(1).max(120),
+  description: z3.string().trim().min(1).max(2e3)
+}).strict();
+var HelpCatalogSchema = z3.object({
+  schemaVersion: z3.literal(HELP_CATALOG_SCHEMA_VERSION),
+  catalogVersion: z3.string().trim().min(1).max(160),
+  status: z3.enum(["SANITIZED_FIXTURE", "AUTHORITATIVE"]),
+  sourceReference: z3.string().trim().min(1).max(500),
+  creditDefinitions: z3.array(CreditDefinitionSchema).length(4),
+  selectionPolicy: z3.object({
+    ageRangeInclusive: z3.literal(true),
+    standardDownwardWindowMonths: z3.number().int().min(0).max(36),
+    supportedDownwardWindowMonths: z3.number().int().min(0).max(36),
+    fallbackCandidateCount: z3.number().int().min(1).max(500),
+    maximumCandidateCount: z3.number().int().min(1).max(500),
+    twoMinusRule: z3.object({
+      enabled: z3.boolean(),
+      consecutiveNotObserved: z3.number().int().min(1).max(10),
+      decisionReference: z3.string().trim().min(1).max(500)
+    }).strict()
+  }).strict(),
+  skills: z3.array(ScoringCandidateSchema).min(1).max(25e3)
+}).strict().superRefine((catalog, context) => {
+  const requiredCredits = /* @__PURE__ */ new Set(["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"]);
+  const credits = new Set(catalog.creditDefinitions.map((definition) => definition.value));
+  if (credits.size !== requiredCredits.size || [...requiredCredits].some((credit) => !credits.has(credit))) {
+    context.addIssue({
+      code: "custom",
+      path: ["creditDefinitions"],
+      message: "The catalogue must define each supported credit exactly once."
+    });
+  }
+  const ids = /* @__PURE__ */ new Set();
+  const codes = /* @__PURE__ */ new Set();
+  const orders = /* @__PURE__ */ new Set();
+  for (const skill of catalog.skills) {
+    if (ids.has(skill.sourceSkillId) || codes.has(skill.skillCode) || orders.has(skill.sourceOrder)) {
+      context.addIssue({
+        code: "custom",
+        path: ["skills"],
+        message: "Skill identifiers, codes, and source order values must be unique."
+      });
+      return;
+    }
+    ids.add(skill.sourceSkillId);
+    codes.add(skill.skillCode);
+    orders.add(skill.sourceOrder);
+  }
+});
+function absoluteCatalogPath(filePath) {
+  return path.isAbsolute(filePath) ? filePath : path.resolve(
+    /* turbopackIgnore: true */
+    process.cwd(),
+    filePath
+  );
+}
+function loadHelpCatalogFile(filePath, expectedVersion, expectedSha256) {
+  const absolutePath = absoluteCatalogPath(filePath);
+  const metadata = statSync(absolutePath);
+  if (!metadata.isFile() || metadata.size <= 0 || metadata.size > MAX_CATALOG_BYTES) {
+    throw new Error("The HELP catalogue file is empty, unavailable, or exceeds the 10 MB limit.");
+  }
+  const bytes = readFileSync(absolutePath);
+  let unparsed;
+  try {
+    unparsed = JSON.parse(bytes.toString("utf8"));
+  } catch {
+    throw new Error("The HELP catalogue is not valid UTF-8 JSON.");
+  }
+  const catalog = HelpCatalogSchema.parse(unparsed);
+  if (expectedVersion && catalog.catalogVersion !== expectedVersion) {
+    throw new Error("The HELP catalogue version does not match the configured immutable version.");
+  }
+  const sha2562 = createHash2("sha256").update(bytes).digest("hex");
+  if (expectedSha256 && sha2562 !== expectedSha256.toLowerCase()) {
+    throw new Error("The HELP catalogue digest does not match the accepted immutable artifact.");
+  }
+  return {
+    catalog,
+    sha256: sha2562,
+    byteSize: bytes.byteLength,
+    absolutePath
+  };
+}
+var configuredCache = null;
+function configuredHelpCatalog(environment = process.env) {
+  const filePath = environment.HELP_REVIEW_HELP_CATALOG_PATH ?? DEFAULT_HELP_CATALOG_PATH;
+  const expectedVersion = environment.HELP_REVIEW_HELP_CATALOG_VERSION ?? HELP_CATALOG_VERSION;
+  const expectedSha256 = environment.HELP_REVIEW_HELP_CATALOG_SHA256;
+  const key = `${absoluteCatalogPath(filePath)}\0${expectedVersion}\0${expectedSha256 ?? ""}`;
+  if (!configuredCache || configuredCache.key !== key) {
+    configuredCache = { key, loaded: loadHelpCatalogFile(filePath, expectedVersion, expectedSha256) };
+  }
+  return configuredCache.loaded.catalog;
+}
+function assertConfiguredHelpCatalog(environment = process.env) {
+  const catalog = configuredHelpCatalog(environment);
+  if (environment.HELP_REVIEW_REAL_DATA_ENABLED === "true" && catalog.status !== "AUTHORITATIVE") {
+    throw new Error("Real-data mode requires an authoritative HELP catalogue artifact.");
+  }
+}
+function selectionPolicyFor(supportContext2, catalog) {
+  return {
+    downwardWindow: supportContext2 === "NONE_REPORTED" ? catalog.selectionPolicy.standardDownwardWindowMonths : catalog.selectionPolicy.supportedDownwardWindowMonths,
+    fallbackCount: catalog.selectionPolicy.fallbackCandidateCount,
+    maximumCount: catalog.selectionPolicy.maximumCandidateCount
+  };
+}
+function selectScoringCandidates(ageMonths, supportContext2, candidates, policyCatalog) {
+  const catalog = policyCatalog ?? configuredHelpCatalog();
+  const source = candidates ?? catalog.skills;
+  const policy = selectionPolicyFor(supportContext2, catalog);
+  const ageAppropriate = source.filter(
     (candidate) => ageMonths >= candidate.minimumAgeMonths && ageMonths <= candidate.maximumAgeMonths
   );
-  const downwardWindow = supportContext === "NONE_REPORTED" ? 6 : 12;
-  const downward = candidates.filter(
-    (candidate) => candidate.maximumAgeMonths < ageMonths && candidate.maximumAgeMonths >= Math.max(0, ageMonths - downwardWindow)
+  const downward = source.filter(
+    (candidate) => candidate.maximumAgeMonths < ageMonths && candidate.maximumAgeMonths >= Math.max(0, ageMonths - policy.downwardWindow)
   );
-  const closestLower = candidates.filter((candidate) => candidate.maximumAgeMonths < ageMonths).sort((left, right) => right.maximumAgeMonths - left.maximumAgeMonths).slice(0, 8);
-  const selected = ageAppropriate.length > 0 ? [...ageAppropriate, ...downward] : downward.length > 0 ? downward : closestLower.length > 0 ? closestLower : candidates;
-  return [...new Map(selected.map((candidate) => [candidate.sourceSkillId, candidate])).values()].sort((left, right) => left.sourceOrder - right.sourceOrder);
+  const closestLower = source.filter((candidate) => candidate.maximumAgeMonths < ageMonths).sort((left, right) => right.maximumAgeMonths - left.maximumAgeMonths).slice(0, policy.fallbackCount);
+  const selected = ageAppropriate.length > 0 ? [...ageAppropriate, ...downward] : downward.length > 0 ? downward : closestLower.length > 0 ? closestLower : source;
+  return [...new Map(selected.map((candidate) => [candidate.sourceSkillId, candidate])).values()].sort((left, right) => left.sourceOrder - right.sourceOrder).slice(0, policy.maximumCount);
 }
+
+// lib/help-review/processing-coordinator.ts
+import { createHash as createHash4 } from "node:crypto";
 
 // lib/help-review/scoring-gateway.ts
 import { GoogleGenAI } from "@google/genai";
 
 // lib/help-review/fake-scoring.ts
 init_domain();
-import { z as z3 } from "zod";
-var SanitizedScoringResultSchema = z3.object({
-  contractVersion: z3.literal("sandbox-v1"),
-  runId: z3.string().min(1),
-  suggestions: z3.array(SkillSuggestionSchema).min(1).max(500)
+import { z as z4 } from "zod";
+var SanitizedScoringResultSchema = z4.object({
+  contractVersion: z4.literal("sandbox-v1"),
+  runId: z4.string().min(1),
+  suggestions: z4.array(SkillSuggestionSchema).min(1).max(500)
 }).strict().superRefine((value, context) => {
   const ids = /* @__PURE__ */ new Set();
   const sourceSkillIds = /* @__PURE__ */ new Set();
@@ -1269,7 +1398,7 @@ var FakeScoringGateway = class {
       contractVersion: validated.contractVersion,
       runId: validated.runId,
       outcome: selected.length > 0 ? "VALID" : "NO_VALID_RESULTS",
-      scoringConfigurationReference: "fake:sandbox-v1:help-2-provisional-2026-07",
+      scoringConfigurationReference: `fake:sandbox-v1:${validated.catalogVersion}`,
       suggestions: selected.map((suggestion) => {
         const maximumSecond = validated.video.durationSeconds ?? 5 * 60;
         return {
@@ -1652,7 +1781,28 @@ function selectedScoringGateway(environment = process.env) {
 // lib/help-review/server-store.ts
 init_fixtures();
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
-import path from "node:path";
+import path2 from "node:path";
+
+// lib/help-review/support-contact.ts
+var supportSubject = "HELP Review pilot support";
+var reservedDomains = /* @__PURE__ */ new Set([
+  "example.com",
+  "example.net",
+  "example.org"
+]);
+function isDeliverableSupportEmail(value) {
+  if (!value) return false;
+  const email = value.trim().toLowerCase();
+  const match = /^[^\s@]+@([^\s@]+)$/.exec(email);
+  if (!match) return false;
+  const domain = match[1];
+  return !reservedDomains.has(domain) && !domain.endsWith(".example") && !domain.endsWith(".invalid") && !domain.endsWith(".localhost") && !domain.endsWith(".test");
+}
+function supportContactHref(value = process.env.NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL) {
+  if (!isDeliverableSupportEmail(value)) return null;
+  return `mailto:${value.trim()}?subject=${encodeURIComponent(supportSubject)}`;
+}
+var SUPPORT_CONTACT_HREF = supportContactHref();
 
 // lib/help-review/runtime-config.ts
 function assertRuntimeConfiguration(environment = process.env) {
@@ -1666,7 +1816,10 @@ function assertRuntimeConfiguration(environment = process.env) {
     const missing = [
       "HELP_REVIEW_REAL_DATA_APPROVAL_ID",
       "HELP_REVIEW_IDENTITY_ADAPTER",
-      "HELP_REVIEW_SCORING_ADAPTER"
+      "HELP_REVIEW_SCORING_ADAPTER",
+      "HELP_REVIEW_HELP_CATALOG_PATH",
+      "HELP_REVIEW_HELP_CATALOG_VERSION",
+      "HELP_REVIEW_HELP_CATALOG_SHA256"
     ].filter((key) => !environment[key]);
     if (!workerSecret) missing.push("HELP_REVIEW_WORKER_SECRET or CRON_SECRET");
     if (missing.length > 0) {
@@ -1687,6 +1840,9 @@ function assertRuntimeConfiguration(environment = process.env) {
     throw new Error("An acknowledged sanitized deployment must use the Neon state adapter or durable PostgreSQL adapter.");
   }
   if (serviceRole === "web") {
+    if (!isDeliverableSupportEmail(environment.NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL)) {
+      throw new Error("Production requires a deliverable NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL.");
+    }
     if (!environment.HELP_REVIEW_SESSION_SECRET || environment.HELP_REVIEW_SESSION_SECRET.length < 32) {
       throw new Error("Production requires HELP_REVIEW_SESSION_SECRET with at least 32 characters.");
     }
@@ -1712,8 +1868,16 @@ function assertRuntimeConfiguration(environment = process.env) {
   } else {
     throw new Error("An acknowledged sanitized deployment must use an authenticated private Blob store or GCS bucket.");
   }
-  if (identityAdapter !== "sandbox") {
-    throw new Error("The selected live identity adapter is not implemented or approved.");
+  if (!(/* @__PURE__ */ new Set(["sandbox", "identity-platform"])).has(identityAdapter)) {
+    throw new Error("The selected identity adapter is not supported.");
+  }
+  if (identityAdapter === "identity-platform") {
+    if (!(environment.HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID || environment.GOOGLE_CLOUD_PROJECT)) {
+      throw new Error("Identity Platform requires HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID or GOOGLE_CLOUD_PROJECT.");
+    }
+    if (serviceRole === "web" && !environment.HELP_REVIEW_IDENTITY_PLATFORM_API_KEY) {
+      throw new Error("The Identity Platform web service requires HELP_REVIEW_IDENTITY_PLATFORM_API_KEY.");
+    }
   }
   if (!(/* @__PURE__ */ new Set(["fake", "gemini", "vertex"])).has(scoringAdapter)) {
     throw new Error("The selected scoring adapter is not supported.");
@@ -1731,9 +1895,9 @@ function assertRuntimeConfiguration(environment = process.env) {
 }
 
 // lib/help-review/server-store.ts
-var dataDirectory = path.join(process.cwd(), ".data");
-var statePath = path.join(dataDirectory, "pilot-state.json");
-var stateLockPath = path.join(dataDirectory, "pilot-state.lock");
+var dataDirectory = path2.join(process.cwd(), ".data");
+var statePath = path2.join(dataDirectory, "pilot-state.json");
+var stateLockPath = path2.join(dataDirectory, "pilot-state.lock");
 var writeQueue = Promise.resolve();
 async function pause(milliseconds) {
   await new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -1830,14 +1994,14 @@ async function updatePilotState(mutation) {
   return result;
 }
 function uploadDirectory() {
-  return path.join(dataDirectory, "uploads");
+  return path2.join(dataDirectory, "uploads");
 }
 
 // lib/help-review/video-storage.ts
 init_gcs_storage();
-import { createHash as createHash2 } from "node:crypto";
+import { createHash as createHash3 } from "node:crypto";
 import { readFile as readFile2 } from "node:fs/promises";
-import path2 from "node:path";
+import path3 from "node:path";
 function mediaType(video) {
   if (["video/mp4", "video/webm", "video/quicktime"].includes(video.contentType)) {
     return video.contentType;
@@ -1845,12 +2009,12 @@ function mediaType(video) {
   throw new Error("The stored video type is not supported by the scoring contract.");
 }
 function sha256(bytes) {
-  return createHash2("sha256").update(bytes).digest("hex");
+  return createHash3("sha256").update(bytes).digest("hex");
 }
 var LocalVideoStorage = class {
   name = "local";
   async readForScoring(video) {
-    const bytes = await readFile2(path2.join(uploadDirectory(), path2.basename(video.storageKey)));
+    const bytes = await readFile2(path3.join(uploadDirectory(), path3.basename(video.storageKey)));
     if (bytes.byteLength !== video.byteSize) {
       throw new Error("The private video object size does not match its verified metadata.");
     }
@@ -1916,14 +2080,14 @@ function contextSnapshotForChild(child, capturedAt = (/* @__PURE__ */ new Date()
   const label = child.contextLabel?.toLowerCase() ?? "";
   const hasIfsp = /ifsp:\s*yes|\bifsp\b(?!:\s*no)/i.test(label);
   const hasDisability = /disabil/i.test(label);
-  const supportContext = hasIfsp && hasDisability ? "IFSP_AND_DISABILITY" : hasIfsp ? "IFSP" : hasDisability ? "DISABILITY" : child.contextLabel === null || /:\s*no\b/i.test(label) ? "NONE_REPORTED" : "UNKNOWN";
+  const inferredSupportContext = hasIfsp && hasDisability ? "IFSP_AND_DISABILITY" : hasIfsp ? "IFSP" : hasDisability ? "DISABILITY" : child.contextLabel === null || /:\s*no\b/i.test(label) ? "NONE_REPORTED" : "UNKNOWN";
   return {
     ageMonthsAtObservation: child.ageMonths,
-    supportContext,
+    supportContext: child.supportContext ?? inferredSupportContext,
     contextLabel: child.contextLabel,
     processingAllowedAtCreation: child.processingAllowed,
     capturedAt,
-    source: "SANITIZED_ADMIN"
+    source: child.contextSource ?? "SANITIZED_ADMIN"
   };
 }
 function markStuckRuns(state, now = /* @__PURE__ */ new Date()) {
@@ -2070,7 +2234,7 @@ async function executeClaim(claim, dependencies, trigger = {}) {
       throw new ScoringGatewayError("The private source video is unavailable.", "VIDEO_UNAVAILABLE", false);
     }
     if (video.checksumSha256 && media.kind === "bytes") {
-      const actual = createHash3("sha256").update(media.bytes).digest("hex");
+      const actual = createHash4("sha256").update(media.bytes).digest("hex");
       if (actual !== video.checksumSha256) {
         throw new ScoringGatewayError("The private source video failed integrity validation.", "VIDEO_UNAVAILABLE", false);
       }
@@ -2250,6 +2414,7 @@ async function route(request, response) {
 function createProcessorServer() {
   process.env.HELP_REVIEW_SERVICE_ROLE = "processor";
   assertRuntimeConfiguration();
+  assertConfiguredHelpCatalog();
   return createServer((request, response) => {
     void route(request, response).catch((error) => {
       const retryable = error instanceof RetryableProcessingError;

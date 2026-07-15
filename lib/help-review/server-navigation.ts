@@ -1,13 +1,13 @@
 import { cookies } from "next/headers";
 
-import { sandboxIdentity, SESSION_COOKIE } from "./server-auth";
+import { selectedIdentityAdapter, SESSION_COOKIE } from "./server-auth";
 import { readPilotState } from "./server-store";
 
 /** Resolves the first authorized workspace without exposing protected records. */
 export async function resolvePilotHome(): Promise<"/sign-in" | "/children" | "/admin/access"> {
   try {
     const token = (await cookies()).get(SESSION_COOKIE)?.value;
-    const userId = sandboxIdentity.resolve(token)?.subject;
+    const userId = selectedIdentityAdapter().resolve(token)?.subject;
     if (!userId) return "/sign-in";
     const state = await readPilotState();
     const user = state.users.find((candidate) => candidate.id === userId && candidate.isActive);

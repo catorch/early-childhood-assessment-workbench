@@ -14,7 +14,7 @@ function declarations(kind: "model" | "enum") {
 }
 
 describe("lean pilot schema boundary", () => {
-  it("contains only the twelve pilot models", () => {
+  it("contains only pilot domain and operational models", () => {
     expect(declarations("model").sort()).toEqual(
       [
         "Assessment",
@@ -22,6 +22,7 @@ describe("lean pilot schema boundary", () => {
         "ChildAssignment",
         "AccessProvision",
         "ProcessingRun",
+        "RateLimitBucket",
         "ReviewDecision",
         "Session",
         "SkillSuggestion",

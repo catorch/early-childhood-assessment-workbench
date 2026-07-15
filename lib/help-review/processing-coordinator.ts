@@ -8,7 +8,7 @@ import {
   validateScoringResultForRequest,
   type ScoringGateway
 } from "./scoring-contract";
-import { selectScoringCandidates } from "./help-catalog";
+import { configuredHelpCatalog, selectScoringCandidates } from "./help-catalog";
 import type { AssessmentContextSnapshot, PilotAssessment, PilotChild, PilotState } from "./models";
 import { selectedScoringGateway } from "./scoring-gateway";
 import { readPilotState, updatePilotState } from "./server-store";
@@ -25,7 +25,7 @@ export function contextSnapshotForChild(
   const label = child.contextLabel?.toLowerCase() ?? "";
   const hasIfsp = /ifsp:\s*yes|\bifsp\b(?!:\s*no)/i.test(label);
   const hasDisability = /disabil/i.test(label);
-  const supportContext = hasIfsp && hasDisability
+  const inferredSupportContext = hasIfsp && hasDisability
     ? "IFSP_AND_DISABILITY"
     : hasIfsp
       ? "IFSP"
@@ -36,11 +36,11 @@ export function contextSnapshotForChild(
           : "UNKNOWN";
   return {
     ageMonthsAtObservation: child.ageMonths,
-    supportContext,
+    supportContext: child.supportContext ?? inferredSupportContext,
     contextLabel: child.contextLabel,
     processingAllowedAtCreation: child.processingAllowed,
     capturedAt,
-    source: "SANITIZED_ADMIN"
+    source: child.contextSource ?? "SANITIZED_ADMIN"
   };
 }
 
@@ -206,7 +206,13 @@ async function executeClaim(
   const run = assessment.runs.at(-1)!;
   const video = assessment.video!;
   const snapshot = assessment.contextSnapshot ?? contextSnapshotForChild(child, assessment.createdAt);
-  const candidates = selectScoringCandidates(snapshot.ageMonthsAtObservation, snapshot.supportContext);
+  const catalog = configuredHelpCatalog();
+  const candidates = selectScoringCandidates(
+    snapshot.ageMonthsAtObservation,
+    snapshot.supportContext,
+    catalog.skills,
+    catalog
+  );
   const request = ScoringRequestSchema.parse({
     contractVersion: assessment.scoringContractVersion ?? SCORING_CONTRACT_VERSION,
     runId: run.id,
@@ -223,6 +229,10 @@ async function executeClaim(
       byteSize: video.byteSize,
       durationSeconds: video.durationSeconds ?? null,
       checksumSha256: video.checksumSha256 ?? null
+    },
+    rubric: {
+      creditDefinitions: catalog.creditDefinitions,
+      twoMinusRule: catalog.selectionPolicy.twoMinusRule
     },
     candidates
   });

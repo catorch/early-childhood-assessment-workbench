@@ -12,7 +12,7 @@ const FinalizationMutationSchema = z.object({
 export async function POST(request: NextRequest, context: { params: Promise<{ assessmentId: string }> }) {
   try {
     assertSameOrigin(request);
-    enforceRateLimit(request, "assessment-finalize", { limit: 20 });
+    await enforceRateLimit(request, "assessment-finalize", { limit: 20 });
     const { assessmentId } = await context.params;
     const parsed = FinalizationMutationSchema.safeParse(await readJsonBody(request, 8 * 1024));
     if (!parsed.success) return validationError("The final confirmation is invalid. Refresh the summary and try again.");

@@ -22,6 +22,8 @@ export interface PilotChild {
   readonly externalChildId: string;
   readonly ageMonths: number;
   readonly contextLabel: string | null;
+  readonly supportContext?: AssessmentContextSnapshot["supportContext"];
+  readonly contextSource?: AssessmentContextSnapshot["source"];
   readonly processingAllowed: boolean;
   readonly isActive: boolean;
 }
@@ -178,6 +180,7 @@ export interface SupportEvent {
     | "PROCESSING_RETRIED"
     | "ACCESS_CHANGED"
     | "ASSIGNMENT_CHANGED"
+    | "ROSTER_IMPORTED"
     | "ASSESSMENT_FINALIZED";
   readonly actorId: string;
   readonly occurredAt: string;

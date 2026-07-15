@@ -3,7 +3,7 @@ import { z } from "zod";
 import { SkillSuggestionSchema } from "./domain";
 
 export const SCORING_CONTRACT_VERSION = "help-scoring-v0" as const;
-export const HELP_CATALOG_VERSION = "help-2-provisional-2026-07" as const;
+export const HELP_CATALOG_VERSION = process.env.HELP_REVIEW_HELP_CATALOG_VERSION ?? "help-2-provisional-2026-07";
 
 export const SupportContextSchema = z.enum([
   "NONE_REPORTED",
@@ -14,6 +14,16 @@ export const SupportContextSchema = z.enum([
 ]);
 export type SupportContext = z.infer<typeof SupportContextSchema>;
 
+export const EvidenceModalitySchema = z.enum(["VISUAL", "AUDIO", "VISUAL_AND_AUDIO", "CONTEXT"]);
+export type EvidenceModality = z.infer<typeof EvidenceModalitySchema>;
+
+const CandidateCreditCriteriaSchema = z.object({
+  present: z.string().trim().min(1).max(4_000),
+  emerging: z.string().trim().min(1).max(4_000),
+  notObserved: z.string().trim().min(1).max(4_000),
+  notApplicable: z.string().trim().min(1).max(4_000)
+}).strict();
+
 export const ScoringCandidateSchema = z.object({
   sourceSkillId: z.string().trim().min(1).max(120),
   skillCode: z.string().trim().min(1).max(40),
@@ -22,7 +32,12 @@ export const ScoringCandidateSchema = z.object({
   strand: z.string().trim().min(1).max(120).nullable(),
   minimumAgeMonths: z.number().int().min(0).max(216),
   maximumAgeMonths: z.number().int().min(0).max(216),
-  sourceOrder: z.number().int().nonnegative()
+  sourceOrder: z.number().int().nonnegative(),
+  observableDefinition: z.string().trim().min(1).max(4_000).optional(),
+  observableIndicators: z.array(z.string().trim().min(1).max(1_000)).min(1).max(20).optional(),
+  nonExamples: z.array(z.string().trim().min(1).max(1_000)).min(1).max(20).optional(),
+  evidenceModalities: z.array(EvidenceModalitySchema).min(1).max(4).optional(),
+  creditCriteria: CandidateCreditCriteriaSchema.optional()
 }).strict().superRefine((candidate, context) => {
   if (candidate.maximumAgeMonths < candidate.minimumAgeMonths) {
     context.addIssue({
@@ -33,6 +48,33 @@ export const ScoringCandidateSchema = z.object({
   }
 });
 export type ScoringCandidate = z.infer<typeof ScoringCandidateSchema>;
+
+const ScoringCreditDefinitionSchema = z.object({
+  value: z.enum(["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"]),
+  symbol: z.string().trim().min(1).max(8),
+  label: z.string().trim().min(1).max(120),
+  description: z.string().trim().min(1).max(2_000)
+}).strict();
+
+export const ScoringRubricSchema = z.object({
+  creditDefinitions: z.array(ScoringCreditDefinitionSchema).length(4),
+  twoMinusRule: z.object({
+    enabled: z.boolean(),
+    consecutiveNotObserved: z.number().int().min(1).max(10),
+    decisionReference: z.string().trim().min(1).max(500)
+  }).strict()
+}).strict().superRefine((rubric, context) => {
+  const expected = new Set(["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"]);
+  const actual = new Set(rubric.creditDefinitions.map((definition) => definition.value));
+  if (actual.size !== expected.size || [...expected].some((credit) => !actual.has(credit as never))) {
+    context.addIssue({
+      code: "custom",
+      path: ["creditDefinitions"],
+      message: "The scoring rubric must define every supported credit exactly once."
+    });
+  }
+});
+export type ScoringRubric = z.infer<typeof ScoringRubricSchema>;
 
 export const ScoringRequestSchema = z.object({
   contractVersion: z.literal(SCORING_CONTRACT_VERSION),
@@ -51,6 +93,7 @@ export const ScoringRequestSchema = z.object({
     durationSeconds: z.number().int().positive().max(5 * 60).nullable(),
     checksumSha256: z.string().regex(/^[a-f0-9]{64}$/).nullable()
   }).strict(),
+  rubric: ScoringRubricSchema.optional(),
   candidates: z.array(ScoringCandidateSchema).min(1).max(500)
 }).strict().superRefine((request, context) => {
   const skillIds = new Set<string>();

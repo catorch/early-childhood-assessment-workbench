@@ -96,21 +96,29 @@ export async function readJsonBody(request: NextRequest, maximumBytes = 32 * 102
   }
 }
 
-export function enforceRateLimit(
+export async function enforceRateLimit(
   request: NextRequest,
   scope: string,
   options: { readonly limit: number; readonly windowMs?: number },
   now = Date.now()
-): void {
+): Promise<void> {
   const windowMs = options.windowMs ?? 60_000;
-  for (const [key, bucket] of rateLimitBuckets) {
-    if (bucket.resetAt <= now) rateLimitBuckets.delete(key);
-  }
   const identity = [
     request.headers.get("x-forwarded-for")?.split(",", 1)[0]?.trim() ?? "unknown",
     request.cookies.get("help_review_session")?.value ?? "anonymous"
   ].join(":");
-  const key = `${scope}:${createHash("sha256").update(identity).digest("hex")}`;
+  const identityHash = createHash("sha256").update(identity).digest("hex");
+  if (["neon", "pg"].includes(process.env.HELP_REVIEW_STATE_ADAPTER ?? "")) {
+    const { incrementSharedRateLimit } = await import("./shared-rate-limit");
+    const count = await incrementSharedRateLimit(scope, identityHash, now, windowMs);
+    if (count > options.limit) throw new RequestError("Too many requests. Wait before trying again.", 429);
+    return;
+  }
+
+  for (const [key, bucket] of rateLimitBuckets) {
+    if (bucket.resetAt <= now) rateLimitBuckets.delete(key);
+  }
+  const key = `${scope}:${identityHash}`;
   const current = rateLimitBuckets.get(key);
   if (!current || current.resetAt <= now) {
     rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });

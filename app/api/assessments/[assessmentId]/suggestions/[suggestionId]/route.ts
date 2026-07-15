@@ -10,7 +10,7 @@ export async function PATCH(
 ) {
   try {
     assertSameOrigin(request);
-    enforceRateLimit(request, "review-decision", { limit: 120 });
+    await enforceRateLimit(request, "review-decision", { limit: 120 });
     const { assessmentId, suggestionId } = await context.params;
     const parsed = ReviewDecisionMutationSchema.safeParse(await readJsonBody(request, 16 * 1024));
     if (!parsed.success) return validationError(parsed.error.issues[0]?.message ?? "The review decision is invalid.");

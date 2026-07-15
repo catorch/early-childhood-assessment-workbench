@@ -1,6 +1,6 @@
 # HELP Review Deployment Evidence
 
-Updated: July 14, 2026
+Updated: July 15, 2026
 
 ## Current Sanitized GCP Environment
 
@@ -11,9 +11,59 @@ Updated: July 14, 2026
 | Storage | Private GCS bucket with public-access prevention, uniform access, resumable upload, immutable generations, and lifecycle rules | Synthetic/sanitized videos only |
 | Worker | IAM-private `help-review-processor` Cloud Run service invoked by Eventarc object-finalized delivery | Vertex synthetic development only |
 | Scoring | Gemini 2.5 Flash on Vertex AI through processor ADC; canonical `gs://` input | Contract/transport evaluation, not scientist acceptance |
-| Identity | Eight-hour HMAC-signed, HTTP-only sandbox sessions checked against active provision and assignment | No HELP Connect claim |
+| Identity | Google Identity Platform email/password with exact local provisioning, verified provider subjects, one-hour application sessions, and mirrored activation/deactivation | Managed synthetic staging accounts; no public signup or HELP Connect claim |
 | Playback | Five-minute application grant followed by a generation-bound V4 GCS signed URL; metadata-only access record | Current assignment/session required |
-| Delivery | Cloud Build images in Artifact Registry and Terraform-managed APIs/IAM/services/trigger | Local state pending organization backend handoff |
+| Delivery | Cloud Build images in Artifact Registry and Terraform-managed APIs/IAM/services/trigger | Local Terraform state pending organization backend handoff |
+
+## July 15 Managed-Identity QA2 Candidate
+
+| Field | Evidence |
+|---|---|
+| Project / region | `help-review-dev-20260714` / `us-central1` |
+| Cloud Build | `7e8bd1d7-a3e0-40ab-94fc-e91a39e1a442`, `SUCCESS` |
+| Web image | `help-review/web:20260715-qa2` at digest `sha256:8829fdec8e3938e535ed45e85f1c5cde2f975cc971523f52cc7c7e6c95380135` |
+| Processor image | QA1 processor digest retained at `sha256:a3d5a93401d0b422513aa5e4859ba842f27d18b9e14fdadf136f644e16721cfd` |
+| Ready revisions | Web `help-review-web-secret-20260715` after the rotation drill; processor `help-review-processor-00008-x8x` |
+| Runtime boundary | Real data off, Google Identity Platform enabled, Neon/GCS/Eventarc/Vertex selected, provisional catalogue version and exact SHA configured |
+| Terraform result | Managed identity, provider lifecycle IAM, quota dependencies, GCS Eventarc publishing, and observability converge to a final `No changes` plan |
+
+The QA2 exercise used ordinary browser controls and the deployed provider rather than mocked credentials:
+
+- The current Google account was first provisioned as an exact Admin through the existing Admin API, then linked to its stable Identity Platform UID on verified sign-in. Wrong credentials produced only the generic focused error and cleared the password; sign-out removed the application cookie and made `/api/session` return `401`.
+- The password-reset button called Google successfully and kept the response non-enumerating. A second provisioned Educator account proved the full setup boundary: an unverified provider token was rejected by HELP Review with `401`, the verification-message request returned `200`, the provider verification action code returned `200`, and the next provider record reported `emailVerified=true`.
+- The provider reset action code accepted a new password and a subsequent provider sign-in returned `200`. No password, refresh token, action code, API key, or ID token was recorded in source, logs, screenshots, or this evidence.
+- Admin deactivation returned `200`, immediately made the provider account disabled, and caused provider sign-in to return `400`. Admin reactivation returned `200`, re-enabled the same UID, and the Educator reached the assignment-scoped `/children` page.
+- Twelve malformed application-session attempts under one opaque synthetic cookie produced ten generic `401` responses followed by two shared PostgreSQL-backed `429` responses, proving the deployed abuse budget is shared rather than instance-local.
+- The live exercise found that `roles/firebaseauth.viewer` could verify users but could not perform the approved Admin account lifecycle. Google's predefined Admin/Editor roles also include configuration secrets and user deletion, so Terraform now creates a project role containing only `firebaseauth.users.get/create/update`. A new account was provisioned and then disabled, re-enabled, and disabled for cleanup through the application after that narrower role was applied.
+- Terraform also now sends user-credential quota to the selected billing project, explicitly enables Cloud Resource Manager, and derives the GCS service-agent address from the stable project number. This fixed an Identity Toolkit quota failure and removed an apply-time IAM replacement. The temporarily removed GCS publisher member was restored and verified before testing resumed.
+- The first managed page paint incorrectly described a sandbox profile while configuration was loading. QA2 uses neutral loading copy, its regression test delays the configuration response, and desktop/mobile visual inspection found no clipping, overlap, or horizontal overflow.
+
+Release recovery was then exercised on the same managed deployment. Terraform rolled QA2 back to immutable QA1 revision `help-review-web-00010-gcc` in 44 seconds with a no-destroy plan, health passed, and the existing managed session remained valid. Terraform rolled forward to QA2 revision `help-review-web-00011-jwm` in 44 seconds with the same result. Secret Manager session-secret version 2 was added without exposing its value; `gcloud` created `help-review-web-secret-20260715` in 14 seconds, the old application cookie returned `401`, and a fresh Google sign-in returned `200`. Terraform ignores only Cloud Run's operational client/version/revision labels, continues to manage every behavioral setting, and again reports no changes.
+
+## July 15 Sanitized QA1 Candidate
+
+| Field | Evidence |
+|---|---|
+| Project / region | `help-review-dev-20260714` / `us-central1` |
+| Cloud Build | `3e2638c3-4665-4d27-96f4-2d2ba7122cda`, `SUCCESS` in 3m36s |
+| Web image | `help-review/web:20260715-qa1` at digest `sha256:2bae47125d5094e48e5f431656210450b6818dc26630a0503b0aa68eab28625a` |
+| Processor image | `help-review/processor:20260715-qa1` at digest `sha256:a3d5a93401d0b422513aa5e4859ba842f27d18b9e14fdadf136f644e16721cfd` |
+| Cloud Run revisions | Web `help-review-web-00007-rjh`; processor `help-review-processor-00007-g7g`; both Ready |
+| Runtime boundary | Real data off, sandbox identity retained, Neon/GCS/Eventarc/Vertex selected, provisional catalogue version and exact SHA configured |
+| Observability | Two log metrics, two enabled alert policies, one email channel, and the operations dashboard are deployed |
+| Terraform result | Initial no-destroy rollout completed; the fresh-metric propagation defect was remediated; final refresh reports `No changes` |
+
+The QA1 smoke exercised the deployed candidate rather than a local server:
+
+- Public health returned `ready`; sandbox sign-in returned the expected Educator projection and three assignment-scoped sanitized children.
+- A live browser confirmed the configured support action had a real recipient and the fixed Provision staff keyboard lifecycle moved focus into the form and back to its trigger.
+- Assessment creation persisted `contentCatalogVersion=help-2-provisional-2026-07`, proving the packaged catalogue passed startup and runtime validation.
+- The 64,256-byte synthetic MP4 uploaded through the ordinary generation-bound resumable GCS flow and completion returned only the public video projection.
+- Start processing returned one queued run. Eventarc invoked processor revision `00007-g7g` after the web request completed; the run moved to `RUNNING` and then failed closed as `INVALID_RESULT` when the provisional Vertex result did not validate. No partial suggestions were exposed.
+- The deployed structured outcome contained only event, opaque run ID, adapter, outcome, duration, and retryability fields. A separate payload-free monitoring drill produced a metric value of one for `help_review_processing_failures` on revision `00007-g7g`; both warning/error policies are enabled.
+- The first observability bootstrap exposed Google Monitoring's asynchronous log-metric propagation: the metrics were created while policy creation returned `404`. Terraform now creates a one-time 90-second propagation guard before either policy and ignores only server-injected dashboard JSON fields. A second apply completed the policies, and a final plan was clean with zero changes or destroys.
+
+At the QA1 checkpoint, the development alert channel was enabled but receipt and ownership of the final organization operations address were not yet accepted. Managed Identity Platform was build-tested but intentionally left off until a bootstrap Admin existed. QA2 above provisioned that Admin, enabled the provider, and supersedes the QA1 identity state; final organization alert receipt remains open.
 
 ## July 14 Google Cloud Release
 
@@ -57,9 +107,13 @@ The live GCP smoke used the 64,256-byte synthetic MP4 through ordinary browser c
 
 ## Migration Evidence
 
-On July 14, 2026, `prisma migrate deploy` applied the GCP processing runtime migration after the earlier contract migration. `prisma migrate status` reports all four migrations current. The latest migration adds GCS object metadata and Eventarc delivery/idempotency fields.
+On July 14, 2026, `prisma migrate deploy` applied the GCP processing runtime migration after the earlier contract migration. That fourth migration added GCS object metadata and Eventarc delivery/idempotency fields.
 
-Provider backup/restore and organization-approved rollback evidence remain external gates; applying this forward, additive migration does not satisfy them.
+On July 15, 2026, the additive roster-import audit and shared-rate-limit migrations were applied and `prisma migrate status` reported all six migrations current against the configured Neon direct endpoint.
+
+All six checked-in migrations were also applied to a fresh isolated PostgreSQL 18 database. They completed successfully and the temporary database container was removed.
+
+On July 15, `pnpm db:recovery-drill -- --confirm-temporary-schema` first exercised a real logical recovery on the configured Neon endpoint at the five-migration revision. It created an isolated schema, inserted one synthetic marker, produced a 52,120-byte custom-format backup, restored and verified the schema, and cleaned every artifact in 33.4 seconds. After the sixth migration, the same guarded drill passed against isolated PostgreSQL 18 with all six migrations, the marker, and a 53,842-byte archive in 1.636 seconds. The shared-rate-limit drill also serialized 12 concurrent increments from 1 through 12 and removed its opaque bucket. No drill printed a database URL or touched shared application tables. QA2 subsequently proved immutable-image rollback/roll-forward, session-secret rotation, session revocation, and recovery sign-in. Provider point-in-time recovery and final organization notification receipt remain separate launch evidence.
 
 ## Verification Evidence
 
@@ -67,14 +121,18 @@ Provider backup/restore and organization-approved rollback evidence remain exter
 |---|---|
 | TypeScript | pass |
 | ESLint | pass |
-| Vitest | 20 files, 119 tests pass |
-| Prisma schema/migrations | schema valid; four migrations current on sanitized Neon |
-| Behavioral browser contracts | 18 tests pass: 14 workflow contracts, 3 route/UI smoke checks, and 1 performance/payload budget |
-| Accessibility/reflow | 6 representative keyboard/focus/zoom checks pass; every accepted screen receives serious/critical axe audit |
+| Vitest | 26 files, 154 tests pass |
+| HELP catalogue | versioned fixture validates; exact version/status/hash and real-data rejection tests pass |
+| Prisma schema/migrations | schema valid; six migrations current on sanitized Neon; clean-schema deploy, shared-counter concurrency, and isolated logical backup/restore pass |
+| Behavioral browser contracts | 46 tests pass, including managed identity, canonical user-story behaviors, workflow, route/UI, security, and performance contracts |
+| Accessibility/reflow | 6 representative keyboard/focus/zoom checks and every accepted screen's serious/critical axe audit pass; the full local Educator/Admin keyboard record closed two focus-loss defects, while supported-screen-reader acceptance remains open |
 | Accepted visual states | screens 01-45 pass deterministic baselines |
 | Stress visual states | long skill, dense results, long email, localized label pass |
 | Visual total | 52 tests pass |
 | Security/privacy | forged session, unsafe return, cross-origin mutation, role/assignment substitution, grant tampering, payload exclusion, and health redaction pass |
+| Production build | Next.js production compile, TypeScript, page-data collection, and all route generation pass with fail-closed sanitized GCP configuration |
+| Local service boundary | web and standalone processor health pass; synthetic upload/process reaches `READY_FOR_REVIEW` with eight suggestions over internal HTTP |
+| Canonical story tracker | 137 pass, 8 partial pass, and 1 incomplete exact-build release story in `docs/quality/help-review-feature-status.csv` |
 
 ## Historical Vercel Smoke Evidence
 
@@ -93,6 +151,6 @@ The July 14 release was exercised with a new synthetic 64,256-byte MP4 through o
 
 ## Release Candidate State
 
-The latest repository candidate is deployed on Google Cloud with distinct session, playback, upload, and worker secrets plus explicit Vertex scoring, sandbox identity, and real-data-disabled configuration. No secret value is recorded here. The older Vercel alias remains historical evidence, not the selected forward architecture. This is a verified sanitized development deployment, not permissioned staging or real-data production.
+The latest repository candidate is deployed on Google Cloud with distinct session, playback, upload, and worker secrets plus explicit Vertex scoring, managed Google Identity Platform, and real-data-disabled configuration. No secret value is recorded here. The older Vercel alias remains historical evidence, not the selected forward architecture. This is a verified sanitized development deployment, not the final organization-owned permissioned staging or real-data production environment.
 
-Real-data production acceptance remains closed by `external-launch-gates.md`.
+Real-data production remains disabled until the concrete closure inputs and exact-build evidence in `external-launch-gates.md` are complete; permissions are treated as approved.

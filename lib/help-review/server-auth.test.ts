@@ -6,6 +6,7 @@ import {
   AccessError,
   activeUserFromState,
   hasActiveAssignment,
+  identityPlatformIdentity,
   sandboxIdentity,
   SESSION_COOKIE
 } from "./server-auth";
@@ -41,7 +42,7 @@ describe("assignment-aware sandbox authorization", () => {
   });
 
   it("rejects a missing session", () => {
-    expect(() => activeUserFromState(requestFor(), createSanitizedPilotState())).toThrow("valid sandbox session");
+    expect(() => activeUserFromState(requestFor(), createSanitizedPilotState())).toThrow("valid session");
   });
 
   it("rejects a forged or expired session", () => {
@@ -53,5 +54,20 @@ describe("assignment-aware sandbox authorization", () => {
     });
     expect(() => activeUserFromState(forgedRequest, state)).toThrow(AccessError);
     expect(sandboxIdentity.resolve(valid, new Date("2026-07-15T12:00:00.000Z"))).toBeNull();
+  });
+
+  it("does not accept a sandbox application session at the managed identity boundary", () => {
+    const state = createSanitizedPilotState();
+    expect(() => activeUserFromState(
+      requestFor("user-educator-1"),
+      state,
+      identityPlatformIdentity
+    )).toThrow(AccessError);
+
+    const managed = identityPlatformIdentity.issue("user-educator-1", new Date("2026-07-15T12:00:00.000Z"));
+    expect(identityPlatformIdentity.resolve(managed, new Date("2026-07-15T12:59:59.000Z"))?.subject)
+      .toBe("user-educator-1");
+    expect(identityPlatformIdentity.resolve(managed, new Date("2026-07-15T13:00:00.000Z")))
+      .toBeNull();
   });
 });

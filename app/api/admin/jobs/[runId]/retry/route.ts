@@ -8,7 +8,7 @@ import { dispatchProcessingRun, processingDispatchIsDurable } from "@/lib/help-r
 export async function POST(request: NextRequest, context: { params: Promise<{ runId: string }> }) {
   try {
     assertSameOrigin(request);
-    enforceRateLimit(request, "admin-processing-retry", { limit: 20 });
+    await enforceRateLimit(request, "admin-processing-retry", { limit: 20 });
     const { runId } = await context.params;
     const result = await adminJobsService.retry(request, runId);
     if (result.blocked) return NextResponse.json({ error: result.reason }, { status: 409 });

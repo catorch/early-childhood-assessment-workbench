@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     assertSameOrigin(request);
-    enforceRateLimit(request, "assessment-create", { limit: 30 });
+    await enforceRateLimit(request, "assessment-create", { limit: 30 });
     const parsed = CreateAssessmentSchema.safeParse(await readJsonBody(request, 16 * 1024));
     if (!parsed.success) return validationError("Choose a valid observation date.");
     const assessment = await assessmentService.create(request, parsed.data);

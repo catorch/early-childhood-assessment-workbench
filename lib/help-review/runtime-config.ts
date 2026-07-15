@@ -1,3 +1,5 @@
+import { isDeliverableSupportEmail } from "./support-contact";
+
 /** Fails closed when sanitized adapters are accidentally used as a live deployment. */
 export function assertRuntimeConfiguration(environment: NodeJS.ProcessEnv = process.env): void {
   if (environment.NODE_ENV !== "production") return;
@@ -10,7 +12,10 @@ export function assertRuntimeConfiguration(environment: NodeJS.ProcessEnv = proc
     const missing = [
       "HELP_REVIEW_REAL_DATA_APPROVAL_ID",
       "HELP_REVIEW_IDENTITY_ADAPTER",
-      "HELP_REVIEW_SCORING_ADAPTER"
+      "HELP_REVIEW_SCORING_ADAPTER",
+      "HELP_REVIEW_HELP_CATALOG_PATH",
+      "HELP_REVIEW_HELP_CATALOG_VERSION",
+      "HELP_REVIEW_HELP_CATALOG_SHA256"
     ].filter((key) => !environment[key]);
     if (!workerSecret) missing.push("HELP_REVIEW_WORKER_SECRET or CRON_SECRET");
     if (missing.length > 0) {
@@ -32,6 +37,9 @@ export function assertRuntimeConfiguration(environment: NodeJS.ProcessEnv = proc
     throw new Error("An acknowledged sanitized deployment must use the Neon state adapter or durable PostgreSQL adapter.");
   }
   if (serviceRole === "web") {
+    if (!isDeliverableSupportEmail(environment.NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL)) {
+      throw new Error("Production requires a deliverable NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL.");
+    }
     if (!environment.HELP_REVIEW_SESSION_SECRET || environment.HELP_REVIEW_SESSION_SECRET.length < 32) {
       throw new Error("Production requires HELP_REVIEW_SESSION_SECRET with at least 32 characters.");
     }
@@ -59,8 +67,16 @@ export function assertRuntimeConfiguration(environment: NodeJS.ProcessEnv = proc
   } else {
     throw new Error("An acknowledged sanitized deployment must use an authenticated private Blob store or GCS bucket.");
   }
-  if (identityAdapter !== "sandbox") {
-    throw new Error("The selected live identity adapter is not implemented or approved.");
+  if (!new Set(["sandbox", "identity-platform"]).has(identityAdapter)) {
+    throw new Error("The selected identity adapter is not supported.");
+  }
+  if (identityAdapter === "identity-platform") {
+    if (!(environment.HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID || environment.GOOGLE_CLOUD_PROJECT)) {
+      throw new Error("Identity Platform requires HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID or GOOGLE_CLOUD_PROJECT.");
+    }
+    if (serviceRole === "web" && !environment.HELP_REVIEW_IDENTITY_PLATFORM_API_KEY) {
+      throw new Error("The Identity Platform web service requires HELP_REVIEW_IDENTITY_PLATFORM_API_KEY.");
+    }
   }
   if (!new Set(["fake", "gemini", "vertex"]).has(scoringAdapter)) {
     throw new Error("The selected scoring adapter is not supported.");

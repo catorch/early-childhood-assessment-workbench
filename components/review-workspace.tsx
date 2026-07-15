@@ -192,6 +192,31 @@ export function ReviewWorkspace() {
   }, [dirty]);
 
   useEffect(() => {
+    if (!dirty) return;
+    const guardInternalNavigation = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented
+        || event.button !== 0
+        || event.metaKey
+        || event.ctrlKey
+        || event.shiftKey
+        || event.altKey
+      ) return;
+      const element = event.target instanceof Element ? event.target : null;
+      const anchor = element?.closest<HTMLAnchorElement>("a[href]");
+      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (destination.pathname === window.location.pathname && destination.search === window.location.search) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setSaveError("Save or discard your current changes before leaving this review.");
+    };
+    document.addEventListener("click", guardInternalNavigation, true);
+    return () => document.removeEventListener("click", guardInternalNavigation, true);
+  }, [dirty]);
+
+  useEffect(() => {
     if (!mobileEditorOpen) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";

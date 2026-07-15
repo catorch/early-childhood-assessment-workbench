@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { handleProtectedResponse } from "@/lib/help-review/client-http";
 import type { AssignedChildProjection } from "@/lib/help-review/models";
 import { assessmentStatusPresentation, formatDate } from "@/lib/help-review/presentation";
+import { SUPPORT_CONTACT_HREF } from "@/lib/help-review/support-contact";
 
 export default function ChildrenPage() {
   const router = useRouter();
@@ -122,7 +123,13 @@ export default function ChildrenPage() {
           );
         })}
       </section>
-      {children && children.length > 0 ? <p className="mt-6 text-[13px] text-muted-foreground">Missing an assignment? <a className="font-bold text-primary-strong underline-offset-4 hover:underline" href="mailto:pilot-support@example.test">Contact your pilot administrator.</a></p> : null}
+      {children && children.length > 0 ? (
+        <p className="mt-6 text-[13px] text-muted-foreground">
+          Missing an assignment? {SUPPORT_CONTACT_HREF ? (
+            <a className="font-bold text-primary-strong underline-offset-4 hover:underline" href={SUPPORT_CONTACT_HREF}>Contact your pilot administrator.</a>
+          ) : "Contact your pilot administrator."}
+        </p>
+      ) : null}
     </PageShell>
   );
 }

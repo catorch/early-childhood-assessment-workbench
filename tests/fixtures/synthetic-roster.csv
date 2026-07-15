@@ -1,0 +1,2 @@
+child_external_id,age_months,support_context,context_label,processing_allowed,child_active,educator_email,assignment_active
+Child 9001,26,IFSP,IFSP: Yes,true,true,alex.educator@example.test,true

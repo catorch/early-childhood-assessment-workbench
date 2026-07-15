@@ -4,6 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { timingSafeEqual } from "node:crypto";
 
 import { configuredGcsBucket } from "../lib/help-review/gcs-storage";
+import { assertConfiguredHelpCatalog } from "../lib/help-review/help-catalog";
 import {
   processRunById,
   RetryableProcessingError,
@@ -121,6 +122,7 @@ async function route(request: IncomingMessage, response: ServerResponse): Promis
 export function createProcessorServer() {
   process.env.HELP_REVIEW_SERVICE_ROLE = "processor";
   assertRuntimeConfiguration();
+  assertConfiguredHelpCatalog();
   return createServer((request, response) => {
     void route(request, response).catch((error) => {
       const retryable = error instanceof RetryableProcessingError;

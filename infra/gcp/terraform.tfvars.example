@@ -1,7 +1,24 @@
 project_id           = "help-review-dev-example"
 region               = "us-central1"
+support_email        = "replace-with-an-organization-owned-address"
+alert_email          = "replace-with-an-organization-on-call-address"
 video_retention_days = 30
 deploy_services      = false
+help_catalog_path    = "content/help-catalog.sanitized.json"
+help_catalog_version = "help-2-provisional-2026-07"
+help_catalog_sha256  = "7d604579d6c8f8fdf5ac0f3d0ef0643a1d4479806d6d6be38cb1bc2f92c451d2"
+
+# Managed staging/production identity. Leave sandbox only for sanitized development.
+# identity_adapter            = "identity-platform"
+# identity_authorized_domains = ["review.example.org"]
+# identity_allowed_referrers  = ["https://review.example.org/*"]
+
+# Enable only after exact-build acceptance is recorded.
+# real_data_enabled     = true
+# real_data_approval_id = "decision-register-reference"
+# help_catalog_path     = "content/help-catalog.authoritative.json"
+# help_catalog_version  = "owner-issued-immutable-version"
+# help_catalog_sha256   = "accepted-64-character-lowercase-sha256"
 
 # Set these after Cloud Build publishes the images.
 # deploy_services = true

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { handleProtectedResponse, responseError } from "@/lib/help-review/client-http";
 import type { AssessmentHistoryItem, ClientVideo, PilotChild } from "@/lib/help-review/models";
+import { SUPPORT_CONTACT_HREF } from "@/lib/help-review/support-contact";
 import {
   VIDEO_CONTENT_TYPES,
   VIDEO_MAX_BYTES,
@@ -361,7 +362,7 @@ export function AssessmentIntake() {
   if (loading) return <PageShell><PageState description="Loading the assigned child and assessment draft." kind="loading" title="Loading observation" /></PageShell>;
   if (!child) return <PageShell><PageState description={error ?? "Choose a child from your assigned list."} kind="unavailable" title="Observation unavailable"><Button asChild><Link href="/children">Return to assigned children</Link></Button></PageState></PageShell>;
   if (!child.processingAllowed) {
-    return <PageShell><Link className={backLinkClass} href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link><PageState description="Processing permission is not approved for this child. No video can be submitted until the pilot administrator resolves it." kind="unavailable" title="Upload unavailable"><Button asChild><a href="mailto:pilot-support@example.test">Contact administrator</a></Button><Button asChild variant="secondary"><Link href={`/children/${child.id}`}>Return to child</Link></Button></PageState></PageShell>;
+    return <PageShell><Link className={backLinkClass} href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link><PageState description="Processing permission is not approved for this child. No video can be submitted until the pilot administrator resolves it." kind="unavailable" title="Upload unavailable">{SUPPORT_CONTACT_HREF ? <Button asChild><a href={SUPPORT_CONTACT_HREF}>Contact administrator</a></Button> : null}<Button asChild variant="secondary"><Link href={`/children/${child.id}`}>Return to child</Link></Button></PageState></PageShell>;
   }
 
   return (

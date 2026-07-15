@@ -10,6 +10,8 @@ RUN pnpm install --frozen-lockfile
 
 FROM dependencies AS builder
 COPY . .
+ARG NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL
+ENV NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL=$NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 RUN pnpm build
@@ -24,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 USER nextjs
 EXPOSE 8080
 CMD ["node", "server.js"]

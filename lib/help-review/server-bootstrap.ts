@@ -3,13 +3,14 @@ import { createAdminAccessService } from "./admin-access-service";
 import { createAdminJobsService } from "./admin-jobs-service";
 import { createAssessmentService } from "./assessment-service";
 import { createChildService } from "./child-service";
+import { assertConfiguredHelpCatalog } from "./help-catalog";
 import { processQueuedRuns, processRunById } from "./processing-coordinator";
 import { createReviewService } from "./review-service";
 import { assertRuntimeConfiguration } from "./runtime-config";
 import {
   activeUserFromState,
   requireChildAssignment,
-  sandboxIdentity
+  selectedIdentityAdapter
 } from "./server-auth";
 import { recordSupportEvent } from "./server-events";
 import { readPilotState, updatePilotState } from "./server-store";
@@ -23,13 +24,15 @@ export function createApplicationDependencies(
   environment: NodeJS.ProcessEnv = process.env
 ): ApplicationDependencies {
   assertRuntimeConfiguration(environment);
+  assertConfiguredHelpCatalog(environment);
   const videoStorage = selectedVideoStorage(environment);
   const scoringGateway = selectedScoringGateway(environment);
+  const identity = selectedIdentityAdapter(environment);
   const serviceRepository = { readState: readPilotState, updateState: updatePilotState };
   return {
-    identity: sandboxIdentity,
+    identity,
     authorization: {
-      activeUser: activeUserFromState,
+      activeUser: (request, state) => activeUserFromState(request, state, identity),
       requireChildAssignment,
       requireAssessment
     },

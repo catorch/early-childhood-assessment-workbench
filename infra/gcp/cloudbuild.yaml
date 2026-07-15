@@ -2,12 +2,14 @@ substitutions:
   _REGION: us-central1
   _REPOSITORY: help-review
   _TAG: dev
+  _SUPPORT_EMAIL: ""
 
 steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - build
       - --file=Dockerfile
+      - --build-arg=NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL=${_SUPPORT_EMAIL}
       - --tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/web:${_TAG}
       - .
   - name: gcr.io/cloud-builders/docker

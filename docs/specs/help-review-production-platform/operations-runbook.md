@@ -1,6 +1,6 @@
 # HELP Review Operations Runbook
 
-Updated: July 14, 2026  
+Updated: July 15, 2026
 Applies to: local development, CI, and the sanitized Google Cloud/Neon deployment  
 Real child data: disabled
 
@@ -10,10 +10,10 @@ Real child data: disabled
 |---|---|---|---|---|---|
 | Local (`pnpm dev:stack`) | locked ignored `.data/` shared by two processes | ignored `.data/uploads/` | signed sandbox profiles | standalone HTTP processor + deterministic fake | synthetic/sanitized |
 | CI | ephemeral PostgreSQL | local synthetic fixture | signed sandbox profiles | deterministic fake | synthetic/sanitized |
-| GCP development | pooled Neon | private GCS | signed provisioned sandbox profiles | Eventarc + private Cloud Run processor + Vertex AI | synthetic/sanitized |
-| Real-data production | approved PostgreSQL target | approved organization GCS policy | HELP Connect or one managed provider | accepted scientist gateway | closed by runtime guard |
+| GCP development | pooled Neon | private GCS | Google Identity Platform with exact provisioned access | Eventarc + private Cloud Run processor + Vertex AI | synthetic/sanitized |
+| Real-data production | approved PostgreSQL target | approved organization GCS policy | Google Identity Platform | accepted scientist gateway | closed by runtime guard |
 
-The GCP development deployment sets `HELP_REVIEW_SANITIZED_PRODUCTION_ACK=true`, `HELP_REVIEW_REAL_DATA_ENABLED=false`, `HELP_REVIEW_STATE_ADAPTER=neon`, `HELP_REVIEW_VIDEO_ADAPTER=gcs`, `HELP_REVIEW_PROCESSING_ADAPTER=gcs-event`, and `HELP_REVIEW_SCORING_ADAPTER=vertex`. It requires `DATABASE_URL`, the private bucket/project/location values, and distinct 32-character-or-longer session, playback, upload, and worker secrets. Cloud Run receives secrets from Secret Manager. Fake/sandbox adapters remain forbidden when real-data mode is requested.
+The GCP development deployment sets `HELP_REVIEW_SANITIZED_PRODUCTION_ACK=true`, `HELP_REVIEW_REAL_DATA_ENABLED=false`, `HELP_REVIEW_STATE_ADAPTER=neon`, `HELP_REVIEW_IDENTITY_ADAPTER=identity-platform`, `HELP_REVIEW_VIDEO_ADAPTER=gcs`, `HELP_REVIEW_PROCESSING_ADAPTER=gcs-event`, and `HELP_REVIEW_SCORING_ADAPTER=vertex`. It requires `DATABASE_URL`, the private bucket/project/location values, the restricted Identity Platform browser key, and distinct 32-character-or-longer session, playback, upload, and worker secrets. Cloud Run receives secrets from Secret Manager. Fake/sandbox adapters remain forbidden when real-data mode is requested.
 
 Never place secret values in source, browser variables, URLs, screenshots, support events, or incident tickets.
 
@@ -30,7 +30,7 @@ Never place secret values in source, browser variables, URLs, screenshots, suppo
 9. Verify `/api/health`, Cloud Run readiness, Eventarc trigger state, sign-in, direct GCS upload completion, private processor delivery, Vertex outcome, authorized signed range playback, review persistence, finalization, Admin revocation, and retry.
 10. Record the deployment URL, commit, migration state, checks, and any open gate in `deployment-evidence.md`.
 
-The release is not a real-data launch. Do not change the top sandbox banner or `HELP_REVIEW_REAL_DATA_ENABLED` until every external gate is accepted.
+The release is not a real-data launch. Managed identity can be exercised with synthetic records while `HELP_REVIEW_REAL_DATA_ENABLED` remains false; do not enable the accepted production boundary until every external gate is closed.
 
 ## Database
 
@@ -40,6 +40,7 @@ The release is not a real-data launch. Do not change the top sandbox banner or `
 - If application code is incompatible after a non-destructive migration, redeploy the prior application version while preparing a forward-fix migration.
 - If the migration itself is invalid, stop writes, preserve evidence, and use a reviewed forward recovery. Do not run `prisma migrate reset` against shared or production data.
 - A schema drift or pending-migration result blocks deployment.
+- Exercise logical recovery only with `pnpm db:recovery-drill -- --confirm-temporary-schema`. The command uses a uniquely named temporary schema, preserves one synthetic marker through `pg_dump`/`pg_restore`, verifies the migration table, and always removes the schema and local archive. Set `PG_DUMP_BIN` and `PG_RESTORE_BIN` when the default client tools do not match the server. This drill does not replace provider point-in-time recovery policy.
 
 ## Video And Playback
 
@@ -69,7 +70,10 @@ The release is not a real-data launch. Do not change the top sandbox banner or `
 - Route failures emit JSON with `event`, an opaque correlation ID, and error type only.
 - Processing outcomes emit structured run outcome, duration, safe category, and retryability without child identifiers, video paths, provider payloads, or secrets.
 - Support records retain actor, time, purpose/reference, and the affected assessment/subject where allowed.
-- Alert candidates for the sanitized environment: readiness unavailable for five minutes, Eventarc delivery failures, repeated processor authentication failures, a growing stuck count, or repeated storage/Vertex failures. Named on-call and incident owners remain an organization gate.
+- Terraform creates allowlisted log metrics for route failures and terminal processing outcomes, a two-panel operations dashboard, and email alert policies. Five route failures in five minutes opens a warning; the first terminal processing outcome opens an error incident.
+- A fresh project waits once for log-metric descriptor propagation before creating alert policies. Monitoring injects read-only fields into dashboard JSON, so intentional layout changes use `terraform apply -replace=google_monitoring_dashboard.operations`; ordinary plans must remain clean.
+- The QA1 development drill produced a payload-free processing-failure metric value of one and a safe live Vertex failure event. QA2 then exercised live managed identity, shared sign-in limits, immutable rollback/roll-forward, and session-secret rotation. The final operations notification recipient must still acknowledge a test incident before promotion; tune the route threshold only from recorded staging behavior.
+- Additional escalation conditions are readiness unavailable for five minutes, Eventarc delivery failures, repeated processor authentication failures, a growing stuck count, or repeated storage/Vertex failures. The final environment records the named on-call and incident owner without placing protected data in notification content.
 
 ## Access Support
 
@@ -100,4 +104,4 @@ The release is not a real-data launch. Do not change the top sandbox banner or `
 
 ## Rollback And Recovery Limits
 
-Application rollback is valid only when the current schema remains backward compatible: point Terraform at the prior immutable Artifact Registry tags, review the no-destroy plan, and apply. Database restore, object restore, organization alerting, cost ownership, and real-data incident exercises require the accepted organization accounts and remain explicit gates in `external-launch-gates.md`.
+Application rollback is valid only when the current schema remains backward compatible: point Terraform at the prior immutable Artifact Registry tags, review the no-destroy plan, and apply. QA2 rolled back to QA1 and forward again in 44 seconds each with health and managed sessions intact. Isolated logical database backup/restore and session-secret rotation are also implemented and exercised. Provider point-in-time recovery, object restore, final organization alert receipt, cost ownership, and a real-data incident exercise remain final-environment gates in `external-launch-gates.md`.

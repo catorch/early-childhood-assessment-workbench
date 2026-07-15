@@ -6,7 +6,8 @@ import { deriveReviewSummary } from "./domain";
 import { assessmentActionLabel, assessmentDestination } from "./presentation";
 import { contextSnapshotForChild, markStuckRuns } from "./processing-coordinator";
 import { clientProcessingRun } from "./public-projections";
-import { HELP_CATALOG_VERSION, SCORING_CONTRACT_VERSION } from "./scoring-contract";
+import { configuredHelpCatalog } from "./help-catalog";
+import { SCORING_CONTRACT_VERSION } from "./scoring-contract";
 import { AccessError, activeUserFromState, requireChildAssignment } from "./server-auth";
 import { recordSupportEvent } from "./server-events";
 import { RequestError } from "./server-http";
@@ -103,7 +104,7 @@ export function createAssessmentService(dependencies: AssessmentServiceDependenc
           educatorId: actor.id,
           observationDate: command.observationDate,
           contextSnapshot: contextSnapshotForChild(child, now),
-          contentCatalogVersion: HELP_CATALOG_VERSION,
+          contentCatalogVersion: configuredHelpCatalog().catalogVersion,
           scoringContractVersion: SCORING_CONTRACT_VERSION,
           status: "DRAFT" as const,
           video: null,

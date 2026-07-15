@@ -14,7 +14,7 @@ function createDatabaseClient(): PrismaClient {
   const databaseAdapter = process.env.HELP_REVIEW_DATABASE_ADAPTER ??
     (process.env.HELP_REVIEW_STATE_ADAPTER === "pg" ? "pg" : "neon");
   const adapter = databaseAdapter === "pg"
-    ? new PrismaPg({ connectionString })
+    ? new PrismaPg({ connectionString, connectionTimeoutMillis: 15_000 })
     : new PrismaNeon({ connectionString });
   return new PrismaClient({ adapter });
 }

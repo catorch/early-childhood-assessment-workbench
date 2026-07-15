@@ -30,6 +30,22 @@ function contextLabel(value: Prisma.JsonValue | null): string | null {
   return typeof label === "string" ? label : null;
 }
 
+function supportContext(value: Prisma.JsonValue | null): AssessmentContextSnapshot["supportContext"] | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") return undefined;
+  const context = (value as Record<string, Prisma.JsonValue>)["supportContext"];
+  return ["NONE_REPORTED", "IFSP", "DISABILITY", "IFSP_AND_DISABILITY", "UNKNOWN"].includes(String(context))
+    ? context as AssessmentContextSnapshot["supportContext"]
+    : undefined;
+}
+
+function contextSource(value: Prisma.JsonValue | null): AssessmentContextSnapshot["source"] | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") return undefined;
+  const source = (value as Record<string, Prisma.JsonValue>)["source"];
+  return ["SANITIZED_ADMIN", "ROSTER_ADAPTER"].includes(String(source))
+    ? source as AssessmentContextSnapshot["source"]
+    : undefined;
+}
+
 function assessmentContextSnapshot(value: Prisma.JsonValue | null): AssessmentContextSnapshot | undefined {
   if (!value || Array.isArray(value) || typeof value !== "object") return undefined;
   const snapshot = value as Record<string, Prisma.JsonValue>;
@@ -103,6 +119,8 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
       externalChildId: child.externalChildId,
       ageMonths: child.ageMonths,
       contextLabel: contextLabel(child.approvedContext),
+      supportContext: supportContext(child.approvedContext),
+      contextSource: contextSource(child.approvedContext),
       processingAllowed: child.processingAllowed === true,
       isActive: child.isActive
     })),
@@ -268,8 +286,12 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
   }
 
   for (const child of state.children) {
-    const approvedContext = child.contextLabel
-      ? ({ label: child.contextLabel } as Prisma.InputJsonValue)
+    const approvedContext = child.contextLabel || child.supportContext || child.contextSource
+      ? ({
+          label: child.contextLabel,
+          supportContext: child.supportContext ?? "UNKNOWN",
+          source: child.contextSource ?? "SANITIZED_ADMIN"
+        } as Prisma.InputJsonValue)
       : Prisma.JsonNull;
     await database.child.upsert({
       where: { id: child.id },

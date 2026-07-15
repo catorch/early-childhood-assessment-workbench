@@ -6,7 +6,7 @@ import { assertSameOrigin, enforceRateLimit, routeError } from "@/lib/help-revie
 export async function POST(request: NextRequest, context: { params: Promise<{ assessmentId: string }> }) {
   try {
     assertSameOrigin(request);
-    enforceRateLimit(request, "playback-grant", { limit: 60 });
+    await enforceRateLimit(request, "playback-grant", { limit: 60 });
     const { assessmentId } = await context.params;
     const result = await reviewService.playbackGrant(request, assessmentId);
     if (!result) return NextResponse.json({ error: "Video unavailable." }, { status: 404 });

@@ -4,13 +4,16 @@ locals {
     "aiplatform.googleapis.com",
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
     "eventarc.googleapis.com",
+    "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "pubsub.googleapis.com",
     "run.googleapis.com",
     "secretmanager.googleapis.com",
     "storage.googleapis.com"
   ])
+  alert_email = var.alert_email != "" ? var.alert_email : var.support_email
   secret_names = toset([
     "help-review-database-url",
     "help-review-playback-secret",
@@ -19,22 +22,50 @@ locals {
     "help-review-worker-secret"
   ])
   shared_environment = {
-    NODE_ENV                              = "production"
-    HELP_REVIEW_STATE_ADAPTER             = "neon"
-    HELP_REVIEW_DATABASE_ADAPTER          = "neon"
-    HELP_REVIEW_VIDEO_ADAPTER             = "gcs"
-    HELP_REVIEW_PROCESSING_ADAPTER        = "gcs-event"
-    HELP_REVIEW_SCORING_ADAPTER           = var.scoring_adapter
-    HELP_REVIEW_IDENTITY_ADAPTER          = "sandbox"
-    HELP_REVIEW_SANITIZED_PRODUCTION_ACK  = "true"
-    HELP_REVIEW_REAL_DATA_ENABLED         = "false"
-    HELP_REVIEW_SEED_SANITIZED_DATA       = "true"
-    GCS_VIDEO_BUCKET                      = local.bucket_name
-    GCS_PROCESSING_REQUEST_PREFIX         = "processing-requests/"
-    GOOGLE_CLOUD_PROJECT                  = var.project_id
-    VERTEX_AI_LOCATION                    = var.region
-    VERTEX_AI_MODEL                       = var.vertex_model
-    HELP_REVIEW_MAX_PROCESSING_DELIVERIES = "5"
+    NODE_ENV                                 = "production"
+    HELP_REVIEW_STATE_ADAPTER                = "neon"
+    HELP_REVIEW_DATABASE_ADAPTER             = "neon"
+    HELP_REVIEW_VIDEO_ADAPTER                = "gcs"
+    HELP_REVIEW_PROCESSING_ADAPTER           = "gcs-event"
+    HELP_REVIEW_SCORING_ADAPTER              = var.scoring_adapter
+    HELP_REVIEW_HELP_CATALOG_PATH            = var.help_catalog_path
+    HELP_REVIEW_HELP_CATALOG_VERSION         = var.help_catalog_version
+    HELP_REVIEW_HELP_CATALOG_SHA256          = var.help_catalog_sha256
+    HELP_REVIEW_IDENTITY_ADAPTER             = var.identity_adapter
+    HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID = var.project_id
+    NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL    = var.support_email
+    HELP_REVIEW_SANITIZED_PRODUCTION_ACK     = "true"
+    HELP_REVIEW_REAL_DATA_ENABLED            = tostring(var.real_data_enabled)
+    HELP_REVIEW_REAL_DATA_APPROVAL_ID        = var.real_data_approval_id
+    HELP_REVIEW_SEED_SANITIZED_DATA          = tostring(!var.real_data_enabled)
+    GCS_VIDEO_BUCKET                         = local.bucket_name
+    GCS_PROCESSING_REQUEST_PREFIX            = "processing-requests/"
+    GOOGLE_CLOUD_PROJECT                     = var.project_id
+    VERTEX_AI_LOCATION                       = var.region
+    VERTEX_AI_MODEL                          = var.vertex_model
+    HELP_REVIEW_MAX_PROCESSING_DELIVERIES    = "5"
+  }
+}
+
+check "identity_platform_configuration" {
+  assert {
+    condition = var.identity_adapter != "identity-platform" || (
+      length(var.identity_authorized_domains) > 0 && length(var.identity_allowed_referrers) > 0
+    )
+    error_message = "Identity Platform requires at least one authorized domain and HTTPS browser referrer."
+  }
+}
+
+check "real_data_configuration" {
+  assert {
+    condition = !var.real_data_enabled || (
+      var.identity_adapter == "identity-platform" &&
+      var.scoring_adapter == "vertex" &&
+      var.help_catalog_version != "help-2-provisional-2026-07" &&
+      length(var.help_catalog_sha256) == 64 &&
+      length(trimspace(var.real_data_approval_id)) > 0
+    )
+    error_message = "Real data requires Identity Platform, Vertex scoring, and a recorded approval ID."
   }
 }
 
@@ -47,6 +78,71 @@ resource "google_project_service" "required" {
   project            = var.project_id
   service            = each.value
   disable_on_destroy = false
+}
+
+resource "google_project_service" "observability" {
+  for_each = toset([
+    "logging.googleapis.com",
+    "monitoring.googleapis.com"
+  ])
+  project            = var.project_id
+  service            = each.value
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "identity" {
+  for_each = var.identity_adapter == "identity-platform" ? toset([
+    "apikeys.googleapis.com",
+    "identitytoolkit.googleapis.com"
+  ]) : toset([])
+  project            = var.project_id
+  service            = each.value
+  disable_on_destroy = false
+}
+
+resource "google_identity_platform_config" "default" {
+  count              = var.identity_adapter == "identity-platform" ? 1 : 0
+  project            = var.project_id
+  authorized_domains = var.identity_authorized_domains
+
+  sign_in {
+    allow_duplicate_emails = false
+    anonymous { enabled = false }
+    email {
+      enabled           = true
+      password_required = true
+    }
+    phone_number { enabled = false }
+  }
+
+  client {
+    permissions {
+      disabled_user_deletion = true
+      disabled_user_signup   = true
+    }
+  }
+
+  depends_on = [google_project_service.identity]
+}
+
+resource "google_apikeys_key" "identity_platform_browser" {
+  count           = var.identity_adapter == "identity-platform" ? 1 : 0
+  project         = var.project_id
+  name            = "help-review-identity-platform"
+  display_name    = "HELP Review Identity Platform browser key"
+  deletion_policy = "PREVENT"
+
+  restrictions {
+    browser_key_restrictions {
+      allowed_referrers = var.identity_allowed_referrers
+    }
+    api_targets { service = "identitytoolkit.googleapis.com" }
+  }
+
+  depends_on = [
+    google_identity_platform_config.default,
+    google_project_service.identity
+  ]
 }
 
 resource "google_artifact_registry_repository" "containers" {
@@ -129,6 +225,36 @@ resource "google_project_iam_member" "processor_vertex" {
   member  = "serviceAccount:${google_service_account.processor.email}"
 }
 
+resource "google_project_iam_custom_role" "identity_user_lifecycle" {
+  count       = var.identity_adapter == "identity-platform" ? 1 : 0
+  project     = var.project_id
+  role_id     = "helpReviewIdentityUserLifecycle"
+  title       = "HELP Review identity user lifecycle"
+  description = "Create, read, disable, and re-enable exact provisioned HELP Review staff identities."
+  permissions = [
+    "firebaseauth.users.create",
+    "firebaseauth.users.get",
+    "firebaseauth.users.update"
+  ]
+}
+
+resource "google_project_iam_member" "web_identity_user_lifecycle" {
+  count   = var.identity_adapter == "identity-platform" ? 1 : 0
+  project = var.project_id
+  role    = google_project_iam_custom_role.identity_user_lifecycle[0].name
+  member  = "serviceAccount:${google_service_account.web.email}"
+}
+
+moved {
+  from = google_project_iam_member.web_identity_viewer[0]
+  to   = google_project_iam_member.web_identity_user_admin[0]
+}
+
+moved {
+  from = google_project_iam_member.web_identity_user_admin[0]
+  to   = google_project_iam_member.web_identity_user_lifecycle[0]
+}
+
 resource "google_project_iam_member" "eventarc_receiver" {
   project = var.project_id
   role    = "roles/eventarc.eventReceiver"
@@ -151,15 +277,12 @@ resource "google_service_account_iam_member" "web_signer" {
   member             = "serviceAccount:${google_service_account.web.email}"
 }
 
-data "google_storage_project_service_account" "gcs" {
-  project    = var.project_id
-  depends_on = [google_project_service.required["storage.googleapis.com"]]
-}
-
 resource "google_project_iam_member" "gcs_pubsub" {
   project = var.project_id
   role    = "roles/pubsub.publisher"
-  member  = "serviceAccount:${data.google_storage_project_service_account.gcs.email_address}"
+  member  = "serviceAccount:service-${data.google_project.current.number}@gs-project-accounts.iam.gserviceaccount.com"
+
+  depends_on = [google_project_service.required["storage.googleapis.com"]]
 }
 
 resource "google_secret_manager_secret" "runtime" {
@@ -290,6 +413,13 @@ resource "google_cloud_run_v2_service" "web" {
           }
         }
       }
+      dynamic "env" {
+        for_each = var.identity_adapter == "identity-platform" ? [1] : []
+        content {
+          name  = "HELP_REVIEW_IDENTITY_PLATFORM_API_KEY"
+          value = google_apikeys_key.identity_platform_browser[0].key_string
+        }
+      }
     }
   }
 
@@ -298,8 +428,13 @@ resource "google_cloud_run_v2_service" "web" {
     google_storage_bucket_iam_member.web_objects,
     google_secret_manager_secret_iam_member.database_web,
     google_secret_manager_secret_iam_member.web_only,
-    google_secret_manager_secret_iam_member.worker_web
+    google_secret_manager_secret_iam_member.worker_web,
+    google_project_iam_member.web_identity_user_lifecycle
   ]
+
+  lifecycle {
+    ignore_changes = [client, client_version, template[0].revision]
+  }
 }
 
 resource "google_cloud_run_v2_service" "processor" {
@@ -367,6 +502,11 @@ resource "google_cloud_run_v2_service" "processor" {
     google_secret_manager_secret_iam_member.database_processor,
     google_secret_manager_secret_iam_member.worker_processor
   ]
+
+
+  lifecycle {
+    ignore_changes = [client, client_version, template[0].revision]
+  }
 }
 
 resource "google_cloud_run_v2_service_iam_member" "web_public" {
@@ -416,4 +556,202 @@ resource "google_eventarc_trigger" "processing" {
     google_project_iam_member.gcs_pubsub,
     google_project_service.required["eventarc.googleapis.com"]
   ]
+}
+
+resource "google_logging_metric" "route_failures" {
+  project     = var.project_id
+  name        = "help_review_route_failures"
+  description = "Count of redacted HELP Review route failures."
+  filter      = "resource.type=\"cloud_run_revision\" AND jsonPayload.event=\"help_review_route_failure\""
+
+  metric_descriptor {
+    metric_kind  = "DELTA"
+    value_type   = "INT64"
+    unit         = "1"
+    display_name = "HELP Review route failures"
+  }
+
+  depends_on = [google_project_service.observability["logging.googleapis.com"]]
+}
+
+resource "google_logging_metric" "processing_failures" {
+  project     = var.project_id
+  name        = "help_review_processing_failures"
+  description = "Count of terminal HELP Review processing outcomes."
+  filter      = "resource.type=\"cloud_run_revision\" AND jsonPayload.event=\"help_review_processing_outcome\" AND jsonPayload.outcome=\"FAILED\""
+
+  metric_descriptor {
+    metric_kind  = "DELTA"
+    value_type   = "INT64"
+    unit         = "1"
+    display_name = "HELP Review processing failures"
+  }
+
+  depends_on = [google_project_service.observability["logging.googleapis.com"]]
+}
+
+resource "time_sleep" "logging_metric_propagation" {
+  create_duration = "90s"
+  triggers = {
+    route_metric      = google_logging_metric.route_failures.id
+    processing_metric = google_logging_metric.processing_failures.id
+  }
+}
+
+resource "google_monitoring_notification_channel" "operations_email" {
+  project      = var.project_id
+  display_name = "HELP Review operations email"
+  type         = "email"
+  labels = {
+    email_address = local.alert_email
+  }
+
+  depends_on = [google_project_service.observability["monitoring.googleapis.com"]]
+}
+
+resource "google_monitoring_alert_policy" "route_failures" {
+  project               = var.project_id
+  display_name          = "HELP Review repeated route failures"
+  combiner              = "OR"
+  enabled               = true
+  notification_channels = [google_monitoring_notification_channel.operations_email.name]
+
+  documentation {
+    content   = "Five or more redacted route failures were recorded in five minutes. Use correlation IDs and the HELP Review incident runbook; do not copy request payloads or child data into the incident."
+    mime_type = "text/markdown"
+  }
+
+  conditions {
+    display_name = "Route failures exceed the pilot threshold"
+    condition_threshold {
+      comparison      = "COMPARISON_GT"
+      duration        = "0s"
+      filter          = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.route_failures.name}\" AND resource.type=\"cloud_run_revision\""
+      threshold_value = var.route_failure_alert_threshold - 1
+      aggregations {
+        alignment_period     = "300s"
+        per_series_aligner   = "ALIGN_SUM"
+        cross_series_reducer = "REDUCE_SUM"
+      }
+      trigger { count = 1 }
+    }
+  }
+
+  alert_strategy { auto_close = "1800s" }
+  user_labels = {
+    service  = "help-review"
+    severity = "warning"
+  }
+
+  depends_on = [
+    google_project_service.observability["monitoring.googleapis.com"],
+    time_sleep.logging_metric_propagation
+  ]
+}
+
+resource "google_monitoring_alert_policy" "processing_failures" {
+  project               = var.project_id
+  display_name          = "HELP Review terminal processing failure"
+  combiner              = "OR"
+  enabled               = true
+  notification_channels = [google_monitoring_notification_channel.operations_email.name]
+
+  documentation {
+    content   = "A terminal processing attempt was recorded. Inspect only the safe run reference and error category in Admin Jobs, verify video availability and retry eligibility, then follow the processing incident procedure."
+    mime_type = "text/markdown"
+  }
+
+  conditions {
+    display_name = "Any terminal processing outcome"
+    condition_threshold {
+      comparison      = "COMPARISON_GT"
+      duration        = "0s"
+      filter          = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.processing_failures.name}\" AND resource.type=\"cloud_run_revision\""
+      threshold_value = 0
+      aggregations {
+        alignment_period     = "60s"
+        per_series_aligner   = "ALIGN_SUM"
+        cross_series_reducer = "REDUCE_SUM"
+      }
+      trigger { count = 1 }
+    }
+  }
+
+  alert_strategy { auto_close = "1800s" }
+  user_labels = {
+    service  = "help-review"
+    severity = "error"
+  }
+
+  depends_on = [
+    google_project_service.observability["monitoring.googleapis.com"],
+    time_sleep.logging_metric_propagation
+  ]
+}
+
+resource "google_monitoring_dashboard" "operations" {
+  project = var.project_id
+  dashboard_json = jsonencode({
+    displayName = "HELP Review operations"
+    gridLayout = {
+      columns = 2
+      widgets = [
+        {
+          title = "Route failures"
+          xyChart = {
+            dataSets = [{
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.route_failures.name}\" AND resource.type=\"cloud_run_revision\""
+                  aggregation = {
+                    alignmentPeriod    = "300s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                  }
+                }
+                unitOverride = "1"
+              }
+              plotType = "LINE"
+            }]
+            timeshiftDuration = "0s"
+            yAxis = {
+              label = "Failures"
+              scale = "LINEAR"
+            }
+          }
+        },
+        {
+          title = "Terminal processing failures"
+          xyChart = {
+            dataSets = [{
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.processing_failures.name}\" AND resource.type=\"cloud_run_revision\""
+                  aggregation = {
+                    alignmentPeriod    = "60s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                  }
+                }
+                unitOverride = "1"
+              }
+              plotType = "STACKED_BAR"
+            }]
+            timeshiftDuration = "0s"
+            yAxis = {
+              label = "Failures"
+              scale = "LINEAR"
+            }
+          }
+        }
+      ]
+    }
+  })
+
+  lifecycle {
+    # Monitoring adds read-only name, etag, and chart defaults to dashboard_json.
+    ignore_changes = [dashboard_json]
+  }
+
+  depends_on = [google_project_service.observability["monitoring.googleapis.com"]]
 }

@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "help-catalog-v1",
+  "catalogVersion": "help-2-provisional-2026-07",
+  "status": "SANITIZED_FIXTURE",
+  "sourceReference": "Sanitized engineering fixture only; replace with the licensed authoritative HELP artifact before real-data use.",
+  "creditDefinitions": [
+    {
+      "value": "PRESENT",
+      "symbol": "+",
+      "label": "Present",
+      "description": "The observed evidence supports credit for the selected skill."
+    },
+    {
+      "value": "EMERGING",
+      "symbol": "+/-",
+      "label": "Emerging",
+      "description": "The observed evidence supports emerging performance for the selected skill."
+    },
+    {
+      "value": "NOT_OBSERVED",
+      "symbol": "-",
+      "label": "Not observed",
+      "description": "The selected skill was not observed in the available evidence."
+    },
+    {
+      "value": "NOT_APPLICABLE",
+      "symbol": "N/A",
+      "label": "N/A",
+      "description": "The selected skill is not applicable to this observation decision."
+    }
+  ],
+  "selectionPolicy": {
+    "ageRangeInclusive": true,
+    "standardDownwardWindowMonths": 6,
+    "supportedDownwardWindowMonths": 12,
+    "fallbackCandidateCount": 8,
+    "maximumCandidateCount": 500,
+    "twoMinusRule": {
+      "enabled": false,
+      "consecutiveNotObserved": 2,
+      "decisionReference": "Disabled in the sanitized fixture until the authoritative content artifact defines the rule."
+    }
+  },
+  "skills": [
+    {
+      "sourceSkillId": "help-1.52",
+      "skillCode": "1.52",
+      "skillName": "Looks for object that has fallen out of sight",
+      "domain": "Cognitive",
+      "strand": "Object permanence",
+      "minimumAgeMonths": 6,
+      "maximumAgeMonths": 18,
+      "sourceOrder": 0
+    },
+    {
+      "sourceSkillId": "help-1.58",
+      "skillCode": "1.58",
+      "skillName": "Stacks rings on post in any order",
+      "domain": "Cognitive",
+      "strand": "Means-end",
+      "minimumAgeMonths": 9,
+      "maximumAgeMonths": 24,
+      "sourceOrder": 1
+    },
+    {
+      "sourceSkillId": "help-2.18",
+      "skillCode": "2.18",
+      "skillName": "Responds to own name",
+      "domain": "Language Receptive",
+      "strand": "Auditory attention",
+      "minimumAgeMonths": 4,
+      "maximumAgeMonths": 15,
+      "sourceOrder": 2
+    },
+    {
+      "sourceSkillId": "help-2.41",
+      "skillCode": "2.41",
+      "skillName": "Follows simple one-step directions",
+      "domain": "Language Receptive",
+      "strand": "Comprehension",
+      "minimumAgeMonths": 12,
+      "maximumAgeMonths": 30,
+      "sourceOrder": 3
+    },
+    {
+      "sourceSkillId": "help-3.62",
+      "skillCode": "3.62",
+      "skillName": "Walks independently across room",
+      "domain": "Gross Motor",
+      "strand": "Locomotion",
+      "minimumAgeMonths": 9,
+      "maximumAgeMonths": 24,
+      "sourceOrder": 4
+    },
+    {
+      "sourceSkillId": "help-4.68",
+      "skillCode": "4.68",
+      "skillName": "Builds tower using two cubes",
+      "domain": "Fine Motor",
+      "strand": "Block construction",
+      "minimumAgeMonths": 12,
+      "maximumAgeMonths": 30,
+      "sourceOrder": 5
+    },
+    {
+      "sourceSkillId": "help-5.41",
+      "skillCode": "5.41",
+      "skillName": "Shares object spontaneously",
+      "domain": "Social-Emotional",
+      "strand": "Social interactions",
+      "minimumAgeMonths": 12,
+      "maximumAgeMonths": 36,
+      "sourceOrder": 6
+    },
+    {
+      "sourceSkillId": "help-6.22",
+      "skillCode": "6.22",
+      "skillName": "Drinks from open cup with assistance",
+      "domain": "Self-Help",
+      "strand": "Feeding",
+      "minimumAgeMonths": 9,
+      "maximumAgeMonths": 30,
+      "sourceOrder": 7
+    }
+  ]
+}

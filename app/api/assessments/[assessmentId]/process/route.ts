@@ -8,7 +8,7 @@ import { dispatchProcessingRun, processingDispatchIsDurable } from "@/lib/help-r
 export async function POST(request: NextRequest, context: { params: Promise<{ assessmentId: string }> }) {
   try {
     assertSameOrigin(request);
-    enforceRateLimit(request, "assessment-process", { limit: 20 });
+    await enforceRateLimit(request, "assessment-process", { limit: 20 });
     const { assessmentId } = await context.params;
     const result = await assessmentService.startProcessing(request, assessmentId);
     if (result.blocked) return validationError(result.reason);

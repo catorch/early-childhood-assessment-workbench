@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "help-catalog-v1",
+  "catalogVersion": "help-contract-test-1",
+  "status": "AUTHORITATIVE",
+  "sourceReference": "Synthetic contract test only; this is not licensed production HELP content.",
+  "creditDefinitions": [
+    { "value": "PRESENT", "symbol": "+", "label": "Present", "description": "Synthetic present definition." },
+    { "value": "EMERGING", "symbol": "+/-", "label": "Emerging", "description": "Synthetic emerging definition." },
+    { "value": "NOT_OBSERVED", "symbol": "-", "label": "Not observed", "description": "Synthetic not-observed definition." },
+    { "value": "NOT_APPLICABLE", "symbol": "N/A", "label": "N/A", "description": "Synthetic not-applicable definition." }
+  ],
+  "selectionPolicy": {
+    "ageRangeInclusive": true,
+    "standardDownwardWindowMonths": 6,
+    "supportedDownwardWindowMonths": 12,
+    "fallbackCandidateCount": 8,
+    "maximumCandidateCount": 500,
+    "twoMinusRule": {
+      "enabled": false,
+      "consecutiveNotObserved": 2,
+      "decisionReference": "Synthetic contract decision."
+    }
+  },
+  "skills": [
+    {
+      "sourceSkillId": "contract-test-skill-1",
+      "skillCode": "T.1",
+      "skillName": "Synthetic contract skill",
+      "domain": "Synthetic domain",
+      "strand": "Synthetic strand",
+      "minimumAgeMonths": 0,
+      "maximumAgeMonths": 216,
+      "sourceOrder": 0
+    }
+  ]
+}

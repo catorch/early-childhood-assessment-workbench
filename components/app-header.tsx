@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SessionUser } from "@/lib/help-review/models";
+import { SUPPORT_CONTACT_HREF } from "@/lib/help-review/support-contact";
 import { cn } from "@/lib/utils";
 
 export function AppHeader() {
@@ -62,24 +63,26 @@ export function AppHeader() {
               <nav aria-label="Primary navigation" className="flex self-stretch">
                 {visibleUser.role === "EDUCATOR" ? (
                   <>
-                    <Link className={navClass(pathname.startsWith("/children"))} href="/children"><UsersRound aria-hidden="true" size={17} />Children</Link>
-                    <Link className={navClass(pathname.startsWith("/assessments"))} href="/assessments"><ClipboardList aria-hidden="true" size={17} />Assessments</Link>
+                    <Link aria-current={pathname.startsWith("/children") ? "page" : undefined} className={navClass(pathname.startsWith("/children"))} href="/children"><UsersRound aria-hidden="true" size={17} />Children</Link>
+                    <Link aria-current={pathname.startsWith("/assessments") ? "page" : undefined} className={navClass(pathname.startsWith("/assessments"))} href="/assessments"><ClipboardList aria-hidden="true" size={17} />Assessments</Link>
                   </>
                 ) : (
                   <>
-                    <Link className={navClass(pathname === "/admin/access")} href="/admin/access"><ShieldCheck aria-hidden="true" size={17} />Access</Link>
-                    <Link className={navClass(pathname === "/admin/jobs")} href="/admin/jobs">Jobs</Link>
+                    <Link aria-current={pathname === "/admin/access" ? "page" : undefined} className={navClass(pathname === "/admin/access")} href="/admin/access"><ShieldCheck aria-hidden="true" size={17} />Access</Link>
+                    <Link aria-current={pathname === "/admin/jobs" ? "page" : undefined} className={navClass(pathname === "/admin/jobs")} href="/admin/jobs">Jobs</Link>
                   </>
                 )}
               </nav>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button asChild className="max-sm:hidden" size="icon" variant="outline">
-                    <a aria-label="Contact pilot support" href="mailto:pilot-support@example.test"><CircleHelp aria-hidden="true" size={18} /></a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Contact pilot support</TooltipContent>
-              </Tooltip>
+              {SUPPORT_CONTACT_HREF ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild className="max-sm:hidden" size="icon" variant="outline">
+                      <a aria-label="Contact pilot support" href={SUPPORT_CONTACT_HREF}><CircleHelp aria-hidden="true" size={18} /></a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Contact pilot support</TooltipContent>
+                </Tooltip>
+              ) : null}
               <span className="ml-3 text-[13px] text-muted-foreground max-md:hidden">{visibleUser.displayName}</span>
               <Tooltip>
                 <TooltipTrigger asChild>
