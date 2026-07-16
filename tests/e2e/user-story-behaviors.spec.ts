@@ -32,8 +32,8 @@ test("AUTH-001: root entry resolves by authentication and role", async ({ page }
   await expect(page).toHaveURL(/\/admin\/access$/);
 });
 
-test("LIVE-001: managed sign-in verifies with Google before creating an application session", async ({ page }) => {
-  let providerSignInAttempts = 0;
+test("LIVE-001: email/password sign-in verifies credentials on the server before creating an application session", async ({ page }) => {
+  let signInAttempts = 0;
   let releaseIdentityConfiguration!: () => void;
   const identityConfigurationGate = new Promise<void>((resolve) => {
     releaseIdentityConfiguration = resolve;
@@ -42,37 +42,20 @@ test("LIVE-001: managed sign-in verifies with Google before creating an applicat
     await identityConfigurationGate;
     await route.fulfill({
       status: 200,
-      json: { mode: "identity-platform", apiKey: "restricted-test-key" }
+      json: { mode: "email-password" }
     });
   });
-  await page.route(/identitytoolkit\.googleapis\.com/, async (route) => {
-    const headers = {
-      "Access-Control-Allow-Headers": "content-type",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Origin": "*"
-    };
-    if (route.request().method() === "OPTIONS") {
-      await route.fulfill({ status: 204, headers });
-      return;
-    }
-    if (route.request().url().includes("sendOobCode")) {
-      await route.fulfill({ status: 400, headers, json: { error: { message: "EMAIL_NOT_FOUND" } } });
-      return;
-    }
-    providerSignInAttempts += 1;
-    if (providerSignInAttempts === 1) {
-      await route.fulfill({ status: 400, headers, json: { error: { message: "INVALID_LOGIN_CREDENTIALS" } } });
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      headers,
-      json: { idToken: "verified-provider-token-".padEnd(140, "x") }
-    });
+  await page.route(/\/api\/auth\/request-reset$/, async (route) => {
+    await route.fulfill({ status: 200, json: { ok: true } });
   });
   let applicationSessionPayload: unknown;
   await page.route(/\/api\/session$/, async (route) => {
     if (route.request().method() !== "POST") return route.continue();
+    signInAttempts += 1;
+    if (signInAttempts === 1) {
+      await route.fulfill({ status: 401, json: { error: "We could not confirm access." } });
+      return;
+    }
     applicationSessionPayload = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
@@ -99,16 +82,17 @@ test("LIVE-001: managed sign-in verifies with Google before creating an applicat
   await page.getByRole("button", { name: "Reset password" }).click();
   await expect(page.getByText("If this address has an account, a reset email is on its way.")).toBeVisible();
 
-  await page.getByLabel("Password", { exact: true }).fill("provider-owned-password");
+  await page.getByLabel("Password", { exact: true }).fill("first-party-password");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "We could not confirm access" })).toBeFocused();
   await expect(page.getByLabel("Email")).toHaveValue("managed.educator@example.test");
   await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
 
-  await page.getByLabel("Password", { exact: true }).fill("provider-owned-password");
+  await page.getByLabel("Password", { exact: true }).fill("first-party-password");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect.poll(() => applicationSessionPayload).toEqual({
-    idToken: "verified-provider-token-".padEnd(140, "x")
+    email: "managed.educator@example.test",
+    password: "first-party-password"
   });
 });
 

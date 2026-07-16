@@ -69,16 +69,16 @@ The prototype also shows the add-on flags `ATYPICAL` and `FAMILY_CONCERN`. Their
 
 1. BEFORE implementing live authentication, the team SHALL document HELP Connect's current sign-in provider or protocol, stable user identifier, session/logout behavior, account lifecycle, available non-production environment, and integration owner.
 2. WHEN HELP Connect authentication is available and approved for the pilot THEN the system SHALL reuse it and map the authenticated identity to the pilot's local role and child assignments without collecting a second password.
-3. IF HELP Connect authentication cannot support the standalone pilot within the agreed schedule THEN the system SHALL use administrator-provisioned email/password through an approved managed identity service that is compatible with the target Google Cloud ownership model.
+3. IF HELP Connect authentication cannot support the standalone pilot within the agreed schedule THEN the system SHALL use administrator-provisioned email/password, implemented either directly by the application with standard credential controls or through a managed identity service compatible with the target Google Cloud ownership model.
 4. WHEN an Admin provisions a staff member THEN the system SHALL create or activate pilot access for the exact external identity or email and either the `EDUCATOR` or `ADMIN` role.
-5. IF the email/password fallback is selected THEN the identity service SHALL support secure initial setup, email verification where required, password recovery, session revocation, rate limiting, and protection against brute-force and credential-stuffing attempts.
+5. IF an email/password path is selected THEN the implementation (application-owned or provider-owned) SHALL support secure initial setup, email verification where required, password recovery, session revocation, rate limiting, and protection against brute-force and credential-stuffing attempts.
 6. WHEN a person without provisioned pilot access attempts sign-in or recovery THEN the system SHALL not grant access or disclose whether a pilot account exists.
 7. WHEN the selected identity provider confirms a valid user THEN the system SHALL establish a secure application session or validate the provider session on each protected request.
 8. WHEN an Educator requests child or assessment data THEN the system SHALL require an active assignment to that child.
 9. WHEN an Admin deactivates a user or assignment THEN the system SHALL deny subsequent access and invalidate or reject incompatible active sessions.
 10. IF a user requests an unauthorized resource THEN the system SHALL return a non-disclosing forbidden or not-found response.
 
-The pilot SHALL implement only the selected sign-in method, not parallel HELP Connect, password, and magic-link systems. Magic links are not the default requirement and SHALL NOT be implemented unless HELP Connect already uses them or stakeholders explicitly select them later. Public signup and self-service account creation are not part of the pilot. The application SHALL NOT build a custom password store when the approved identity service can own credentials.
+The pilot SHALL run one active sign-in method at a time rather than parallel HELP Connect, password, and magic-link systems. Magic links are not the default requirement and SHALL NOT be implemented unless HELP Connect already uses them or stakeholders explicitly select them later. Public signup and self-service account creation are not part of the pilot. The application MAY implement a normal first-party email/password system — including securely hashed credential storage, email verification, password reset, session revocation, and rate limiting — or delegate credentials to a managed identity service; both paths are approved.
 
 ### R2. Assigned Child Selection
 
@@ -171,11 +171,14 @@ The meeting requires a final page/report, but it does not confirm a downloadable
 
 **Acceptance Criteria:**
 
-1. WHEN an Admin manages access THEN the system SHALL support provisioning, deactivating, and viewing the status of Educator pilot access; credential lifecycle remains with the selected identity provider.
-2. WHEN an Admin manages assignments THEN the system SHALL support assigning and unassigning Educators to children.
-3. WHEN a processing run fails THEN the system SHALL let an Admin inspect a safe error category and retry or mark it for technical follow-up.
-4. WHEN the agreed roster source is an import THEN the system SHALL validate required child and assignment fields and report row errors.
-5. WHEN an Admin action changes access or processing state THEN the system SHALL record the Admin and time.
+1. WHEN an Admin manages access THEN the system SHALL support inviting, provisioning, editing, deactivating, reactivating, removing, and viewing the status of Educator pilot access; credential lifecycle follows the selected identity path and MAY be provider-owned or application-owned.
+2. WHEN an Admin invites a staff member THEN the system SHALL send a secure account-setup invitation to the exact provisioned email and SHALL NOT create, display, or transmit a usable password.
+3. WHEN an Admin edits a staff member THEN the system SHALL support updating the display name and role, record the acting Admin and time, and apply the change on the target's next request.
+4. WHEN an Admin removes a staff member THEN the system SHALL immediately revoke access, sessions, and assignments, retain attributable historical decisions and finalized records, and allow the same email to be provisioned again later.
+5. WHEN an Admin manages assignments THEN the system SHALL support assigning and unassigning Educators to children.
+6. WHEN a processing run fails THEN the system SHALL let an Admin inspect a safe error category and retry or mark it for technical follow-up.
+7. WHEN the agreed roster source is an import THEN the system SHALL validate required child and assignment fields and report row errors.
+8. WHEN an Admin action changes access or processing state THEN the system SHALL record the Admin and time.
 
 A dashboard, batch console, prompt manager, reliability workspace, generalized rubric editor, and export center are not part of the confirmed Admin scope.
 
@@ -217,11 +220,11 @@ Every accepted screen is an acceptance state of an existing route, not a separat
 
 | Screen | Required acceptance behavior |
 |---|---|
-| `01-sign-in.png` | IF managed email/password is the selected identity path THEN `/sign-in` SHALL provide email, password visibility control, sign-in, and provider-owned recovery entry points; WHEN credentials or access are rejected THEN it SHALL use the safe failure in screen 10. IF HELP Connect reuse is selected THEN this form SHALL be replaced by the approved provider handoff rather than shipped as a second mode. |
+| `01-sign-in.png` | IF an email/password path (first-party or managed) is selected THEN `/sign-in` SHALL provide email, password visibility control, sign-in, and recovery entry points (provider-hosted or first-party); WHEN credentials or access are rejected THEN it SHALL use the safe failure in screen 10. IF HELP Connect reuse is selected THEN this form SHALL be replaced by the approved provider handoff rather than shipped as a second mode. |
 | `10-auth-access-unavailable.png` | WHEN sign-in, recovery, or pilot-access mapping fails THEN the system SHALL show one non-enumerating response, retain the entered email only when approved by the provider flow, clear the password, and offer the selected recovery or Admin-contact path without identifying which check failed. |
 | `11-session-expired.png` | WHEN an active session expires THEN the system SHALL interrupt protected requests, avoid saving the failed command as successful, show the safe assessment reference already visible to the user, and allow reauthentication followed by authorization-checked resume. |
 | `15-resource-unavailable.png` | WHEN a child, assessment, video, or final record is missing or unauthorized THEN the system SHALL show the same generic unavailable state and a route back to assigned children; it SHALL NOT distinguish missing from forbidden. |
-| `40-mobile-sign-in.png` | IF the managed fallback is selected and the viewport is mobile THEN all sign-in, password visibility, recovery, privacy, help, error, and focus behavior from screen 01 SHALL remain usable without horizontal scrolling or obscured controls. |
+| `40-mobile-sign-in.png` | IF an email/password path is selected and the viewport is mobile THEN all sign-in, password visibility, recovery, privacy, help, error, and focus behavior from screen 01 SHALL remain usable without horizontal scrolling or obscured controls. |
 
 ### Assigned Children And Assessment Navigation
 
@@ -355,7 +358,6 @@ Every accepted screen is an acceptance state of an existing route, not a separat
 - A native mobile application, offline review, live recording, or livestream scoring
 - Public signup, billing, or self-service organization management
 - Running multiple parallel sign-in systems for the pilot
-- A custom application password store when an approved HELP Connect or managed identity service can own credentials
 - Full integration with Acelero's existing platform beyond the selected identity and required handoff boundaries in version 1
 - Autonomous final assessment decisions
 
@@ -379,7 +381,7 @@ A feature without one of these bases requires an explicit requirements change be
 ## Decisions Required Before Live Integration
 
 1. HELP Connect's current authentication provider/protocol and whether the pilot can reuse its non-production and production identity interfaces.
-2. If reuse is not feasible, the approved managed email/password provider and the migration or federation path into HELP Connect.
+2. If HELP Connect reuse is not chosen, the email/password implementation (first-party application-owned or a managed provider) and any desired future federation or migration path.
 3. The target Google Cloud organization/project, service and budget ownership, deployment constraints, secret ownership, and handoff expectations.
 4. Scientist API request, response, authentication, completion, retry, and error contract.
 5. Exact child roster source, identifier, assignment method, and approved context fields.
@@ -392,7 +394,7 @@ A feature without one of these bases requires an explicit requirements change be
 
 | Gate | Until confirmed | After confirmation |
 |---|---|---|
-| HELP Connect reuse versus managed email/password | Use only a test identity adapter and sanitized users outside production. | Implement and test exactly the selected path; remove or omit the alternative UI and routes. |
+| Identity path (first-party email/password, managed provider, or HELP Connect reuse) | Any standard email/password implementation is approved; use sanitized users outside production. | Implement and test the selected path; keep one active sign-in path per release. |
 | Negative credit wording | Use canonical code `NOT_OBSERVED` internally and mark release content as unresolved. | Apply one approved display label consistently across review, summaries, final records, tests, and accessibility names. |
 | `ATYPICAL` and `FAMILY_CONCERN` flags | Hide the flag controls and reject flag values at the production API boundary. | Enable only the approved names, symbols, eligibility, summary behavior, and persistence rules. |
 | Child roster source | Use sanitized fixtures or controlled seed data; the Admin UI can assign only those existing records. | Implement the approved controlled import or upstream integration for child records while retaining the minimal access/assignment UI represented by the screens. |
@@ -402,4 +404,4 @@ A feature without one of these bases requires an explicit requirements change be
 
 ## Definition Of Done
 
-Version 1 is done when an approved Educator can sign in through the selected HELP Connect or managed email/password path, see only assigned children, upload one approved video, leave and return during processing, review every valid suggestion using real video evidence, save each supported action, finalize the assessment, and reopen the final summary. An unassigned Educator must be unable to access the child or assessment through either the UI or direct requests. The selected identity and deployment path must have an accepted HELP Connect/Google Cloud ownership handoff, the scientist integration must pass against its agreed sandbox, and the unresolved privacy/storage decisions must be approved before real child data is enabled.
+Version 1 is done when an approved Educator can sign in through the selected identity path (first-party email/password, managed provider, or HELP Connect), see only assigned children, upload one approved video, leave and return during processing, review every valid suggestion using real video evidence, save each supported action, finalize the assessment, and reopen the final summary. An unassigned Educator must be unable to access the child or assessment through either the UI or direct requests. The selected identity and deployment path must have an accepted HELP Connect/Google Cloud ownership handoff, the scientist integration must pass against its agreed sandbox, and the unresolved privacy/storage decisions must be approved before real child data is enabled.

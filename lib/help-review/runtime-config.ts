@@ -67,15 +67,22 @@ export function assertRuntimeConfiguration(environment: NodeJS.ProcessEnv = proc
   } else {
     throw new Error("An acknowledged sanitized deployment must use an authenticated private Blob store or GCS bucket.");
   }
-  if (!new Set(["sandbox", "identity-platform"]).has(identityAdapter)) {
+  if (!new Set(["sandbox", "email-password"]).has(identityAdapter)) {
     throw new Error("The selected identity adapter is not supported.");
   }
-  if (identityAdapter === "identity-platform") {
-    if (!(environment.HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID || environment.GOOGLE_CLOUD_PROJECT)) {
-      throw new Error("Identity Platform requires HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID or GOOGLE_CLOUD_PROJECT.");
+  if (identityAdapter === "email-password" && serviceRole === "web") {
+    const emailAdapter = environment.HELP_REVIEW_EMAIL_ADAPTER ?? "console";
+    if (emailAdapter === "console") {
+      throw new Error("Production email/password sign-in requires a real email adapter (HELP_REVIEW_EMAIL_ADAPTER=resend) for invitations and resets.");
     }
-    if (serviceRole === "web" && !environment.HELP_REVIEW_IDENTITY_PLATFORM_API_KEY) {
-      throw new Error("The Identity Platform web service requires HELP_REVIEW_IDENTITY_PLATFORM_API_KEY.");
+    if (emailAdapter !== "resend") {
+      throw new Error("The selected email adapter is not supported.");
+    }
+    if (!environment.RESEND_API_KEY || !isDeliverableSupportEmail(environment.HELP_REVIEW_EMAIL_FROM)) {
+      throw new Error("The Resend email adapter requires RESEND_API_KEY and a deliverable HELP_REVIEW_EMAIL_FROM.");
+    }
+    if (!/^https:\/\//.test(environment.HELP_REVIEW_APP_ORIGIN ?? "")) {
+      throw new Error("Production email/password sign-in requires an https HELP_REVIEW_APP_ORIGIN for account setup links.");
     }
   }
   if (!new Set(["fake", "gemini", "vertex"]).has(scoringAdapter)) {

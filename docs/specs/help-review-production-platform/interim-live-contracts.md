@@ -149,12 +149,13 @@ The content owner must verify the structured HELP 2 catalogue against the author
 
 The sanitized deployment uses administrator-provisioned fixture identities. It has no public signup, password store, recovery flow, or claim of HELP Connect federation. Sessions are HTTP-only, same-site, secure in production, time-limited, and rechecked against active access on each request.
 
-Exactly one production identity mode will replace it:
+One production identity mode will be active at a time. Approved options:
 
-1. HELP Connect OIDC/OAuth-compatible reuse, if the provider contract is supplied; otherwise
-2. one organization-approved managed email/password provider.
+1. a first-party application email/password implementation with securely hashed credential storage, email verification, password reset, and rate limiting;
+2. the implemented Google Identity Platform managed provider; or
+3. HELP Connect OIDC/OAuth-compatible reuse, if the provider contract is supplied.
 
-The application will not ship both production modes and will not store passwords.
+The application runs one live sign-in mode per release and may own the credential store when the first-party option is selected.
 
 ### Interim Infrastructure Ownership
 

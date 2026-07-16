@@ -2,7 +2,7 @@
 
 Updated: July 15, 2026
 
-Selected fallback: Google Cloud Identity Platform email/password. HELP Connect is not implemented in parallel. Sandbox profiles remain limited to local and visibly sanitized development.
+**RETIRED July 15, 2026.** This contract documents the Google Cloud Identity Platform email/password path that was implemented and QA2-exercised before stakeholder direction replaced it with the first-party application email/password implementation (scrypt-hashed credentials, single-use invitation/reset links, `/api/auth/*` routes, `/set-password`). The adapter, firebase-admin dependency, and Identity Platform Terraform resources are removed from the codebase; this document is retained as the historical record of the retired path and of the QA2 evidence. Sandbox profiles remain limited to local and visibly sanitized development.
 
 ## Security Boundary
 

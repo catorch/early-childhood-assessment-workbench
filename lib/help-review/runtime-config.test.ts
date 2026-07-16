@@ -101,14 +101,16 @@ describe("runtime adapter guard", () => {
     ).toThrow("Real-data configuration is incomplete");
   });
 
-  it("allows the selected managed identity path with complete real-data infrastructure", () => {
+  it("allows the first-party email/password path with complete real-data infrastructure", () => {
     expect(() => assertRuntimeConfiguration({
       NODE_ENV: "production",
       HELP_REVIEW_REAL_DATA_ENABLED: "true",
-      HELP_REVIEW_REAL_DATA_APPROVAL_ID: "approval-identity-platform-1",
-      HELP_REVIEW_IDENTITY_ADAPTER: "identity-platform",
-      HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID: "help-review-production",
-      HELP_REVIEW_IDENTITY_PLATFORM_API_KEY: "restricted-browser-api-key",
+      HELP_REVIEW_REAL_DATA_APPROVAL_ID: "approval-email-password-1",
+      HELP_REVIEW_IDENTITY_ADAPTER: "email-password",
+      HELP_REVIEW_EMAIL_ADAPTER: "resend",
+      RESEND_API_KEY: "resend-test-api-key",
+      HELP_REVIEW_EMAIL_FROM: "invites@help-review.dev",
+      HELP_REVIEW_APP_ORIGIN: "https://review.help-review.dev",
       HELP_REVIEW_SCORING_ADAPTER: "vertex",
       HELP_REVIEW_HELP_CATALOG_PATH: "tests/fixtures/help-catalog.authoritative-contract-test.json",
       HELP_REVIEW_HELP_CATALOG_VERSION: "help-contract-test-1",
@@ -127,12 +129,11 @@ describe("runtime adapter guard", () => {
     })).not.toThrow();
   });
 
-  it("rejects a managed identity web service without its browser API key", () => {
+  it("rejects an email/password web service without a real email adapter", () => {
     expect(() => assertRuntimeConfiguration({
       NODE_ENV: "production",
       HELP_REVIEW_SANITIZED_PRODUCTION_ACK: "true",
-      HELP_REVIEW_IDENTITY_ADAPTER: "identity-platform",
-      HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID: "help-review-staging",
+      HELP_REVIEW_IDENTITY_ADAPTER: "email-password",
       HELP_REVIEW_STATE_ADAPTER: "neon",
       HELP_REVIEW_VIDEO_ADAPTER: "vercel-blob",
       DATABASE_URL: "postgresql://example.invalid/staging",
@@ -141,6 +142,6 @@ describe("runtime adapter guard", () => {
       HELP_REVIEW_SESSION_SECRET: "a-production-session-secret-with-32-characters",
       HELP_REVIEW_PLAYBACK_GRANT_SECRET: "a-production-playback-secret-with-32-characters",
       HELP_REVIEW_WORKER_SECRET: "a-production-worker-secret-with-32-characters"
-    })).toThrow("HELP_REVIEW_IDENTITY_PLATFORM_API_KEY");
+    })).toThrow("HELP_REVIEW_EMAIL_ADAPTER=resend");
   });
 });

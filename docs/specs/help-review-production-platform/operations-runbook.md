@@ -10,10 +10,10 @@ Real child data: disabled
 |---|---|---|---|---|---|
 | Local (`pnpm dev:stack`) | locked ignored `.data/` shared by two processes | ignored `.data/uploads/` | signed sandbox profiles | standalone HTTP processor + deterministic fake | synthetic/sanitized |
 | CI | ephemeral PostgreSQL | local synthetic fixture | signed sandbox profiles | deterministic fake | synthetic/sanitized |
-| GCP development | pooled Neon | private GCS | Google Identity Platform with exact provisioned access | Eventarc + private Cloud Run processor + Vertex AI | synthetic/sanitized |
-| Real-data production | approved PostgreSQL target | approved organization GCS policy | Google Identity Platform | accepted scientist gateway | closed by runtime guard |
+| GCP development | pooled Neon | private GCS | signed sandbox profiles until an approved sender is configured | Eventarc + private Cloud Run processor + Vertex AI | synthetic/sanitized |
+| Real-data production | approved PostgreSQL target | approved organization GCS policy | first-party email/password with exact provisioned access | accepted scientist gateway | closed by runtime guard |
 
-The GCP development deployment sets `HELP_REVIEW_SANITIZED_PRODUCTION_ACK=true`, `HELP_REVIEW_REAL_DATA_ENABLED=false`, `HELP_REVIEW_STATE_ADAPTER=neon`, `HELP_REVIEW_IDENTITY_ADAPTER=identity-platform`, `HELP_REVIEW_VIDEO_ADAPTER=gcs`, `HELP_REVIEW_PROCESSING_ADAPTER=gcs-event`, and `HELP_REVIEW_SCORING_ADAPTER=vertex`. It requires `DATABASE_URL`, the private bucket/project/location values, the restricted Identity Platform browser key, and distinct 32-character-or-longer session, playback, upload, and worker secrets. Cloud Run receives secrets from Secret Manager. Fake/sandbox adapters remain forbidden when real-data mode is requested.
+The GCP development deployment sets `HELP_REVIEW_SANITIZED_PRODUCTION_ACK=true`, `HELP_REVIEW_REAL_DATA_ENABLED=false`, `HELP_REVIEW_STATE_ADAPTER=neon`, `HELP_REVIEW_IDENTITY_ADAPTER=sandbox`, `HELP_REVIEW_VIDEO_ADAPTER=gcs`, `HELP_REVIEW_PROCESSING_ADAPTER=gcs-event`, and `HELP_REVIEW_SCORING_ADAPTER=vertex`. It requires `DATABASE_URL`, the private bucket/project/location values, and distinct 32-character-or-longer session, playback, upload, and worker secrets. Cloud Run receives secrets from Secret Manager. Selecting `email-password` additionally requires the Resend secret, a verified `HELP_REVIEW_EMAIL_FROM`, and the exact HTTPS `HELP_REVIEW_APP_ORIGIN`. Sandbox identity remains forbidden when real-data mode is requested.
 
 Never place secret values in source, browser variables, URLs, screenshots, support events, or incident tickets.
 
@@ -30,7 +30,7 @@ Never place secret values in source, browser variables, URLs, screenshots, suppo
 9. Verify `/api/health`, Cloud Run readiness, Eventarc trigger state, sign-in, direct GCS upload completion, private processor delivery, Vertex outcome, authorized signed range playback, review persistence, finalization, Admin revocation, and retry.
 10. Record the deployment URL, commit, migration state, checks, and any open gate in `deployment-evidence.md`.
 
-The release is not a real-data launch. Managed identity can be exercised with synthetic records while `HELP_REVIEW_REAL_DATA_ENABLED` remains false; do not enable the accepted production boundary until every external gate is closed.
+The release is not a real-data launch. Email/password identity can be exercised with synthetic records while `HELP_REVIEW_REAL_DATA_ENABLED` remains false; do not enable the accepted production boundary until every external gate is closed.
 
 ## Database
 
@@ -78,7 +78,7 @@ The release is not a real-data launch. Managed identity can be exercised with sy
 ## Access Support
 
 1. Confirm the caller is an authorized pilot Admin.
-2. Use `/admin/access` for exact provision, activation/deactivation, and one assignment change.
+2. Use `/admin/access` for exact provision, invitation/reset, edit, activation/deactivation, removal, and assignment changes.
 3. Use `/admin/jobs` for safe failed/stuck history and eligible retry only.
 4. Do not open child records, videos, review projections, raw scoring output, or database rows on an Admin's behalf.
 5. Deactivation and unassignment apply on the next request; validate with a fresh direct request rather than relying on hidden navigation.
@@ -88,7 +88,7 @@ The release is not a real-data launch. Managed identity can be exercised with sy
 1. Add a new Secret Manager version without recording the value in source, a plan file, or a shell transcript.
 2. Deploy new Cloud Run revisions so `latest` resolves the new version, then verify readiness plus the affected flow.
 3. Session-secret rotation intentionally expires current sessions. Playback-secret rotation invalidates outstanding five-minute grants.
-4. Rotate worker/cron secrets together with the configured scheduler authorization.
+4. Rotate worker/cron secrets together with the configured scheduler authorization; rotate the Resend key with an invitation/reset delivery smoke check.
 5. Remove the prior value only after the new deployment and smoke check pass.
 6. Record who rotated it, when, the affected environment, and the smoke reference, never the value.
 

@@ -36,7 +36,7 @@ Skill IDs, skill codes, and source-order values must each be unique. Maximum age
 5. Build both images. Each Docker image contains the `content/` directory, and both services verify the same immutable version at startup.
 6. Create new assessments only after the new image is active. Drain or finish assessments tied to an older version before changing the configured catalogue.
 
-`HELP_REVIEW_REAL_DATA_ENABLED=true` additionally requires an `AUTHORITATIVE` artifact, explicit path/version/digest, managed identity, and accepted production scoring configuration. The sanitized fixture remains available only for deterministic development and test states.
+`HELP_REVIEW_REAL_DATA_ENABLED=true` additionally requires an `AUTHORITATIVE` artifact, explicit path/version/digest, the selected non-sandbox identity path, and accepted production scoring configuration. The sanitized fixture remains available only for deterministic development and test states.
 
 ## Model Boundary
 

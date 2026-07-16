@@ -6,7 +6,7 @@ import {
   selectedIdentityAdapter,
   SESSION_COOKIE,
 } from "@/lib/help-review/server-auth";
-import { authenticateIdentityPlatformUser } from "@/lib/help-review/identity-platform";
+import { authenticateEmailPassword } from "@/lib/help-review/email-password-auth";
 import { sessionUser } from "@/lib/help-review/public-projections";
 import { assertSameOrigin, enforceRateLimit, readJsonBody, routeError, validationError } from "@/lib/help-review/server-http";
 import { readPilotState } from "@/lib/help-review/server-store";
@@ -14,8 +14,9 @@ import { readPilotState } from "@/lib/help-review/server-store";
 const SandboxSignInSchema = z.object({
   userId: z.enum(["user-educator-1", "user-educator-2", "user-admin-1"])
 }).strict();
-const IdentityPlatformSignInSchema = z.object({
-  idToken: z.string().min(100).max(16 * 1024)
+const EmailPasswordSignInSchema = z.object({
+  email: z.email().max(254),
+  password: z.string().min(1).max(4096)
 }).strict();
 
 function sessionResponse(user: Parameters<typeof sessionUser>[0]) {
@@ -52,11 +53,12 @@ export async function POST(request: NextRequest) {
       limit: process.env.NODE_ENV === "production" ? 10 : 200
     });
     const body = await readJsonBody(request, 20 * 1024);
-    if (identity.name === "identity-platform") {
-      const parsed = IdentityPlatformSignInSchema.safeParse(body);
+    if (identity.name === "email-password") {
+      const parsed = EmailPasswordSignInSchema.safeParse(body);
       if (!parsed.success) return validationError("We could not confirm access.");
       try {
-        const user = await authenticateIdentityPlatformUser(parsed.data.idToken);
+        const state = await readPilotState();
+        const user = await authenticateEmailPassword(state, parsed.data.email, parsed.data.password);
         if (!user) return NextResponse.json({ error: "We could not confirm access." }, { status: 401 });
         return sessionResponse(user);
       } catch {

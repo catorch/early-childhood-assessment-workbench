@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 type SandboxUserId = "user-educator-1" | "user-educator-2" | "user-admin-1";
 type IdentityConfiguration =
   | { readonly mode: "sandbox" }
-  | { readonly mode: "identity-platform"; readonly apiKey: string };
+  | { readonly mode: "email-password" };
 
 const profiles: ReadonlyArray<{
   readonly id: SandboxUserId;
@@ -127,51 +127,31 @@ export default function SignInPage() {
 
   async function managedSignIn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (configuration?.mode !== "identity-platform") return;
+    if (configuration?.mode !== "email-password") return;
     setManagedPending(true);
     setError(null);
     setNotice(null);
     try {
-      const providerResponse = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(configuration.apiKey)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim(), password, returnSecureToken: true })
-        }
-      );
-      const providerResult = await providerResponse.json() as { readonly idToken?: string };
-      if (!providerResponse.ok || !providerResult.idToken) throw new Error("Provider rejected sign-in.");
       const response = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: providerResult.idToken })
+        body: JSON.stringify({ email: email.trim(), password })
       });
       const result = await response.json() as { readonly user?: { readonly role?: string } };
-      if (!response.ok || !result.user) {
-        await fetch(
-          `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${encodeURIComponent(configuration.apiKey)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ requestType: "VERIFY_EMAIL", idToken: providerResult.idToken })
-          }
-        ).catch(() => undefined);
-        throw new Error("Application access was not confirmed.");
-      }
+      if (!response.ok || !result.user) throw new Error("Application access was not confirmed.");
       setPassword("");
       const destination = result.user.role === "ADMIN" ? "/admin/access" : "/children";
       router.push(safeReturnPath(destination));
       router.refresh();
     } catch {
       setPassword("");
-      setError("We could not confirm access. Check your details or verification email, then contact the pilot administrator if needed.");
+      setError("We could not confirm access. Check your details, then contact the pilot administrator if needed.");
       setManagedPending(false);
     }
   }
 
   async function requestPasswordReset() {
-    if (configuration?.mode !== "identity-platform" || !email.trim()) {
+    if (configuration?.mode !== "email-password" || !email.trim()) {
       setError("Enter your provisioned email address first.");
       return;
     }
@@ -179,14 +159,11 @@ export default function SignInPage() {
     setError(null);
     setNotice(null);
     try {
-      await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${encodeURIComponent(configuration.apiKey)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requestType: "PASSWORD_RESET", email: email.trim() })
-        }
-      );
+      await fetch("/api/auth/request-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() })
+      });
       setNotice("If this address has an account, a reset email is on its way.");
     } catch {
       setNotice("If this address has an account, a reset email is on its way.");
@@ -202,7 +179,7 @@ export default function SignInPage() {
         <p className="mt-4 text-[9px] font-extrabold uppercase text-primary-strong">HELP Review pilot</p>
         <h1 className="mt-1 font-heading text-[32px] font-normal leading-tight text-ink" id="sign-in-title">Sign in</h1>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {configuration?.mode === "identity-platform"
+          {configuration?.mode === "email-password"
             ? "Use your provisioned staff account."
             : configuration?.mode === "sandbox"
               ? "Choose an approved sanitized staff profile."
@@ -229,7 +206,7 @@ export default function SignInPage() {
               );
             })}
           </div>
-        ) : configuration?.mode === "identity-platform" ? (
+        ) : configuration?.mode === "email-password" ? (
           <form className="mt-5 grid gap-4" onSubmit={managedSignIn}>
             <div className="grid gap-1.5">
               <label className="text-xs font-bold text-ink" htmlFor="sign-in-email">Email</label>

@@ -17,55 +17,55 @@ locals {
   secret_names = toset([
     "help-review-database-url",
     "help-review-playback-secret",
+    "help-review-resend-api-key",
     "help-review-session-secret",
     "help-review-upload-secret",
     "help-review-worker-secret"
   ])
   shared_environment = {
-    NODE_ENV                                 = "production"
-    HELP_REVIEW_STATE_ADAPTER                = "neon"
-    HELP_REVIEW_DATABASE_ADAPTER             = "neon"
-    HELP_REVIEW_VIDEO_ADAPTER                = "gcs"
-    HELP_REVIEW_PROCESSING_ADAPTER           = "gcs-event"
-    HELP_REVIEW_SCORING_ADAPTER              = var.scoring_adapter
-    HELP_REVIEW_HELP_CATALOG_PATH            = var.help_catalog_path
-    HELP_REVIEW_HELP_CATALOG_VERSION         = var.help_catalog_version
-    HELP_REVIEW_HELP_CATALOG_SHA256          = var.help_catalog_sha256
-    HELP_REVIEW_IDENTITY_ADAPTER             = var.identity_adapter
-    HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID = var.project_id
-    NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL    = var.support_email
-    HELP_REVIEW_SANITIZED_PRODUCTION_ACK     = "true"
-    HELP_REVIEW_REAL_DATA_ENABLED            = tostring(var.real_data_enabled)
-    HELP_REVIEW_REAL_DATA_APPROVAL_ID        = var.real_data_approval_id
-    HELP_REVIEW_SEED_SANITIZED_DATA          = tostring(!var.real_data_enabled)
-    GCS_VIDEO_BUCKET                         = local.bucket_name
-    GCS_PROCESSING_REQUEST_PREFIX            = "processing-requests/"
-    GOOGLE_CLOUD_PROJECT                     = var.project_id
-    VERTEX_AI_LOCATION                       = var.region
-    VERTEX_AI_MODEL                          = var.vertex_model
-    HELP_REVIEW_MAX_PROCESSING_DELIVERIES    = "5"
+    NODE_ENV                              = "production"
+    HELP_REVIEW_STATE_ADAPTER             = "neon"
+    HELP_REVIEW_DATABASE_ADAPTER          = "neon"
+    HELP_REVIEW_VIDEO_ADAPTER             = "gcs"
+    HELP_REVIEW_PROCESSING_ADAPTER        = "gcs-event"
+    HELP_REVIEW_SCORING_ADAPTER           = var.scoring_adapter
+    HELP_REVIEW_HELP_CATALOG_PATH         = var.help_catalog_path
+    HELP_REVIEW_HELP_CATALOG_VERSION      = var.help_catalog_version
+    HELP_REVIEW_HELP_CATALOG_SHA256       = var.help_catalog_sha256
+    HELP_REVIEW_IDENTITY_ADAPTER          = var.identity_adapter
+    NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL = var.support_email
+    HELP_REVIEW_SANITIZED_PRODUCTION_ACK  = "true"
+    HELP_REVIEW_REAL_DATA_ENABLED         = tostring(var.real_data_enabled)
+    HELP_REVIEW_REAL_DATA_APPROVAL_ID     = var.real_data_approval_id
+    HELP_REVIEW_SEED_SANITIZED_DATA       = tostring(!var.real_data_enabled)
+    GCS_VIDEO_BUCKET                      = local.bucket_name
+    GCS_PROCESSING_REQUEST_PREFIX         = "processing-requests/"
+    GOOGLE_CLOUD_PROJECT                  = var.project_id
+    VERTEX_AI_LOCATION                    = var.region
+    VERTEX_AI_MODEL                       = var.vertex_model
+    HELP_REVIEW_MAX_PROCESSING_DELIVERIES = "5"
   }
 }
 
-check "identity_platform_configuration" {
+check "email_password_configuration" {
   assert {
-    condition = var.identity_adapter != "identity-platform" || (
-      length(var.identity_authorized_domains) > 0 && length(var.identity_allowed_referrers) > 0
+    condition = var.identity_adapter != "email-password" || (
+      length(trimspace(var.email_from)) > 0 && startswith(var.app_origin, "https://")
     )
-    error_message = "Identity Platform requires at least one authorized domain and HTTPS browser referrer."
+    error_message = "Email/password sign-in requires email_from and an https app_origin for account setup links."
   }
 }
 
 check "real_data_configuration" {
   assert {
     condition = !var.real_data_enabled || (
-      var.identity_adapter == "identity-platform" &&
+      var.identity_adapter == "email-password" &&
       var.scoring_adapter == "vertex" &&
       var.help_catalog_version != "help-2-provisional-2026-07" &&
       length(var.help_catalog_sha256) == 64 &&
       length(trimspace(var.real_data_approval_id)) > 0
     )
-    error_message = "Real data requires Identity Platform, Vertex scoring, and a recorded approval ID."
+    error_message = "Real data requires email/password sign-in, Vertex scoring, and a recorded approval ID."
   }
 }
 
@@ -88,61 +88,6 @@ resource "google_project_service" "observability" {
   project            = var.project_id
   service            = each.value
   disable_on_destroy = false
-}
-
-resource "google_project_service" "identity" {
-  for_each = var.identity_adapter == "identity-platform" ? toset([
-    "apikeys.googleapis.com",
-    "identitytoolkit.googleapis.com"
-  ]) : toset([])
-  project            = var.project_id
-  service            = each.value
-  disable_on_destroy = false
-}
-
-resource "google_identity_platform_config" "default" {
-  count              = var.identity_adapter == "identity-platform" ? 1 : 0
-  project            = var.project_id
-  authorized_domains = var.identity_authorized_domains
-
-  sign_in {
-    allow_duplicate_emails = false
-    anonymous { enabled = false }
-    email {
-      enabled           = true
-      password_required = true
-    }
-    phone_number { enabled = false }
-  }
-
-  client {
-    permissions {
-      disabled_user_deletion = true
-      disabled_user_signup   = true
-    }
-  }
-
-  depends_on = [google_project_service.identity]
-}
-
-resource "google_apikeys_key" "identity_platform_browser" {
-  count           = var.identity_adapter == "identity-platform" ? 1 : 0
-  project         = var.project_id
-  name            = "help-review-identity-platform"
-  display_name    = "HELP Review Identity Platform browser key"
-  deletion_policy = "PREVENT"
-
-  restrictions {
-    browser_key_restrictions {
-      allowed_referrers = var.identity_allowed_referrers
-    }
-    api_targets { service = "identitytoolkit.googleapis.com" }
-  }
-
-  depends_on = [
-    google_identity_platform_config.default,
-    google_project_service.identity
-  ]
 }
 
 resource "google_artifact_registry_repository" "containers" {
@@ -225,36 +170,6 @@ resource "google_project_iam_member" "processor_vertex" {
   member  = "serviceAccount:${google_service_account.processor.email}"
 }
 
-resource "google_project_iam_custom_role" "identity_user_lifecycle" {
-  count       = var.identity_adapter == "identity-platform" ? 1 : 0
-  project     = var.project_id
-  role_id     = "helpReviewIdentityUserLifecycle"
-  title       = "HELP Review identity user lifecycle"
-  description = "Create, read, disable, and re-enable exact provisioned HELP Review staff identities."
-  permissions = [
-    "firebaseauth.users.create",
-    "firebaseauth.users.get",
-    "firebaseauth.users.update"
-  ]
-}
-
-resource "google_project_iam_member" "web_identity_user_lifecycle" {
-  count   = var.identity_adapter == "identity-platform" ? 1 : 0
-  project = var.project_id
-  role    = google_project_iam_custom_role.identity_user_lifecycle[0].name
-  member  = "serviceAccount:${google_service_account.web.email}"
-}
-
-moved {
-  from = google_project_iam_member.web_identity_viewer[0]
-  to   = google_project_iam_member.web_identity_user_admin[0]
-}
-
-moved {
-  from = google_project_iam_member.web_identity_user_admin[0]
-  to   = google_project_iam_member.web_identity_user_lifecycle[0]
-}
-
 resource "google_project_iam_member" "eventarc_receiver" {
   project = var.project_id
   role    = "roles/eventarc.eventReceiver"
@@ -323,6 +238,7 @@ resource "google_secret_manager_secret_iam_member" "worker_processor" {
 resource "google_secret_manager_secret_iam_member" "web_only" {
   for_each = toset([
     "help-review-playback-secret",
+    "help-review-resend-api-key",
     "help-review-session-secret",
     "help-review-upload-secret"
   ])
@@ -414,10 +330,36 @@ resource "google_cloud_run_v2_service" "web" {
         }
       }
       dynamic "env" {
-        for_each = var.identity_adapter == "identity-platform" ? [1] : []
+        for_each = var.identity_adapter == "email-password" ? [1] : []
         content {
-          name  = "HELP_REVIEW_IDENTITY_PLATFORM_API_KEY"
-          value = google_apikeys_key.identity_platform_browser[0].key_string
+          name  = "HELP_REVIEW_EMAIL_ADAPTER"
+          value = "resend"
+        }
+      }
+      dynamic "env" {
+        for_each = var.identity_adapter == "email-password" ? [1] : []
+        content {
+          name  = "HELP_REVIEW_EMAIL_FROM"
+          value = var.email_from
+        }
+      }
+      dynamic "env" {
+        for_each = var.identity_adapter == "email-password" ? [1] : []
+        content {
+          name  = "HELP_REVIEW_APP_ORIGIN"
+          value = var.app_origin
+        }
+      }
+      dynamic "env" {
+        for_each = var.identity_adapter == "email-password" ? [1] : []
+        content {
+          name = "RESEND_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.runtime["help-review-resend-api-key"].secret_id
+              version = "latest"
+            }
+          }
         }
       }
     }
@@ -428,8 +370,7 @@ resource "google_cloud_run_v2_service" "web" {
     google_storage_bucket_iam_member.web_objects,
     google_secret_manager_secret_iam_member.database_web,
     google_secret_manager_secret_iam_member.web_only,
-    google_secret_manager_secret_iam_member.worker_web,
-    google_project_iam_member.web_identity_user_lifecycle
+    google_secret_manager_secret_iam_member.worker_web
   ]
 
   lifecycle {

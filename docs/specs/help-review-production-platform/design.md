@@ -70,7 +70,7 @@ The durable trigger is deliberately small: Start processing first persists one `
 
 - Confirm HELP Connect's current identity provider or protocol before designing credential tables or sign-in routes.
 - Prefer the same stable user identity and sign-in experience already used by HELP Connect when the pilot can consume it safely.
-- If a standalone credential path is required, use an approved managed email/password identity service rather than implementing password hashing and recovery in the application.
+- If a standalone credential path is required, either an approved managed email/password identity service or a first-party application implementation with securely hashed credentials and standard recovery controls is acceptable.
 - Keep roles and child assignments in the pilot authorization layer unless HELP Connect explicitly supplies an equivalent contract.
 - Keep environment configuration, Terraform, container artifacts, data migration instructions, cost visibility, and operational runbooks transferable to the named HELP Connect/Google Cloud technical and budget owners rather than a developer's personal account.
 - The current development project proves the topology but does not itself constitute organization acceptance for real child data. Project/folder ownership, billing, region, retention, incident response, and named operators remain handoff gates.
@@ -103,7 +103,7 @@ The removed mockup remains recoverable from Git history. Do not copy it into a `
 /auth/callback     # only when required by the selected identity provider
 ```
 
-Password setup and recovery should use provider-hosted flows when the fallback provider supports them. Add application-owned auth routes only when the confirmed provider contract requires them; do not publish both HELP Connect and fallback-password routes.
+Password setup and recovery may use provider-hosted flows or application-owned routes; a normal first-party email/password implementation is approved. Keep one active sign-in path per release.
 
 ### Educator
 
@@ -145,7 +145,7 @@ Route handlers re-read state before rendering or mutating. A stale row link redi
 /admin/jobs
 ```
 
-`/admin/access` covers pilot access provisioning and Educator-child assignments. Credential setup, verification, and recovery remain with the selected identity provider. `/admin/jobs` shows failed or stuck pilot processing and retry. A separate roster-import page is added only if the agreed child-data source requires it. Neither Admin route grants ordinary video playback or review access.
+`/admin/access` covers pilot access invitation/provisioning, staff editing and removal, and Educator-child assignments. Credential setup, verification, and recovery follow the selected identity path (provider-owned or application-owned). `/admin/jobs` shows failed or stuck pilot processing and retry. A separate roster-import page is added only if the agreed child-data source requires it. Neither Admin route grants ordinary video playback or review access.
 
 ## Component And Service Boundaries
 
@@ -162,7 +162,7 @@ The Next.js application uses server components for authorized page projections a
 | `ProcessingCoordinator` | Create a run, enqueue/observe it durably, apply backoff/timeouts, and serialize terminal result persistence | Depend on browser polling to make scoring progress |
 | `ScoringResultValidator` | Validate schema version, run identity, credits, skill identity, evidence, uncertainty, and optional approved flags atomically | Persist a partial result that looks reviewable |
 | `ReviewService` | Build the review projection, save revision-checked decisions, and derive summary/final views | Overwrite stale edits or mutate finalized records |
-| `AdminService` | Provision/deactivate access, manage assignments, list supportable runs, and create eligible retries | Own credentials or grant Admin implicit child/video access |
+| `AdminService` | Invite/provision, edit, deactivate/reactivate, and remove access; manage assignments; list supportable runs; create eligible retries | Own credentials or grant Admin implicit child/video access |
 | `SupportRecorder` | Retain purpose-specific actor/time/reference records for playback grants and Admin changes | Become a generalized analytics or surveillance event stream |
 
 ### UI Composition
@@ -380,7 +380,7 @@ type AssessmentStatus =
 | `SkillSuggestion` | Run, skill identity, optional draft credit, confidence/uncertainty, evidence, proposed flags |
 | `ReviewDecision` | Suggestion, final credit or dismissal, conditionally approved flags, note, origin, Educator, revision, and saved time |
 
-This model deliberately excludes password hashes, magic-link tokens, organizations, batches, prompt registries, DAL rule sets, independent ratings, reliability reports, export jobs, report artifacts, amendment chains, and generalized audit-event infrastructure.
+This model deliberately excludes magic-link tokens, organizations, batches, prompt registries, DAL rule sets, independent ratings, reliability reports, export jobs, report artifacts, amendment chains, and generalized audit-event infrastructure. Password hashes appear only if the approved first-party email/password path is implemented.
 
 ```mermaid
 erDiagram
@@ -541,8 +541,8 @@ Validation is all-or-nothing for one successful run. It checks the confirmed con
 
 1. Discover HELP Connect's current provider or protocol, stable subject identifier, environment access, login/callback/logout behavior, deactivation behavior, and integration owner.
 2. Reuse HELP Connect identity when it is available, approved, and compatible with the pilot schedule and target Google Cloud ownership.
-3. Otherwise select one approved managed email/password identity service with a documented path to future HELP Connect federation or migration.
-4. Do not implement both alternatives, and do not implement magic links unless the selected HELP Connect contract itself requires them.
+3. Otherwise implement administrator-provisioned email/password either directly in the application with standard credential controls (securely hashed storage, verification, recovery, rate limiting) or through one managed identity service; both are approved.
+4. Run one active sign-in path per release, and do not implement magic links unless the selected HELP Connect contract itself requires them.
 
 ### Common Sign-In Guarantees
 
@@ -555,9 +555,9 @@ Validation is all-or-nothing for one successful run. It checks the confirmed con
 
 ### Email/Password Fallback
 
-- Credential setup, verification, hashing, recovery, brute-force protection, and credential-stuffing protection belong to the approved managed identity service.
-- The application stores only the external subject and minimum access metadata, not passwords or password-reset secrets.
-- Provider-hosted setup and recovery are preferred over custom application forms when they meet the required educator experience.
+- Credential setup, verification, hashing, recovery, brute-force protection, and credential-stuffing protection may be owned by the application (with securely hashed storage and standard protections) or by a managed identity service; both are approved.
+- When a managed provider is selected, the application stores only the external subject and minimum access metadata, not passwords or password-reset secrets; a first-party implementation stores only securely hashed credentials.
+- Either provider-hosted or application-owned setup and recovery forms are acceptable when they meet the required educator experience.
 
 ### Request Authorization
 
@@ -590,7 +590,7 @@ UI route hiding is not an authorization control. Repositories and route handlers
 | `GET /api/assessments/[id]/summary` | Read server-derived complete/incomplete summary | Assigned Educator |
 | `POST /api/assessments/[id]/finalize` | Confirm final summary | Assigned Educator |
 | `GET /api/assessments/[id]/final` | Read finalized summary | Assigned Educator |
-| `GET/POST /api/admin/access` | List/filter or provision pilot access | Admin |
+| `GET/POST /api/admin/access` | List/filter, invite/provision, edit, deactivate/reactivate, or remove pilot access | Admin |
 | `PATCH /api/admin/access/[provisionId]` | Activate/deactivate approved access state | Admin |
 | `POST /api/admin/assignments` | Create an Educator-child assignment | Admin |
 | `DELETE /api/admin/assignments/[assignmentId]` | Revoke one assignment | Admin |
@@ -725,7 +725,7 @@ Health endpoints expose only process/dependency readiness and a safe build ident
 ### Integration
 
 - Selected-provider sign-in, non-enumerating failure/recovery, session validation, sign-out, and deactivation.
-- HELP Connect subject mapping when that path is selected, or managed password setup/recovery when the fallback is selected; never both suites for the same release.
+- HELP Connect subject mapping when that path is selected, or email/password setup/recovery (first-party or provider-owned) when that path is selected; one active suite per release.
 - Assigned versus unassigned child and assessment access.
 - Upload adapter success/failure.
 - Scoring submit, status, invalid output, retry, and idempotency against a fake scientist service.
@@ -810,13 +810,13 @@ Health endpoints expose only process/dependency readiness and a safe build ident
 
 **Rationale:** This matches the pilot workflow while preventing all Educators from seeing all children.
 
-### Reuse HELP Connect Identity Before Adding Credentials
+### Use Any Standard Email/Password Identity Path
 
-**Decision:** First determine whether the pilot can reuse HELP Connect's current sign-in. If it cannot, use one administrator-provisioned managed email/password identity service compatible with the target Google Cloud ownership model. Do not build a custom password store or a parallel magic-link system.
+**Decision:** The pilot may implement normal administrator-provisioned email/password authentication directly in the application — with securely hashed credential storage, email verification, password recovery, session revocation, and rate limiting — or delegate credentials to a managed identity service, or reuse HELP Connect if its contract is supplied. Run one active sign-in path per release; do not add a parallel magic-link system.
 
-**Rationale:** Reusing the existing identity is the lowest-migration path; a managed password fallback avoids making the application itself a credential system and can be configured for the organization-owned Google Cloud environment.
+**Rationale:** Both application-owned and provider-owned credential handling meet the pilot's security needs when the standard controls are present, so the team is free to choose the implementation that best fits delivery and operations.
 
-**Status:** The selection remains blocked until the HELP Connect identity interface and target Google Cloud ownership constraints are documented.
+**Status:** Relaxed by stakeholder direction on July 15, 2026. The QA2-exercised Google Identity Platform path was retired and replaced by first-party email/password with scrypt-hashed credentials, single-use invitation/reset links, and application-owned revocation.
 
 ### Keep Finalization Simple
 
@@ -832,7 +832,7 @@ Health endpoints expose only process/dependency readiness and a safe build ident
 
 ### Fail Closed On Conditional Content
 
-**Decision:** Negative-label content is centralized by canonical credit code. Add-on flags, omitted-skill creation, alternate final outputs, and the non-selected identity mode are absent and rejected at the server boundary until explicitly approved.
+**Decision:** Negative-label content is centralized by canonical credit code. Add-on flags, omitted-skill creation, and alternate final outputs are absent and rejected at the server boundary until explicitly approved, and only the configured identity adapter is active.
 
 **Rationale:** A disabled-looking control or dormant endpoint still creates an implied product contract and security surface. Hiding only in the browser would also allow unsupported values through direct requests.
 
@@ -846,4 +846,4 @@ Health endpoints expose only process/dependency readiness and a safe build ident
 
 Implementation can proceed against sanitized fixtures, a fake scoring gateway, test-only identity, local development storage, and the full screen-state fixture catalogue. The current repository is a sanitized spike, not evidence that production identity, durable storage, background processing, or database persistence is complete.
 
-Google Identity Platform is the selected managed path and its live setup, recovery, exact linking, revocation, and Admin lifecycle are exercised in QA2; HELP Connect is not implemented in parallel. The GCP development topology is implemented and deployable. Final organization launch still requires the scientist contract, authoritative HELP artifact, approved roster application, organization project/backend ownership, video lifecycle values, incident owner, and exact-build acceptance. These gates do not prevent end-to-end synthetic development and testing.
+First-party email/password is the currently implemented path; its credential, invitation, reset, revocation, and Admin lifecycle contracts pass locally. The earlier Google Identity Platform setup remains only as historical QA2 evidence. The GCP development topology is implemented and deployable. Final organization launch still requires the live organization sender exercise, scientist contract, authoritative HELP artifact, approved roster application, organization project/backend ownership, video lifecycle values, incident owner, and exact-build acceptance. These gates do not prevent end-to-end synthetic development and testing.

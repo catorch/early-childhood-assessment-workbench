@@ -6,7 +6,7 @@ import {
   AccessError,
   activeUserFromState,
   hasActiveAssignment,
-  identityPlatformIdentity,
+  emailPasswordIdentity,
   sandboxIdentity,
   SESSION_COOKIE
 } from "./server-auth";
@@ -56,18 +56,18 @@ describe("assignment-aware sandbox authorization", () => {
     expect(sandboxIdentity.resolve(valid, new Date("2026-07-15T12:00:00.000Z"))).toBeNull();
   });
 
-  it("does not accept a sandbox application session at the managed identity boundary", () => {
+  it("does not accept a sandbox application session at the email/password identity boundary", () => {
     const state = createSanitizedPilotState();
     expect(() => activeUserFromState(
       requestFor("user-educator-1"),
       state,
-      identityPlatformIdentity
+      emailPasswordIdentity
     )).toThrow(AccessError);
 
-    const managed = identityPlatformIdentity.issue("user-educator-1", new Date("2026-07-15T12:00:00.000Z"));
-    expect(identityPlatformIdentity.resolve(managed, new Date("2026-07-15T12:59:59.000Z"))?.subject)
+    const managed = emailPasswordIdentity.issue("user-educator-1", new Date("2026-07-15T12:00:00.000Z"));
+    expect(emailPasswordIdentity.resolve(managed, new Date("2026-07-15T19:59:59.000Z"))?.subject)
       .toBe("user-educator-1");
-    expect(identityPlatformIdentity.resolve(managed, new Date("2026-07-15T13:00:00.000Z")))
+    expect(emailPasswordIdentity.resolve(managed, new Date("2026-07-15T20:00:00.000Z")))
       .toBeNull();
   });
 });

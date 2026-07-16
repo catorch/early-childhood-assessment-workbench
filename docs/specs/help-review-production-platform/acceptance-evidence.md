@@ -13,7 +13,7 @@ This record explains why an implementation task is checked in `tasks.md`. A pass
 |---|---|---|
 | TypeScript | Pass | `pnpm typecheck` |
 | ESLint | Pass | `pnpm lint` |
-| Unit/service/adapter contracts | 27 files, 165 tests pass | `pnpm test` |
+| Unit/service/adapter contracts | 27 files, 166 tests pass | `pnpm test` |
 | Behavioral browser contracts | 46 tests pass | `pnpm test:e2e` |
 | Accessibility and reflow | 6 representative workflow tests pass | `pnpm test:a11y` |
 | Visual acceptance | 52 tests pass: screens 01-45, 4 stress states, 3 smoke baselines | `pnpm test:visual` |
@@ -48,7 +48,7 @@ This record explains why an implementation task is checked in `tasks.md`. A pass
 | 1.1, 1.3-1.5 | Complete provisional contracts, live managed identity, and explicit fail-closed defaults | Named production artifacts/configuration for scientist, content, video lifecycle, and final infrastructure ownership paths |
 | 11.3 | Automated axe, keyboard, focus, reflow, 360/768/1280, and 200% checks plus the complete local keyboard record in `docs/quality/accessibility-manual-acceptance-2026-07-15.md` | Recorded representative supported-screen-reader acceptance |
 | 11.5 | Local payload/latency budgets, byte ranges, browser-exit durability, QA2 identity recovery, rollback, and secret rotation | Selected-provider measurements plus database point-in-time, storage-outage, and final scoring-contract drills |
-| 11.6 | CI runs code, catalogue, six migrations, shared-counter, managed identity build, processor, browser, a11y, visual, Terraform, and diagnostic-artifact gates | Yi's exact contract job plus organization CI execution/artifact acceptance |
+| 11.6 | CI runs code, catalogue, seven migrations, shared-counter, email/password build, processor, browser, a11y, visual, Terraform, and diagnostic-artifact gates | Yi's exact contract job plus organization CI execution/artifact acceptance |
 | 12.1-12.3, 12.5-12.6, 12.8-12.9 | Terraform-managed GCP/Neon development topology, QA1/QA2 rollout, GCS/Eventarc/Vertex and managed identity smoke, deployed redacted metrics/policies/dashboard, runbook, health, secrets, release procedure, logical recovery, rollback, and rotation | Organization project/service ownership, scientist/content acceptance, provider point-in-time/storage recovery, final alert receipt/owners, permissioned staging acceptance, and real-data launch evidence |
 
 ## Evidence Limits

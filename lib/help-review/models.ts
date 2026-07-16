@@ -151,6 +151,25 @@ export interface AccessProvision {
   updatedById: string;
 }
 
+/** Server-only salted password hash for the first-party email/password adapter. Never projected to browsers. */
+export interface StaffCredential {
+  readonly userId: string;
+  passwordHash: string;
+  updatedAt: string;
+}
+
+/** Single-use invitation or reset token. Only the SHA-256 hash of the raw token is stored. */
+export interface StaffAuthToken {
+  readonly id: string;
+  readonly userId: string;
+  readonly purpose: "INVITE" | "PASSWORD_RESET";
+  readonly tokenHash: string;
+  readonly createdById: string;
+  readonly createdAt: string;
+  readonly expiresAt: string;
+  usedAt: string | null;
+}
+
 export interface PilotState {
   readonly fixtureVersion: 1;
   users: PilotUser[];
@@ -158,6 +177,8 @@ export interface PilotState {
   assignments: ChildAssignment[];
   assessments: PilotAssessment[];
   access: AccessProvision[];
+  credentials?: StaffCredential[];
+  authTokens?: StaffAuthToken[];
   supportEvents?: SupportEvent[];
   videoAccessGrants?: VideoAccessGrantRecord[];
 }
@@ -179,6 +200,7 @@ export interface SupportEvent {
     | "DECISION_SAVED"
     | "PROCESSING_RETRIED"
     | "ACCESS_CHANGED"
+    | "CREDENTIAL_CHANGED"
     | "ASSIGNMENT_CHANGED"
     | "ROSTER_IMPORTED"
     | "ASSESSMENT_FINALIZED";

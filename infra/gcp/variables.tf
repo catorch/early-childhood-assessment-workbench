@@ -96,21 +96,21 @@ variable "identity_adapter" {
   default     = "sandbox"
 
   validation {
-    condition     = contains(["sandbox", "identity-platform"], var.identity_adapter)
-    error_message = "identity_adapter must be sandbox or identity-platform."
+    condition     = contains(["sandbox", "email-password"], var.identity_adapter)
+    error_message = "identity_adapter must be sandbox or email-password."
   }
 }
 
-variable "identity_authorized_domains" {
-  description = "Bare domains allowed by Identity Platform, such as review.example.org."
-  type        = list(string)
-  default     = []
+variable "email_from" {
+  description = "Deliverable sender address for first-party invitation and password-reset emails."
+  type        = string
+  default     = ""
 }
 
-variable "identity_allowed_referrers" {
-  description = "HTTPS referrer patterns allowed to use the restricted Identity Platform browser key."
-  type        = list(string)
-  default     = []
+variable "app_origin" {
+  description = "Public https origin used in account setup links, such as https://review.example.org."
+  type        = string
+  default     = ""
 }
 
 variable "real_data_enabled" {

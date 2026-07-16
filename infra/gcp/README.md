@@ -9,8 +9,8 @@ This directory provisions the sanitized HELP Review topology:
 - Vertex AI access for the processor;
 - Secret Manager containers and least-privilege runtime access;
 - Artifact Registry plus Cloud Build definitions;
-- redacted route/processing log metrics, email alert policies, and an operations dashboard.
-- optional Google Cloud Identity Platform email/password with disabled public signup, a referrer/API-restricted browser key, and application-authorized provider user lifecycle access.
+- redacted route/processing log metrics, email alert policies, and an operations dashboard;
+- optional first-party email/password sign-in with scrypt-hashed credentials and Resend-delivered, single-use invitation and reset links.
 
 Neon remains the PostgreSQL provider and is injected as `DATABASE_URL`. The
 browser uploads the video directly to GCS. Vertex reads that same `gs://`
@@ -58,6 +58,7 @@ never place secret values in Terraform variables or state:
 gcloud secrets versions add help-review-database-url --data-file=-
 gcloud secrets versions add help-review-session-secret --data-file=-
 gcloud secrets versions add help-review-playback-secret --data-file=-
+gcloud secrets versions add help-review-resend-api-key --data-file=-
 gcloud secrets versions add help-review-upload-secret --data-file=-
 gcloud secrets versions add help-review-worker-secret --data-file=-
 ```
@@ -102,32 +103,29 @@ terraform -chdir=infra/gcp apply services.tfplan
 Review every plan. A routine image rollout should be an in-place Cloud Run
 change with no destroys.
 
-For managed staging, select the one approved identity path and provide bare
-authorized domains plus exact HTTPS referrer patterns:
+For managed staging, select the first-party identity path, add a Resend API key
+version to Secret Manager, and provide a verified sender plus the exact public
+HTTPS origin:
 
 ```bash
-terraform -chdir=infra/gcp plan -out=managed-services.tfplan \
+terraform -chdir=infra/gcp plan -out=email-password-services.tfplan \
   -var=project_id=<project-id> \
   -var=support_email=<organization-owned-support-address> \
   -var=alert_email=<organization-owned-on-call-address> \
-  -var=identity_adapter=identity-platform \
-  -var='identity_authorized_domains=["review.example.org"]' \
-  -var='identity_allowed_referrers=["https://review.example.org/*"]' \
+  -var=identity_adapter=email-password \
+  -var=email_from=invites@review.example.org \
+  -var=app_origin=https://review.example.org \
   -var=deploy_services=true \
   -var=web_image=<immutable-web-image> \
   -var=processor_image=<immutable-processor-image>
 ```
 
-Terraform disables anonymous, phone, public-signup, and end-user-deletion
-paths. In managed mode, Admin provisioning idempotently creates a provider
-account without setting a password. Staff use the provider reset and email
-verification messages before the first exact-email link. See
-`docs/specs/help-review-production-platform/identity-platform-contract.md`.
-The web service account receives a project custom role with only
-`firebaseauth.users.get`, `firebaseauth.users.create`, and
-`firebaseauth.users.update`. Those permissions cover token revocation checks
-and the application-authorized create/disable/re-enable commands without
-granting provider configuration, secret-reading, or user-deletion access.
+Run `pnpm admin:bootstrap -- --email <exact-admin-email> --name <display-name>`
+against the migrated database to create the first Admin and print one
+single-use setup link. Every later staff invitation, reset, edit, deactivation,
+and removal goes through the authenticated Admin surface. There is no public
+signup path. The retired Google Identity Platform contract remains historical
+evidence in `docs/specs/help-review-production-platform/identity-platform-contract.md`.
 
 The first observability apply sends a Google Cloud verification message to the
 alert address. Verify the notification channel before treating alerts as live.
@@ -159,8 +157,9 @@ remain managed.
 8. Direct unauthenticated processor invocation remains denied.
 9. The operations notification channel is verified and a test incident reaches
    the named address without protected fields.
-10. A provisioned managed test account completes reset, email verification,
-    sign-in, logout, deactivation, and reactivation without a public signup path.
+10. A provisioned email/password test account completes invitation, password
+    setup, sign-in, reset, logout, deactivation, and removal without a public
+    signup path.
 
 ## State And Handoff
 

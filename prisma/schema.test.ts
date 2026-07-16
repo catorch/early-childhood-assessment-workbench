@@ -26,6 +26,8 @@ describe("lean pilot schema boundary", () => {
         "ReviewDecision",
         "Session",
         "SkillSuggestion",
+        "StaffAuthToken",
+        "StaffCredential",
         "SupportEvent",
         "User",
         "VideoAsset",

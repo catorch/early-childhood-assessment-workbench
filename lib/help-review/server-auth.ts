@@ -8,8 +8,7 @@ import { readPilotState } from "./server-store";
 
 export const SESSION_COOKIE = "help_review_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
-export const IDENTITY_PLATFORM_SESSION_MAX_AGE_SECONDS = 60 * 60;
-export type IdentityAdapterName = "sandbox" | "identity-platform";
+export type IdentityAdapterName = "sandbox" | "email-password";
 
 interface SessionClaims {
   readonly version: 2;
@@ -101,19 +100,19 @@ export class SandboxIdentityAdapter extends SignedSessionIdentityAdapter {
   }
 }
 
-export class IdentityPlatformSessionAdapter extends SignedSessionIdentityAdapter {
+export class EmailPasswordIdentityAdapter extends SignedSessionIdentityAdapter {
   constructor() {
-    super("identity-platform", IDENTITY_PLATFORM_SESSION_MAX_AGE_SECONDS);
+    super("email-password", SESSION_MAX_AGE_SECONDS);
   }
 }
 
 export const sandboxIdentity = new SandboxIdentityAdapter();
-export const identityPlatformIdentity = new IdentityPlatformSessionAdapter();
+export const emailPasswordIdentity = new EmailPasswordIdentityAdapter();
 
 export function selectedIdentityAdapter(environment: NodeJS.ProcessEnv = process.env): IdentityAdapter {
   const selected = environment.HELP_REVIEW_IDENTITY_ADAPTER ?? "sandbox";
   if (selected === "sandbox") return sandboxIdentity;
-  if (selected === "identity-platform") return identityPlatformIdentity;
+  if (selected === "email-password") return emailPasswordIdentity;
   throw new Error("The selected identity adapter is not supported.");
 }
 

@@ -99,6 +99,8 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
   });
   const supportEvents = await database.supportEvent.findMany({ orderBy: { occurredAt: "asc" } });
   const videoAccessGrants = await database.videoAccessGrantRecord.findMany({ orderBy: { issuedAt: "asc" } });
+  const credentials = await database.staffCredential.findMany({ orderBy: { userId: "asc" } });
+  const authTokens = await database.staffAuthToken.findMany({ orderBy: { createdAt: "asc" } });
   const userBySubject = new Map(users.map((user) => [user.externalSubject, user]));
   const userByEmail = new Map(
     users.filter((user) => user.email).map((user) => [user.email!.toLowerCase(), user])
@@ -259,6 +261,21 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
       purpose: "EDUCATOR_REVIEW" as const,
       issuedAt: grant.issuedAt.toISOString(),
       expiresAt: grant.expiresAt.toISOString()
+    })),
+    credentials: credentials.map((credential) => ({
+      userId: credential.userId,
+      passwordHash: credential.passwordHash,
+      updatedAt: credential.updatedAt.toISOString()
+    })),
+    authTokens: authTokens.map((token) => ({
+      id: token.id,
+      userId: token.userId,
+      purpose: token.purpose === "INVITE" ? ("INVITE" as const) : ("PASSWORD_RESET" as const),
+      tokenHash: token.tokenHash,
+      createdById: token.createdById,
+      createdAt: token.createdAt.toISOString(),
+      expiresAt: token.expiresAt.toISOString(),
+      usedAt: token.usedAt ? token.usedAt.toISOString() : null
     }))
   };
 }
@@ -284,6 +301,48 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
       }
     });
   }
+
+  const credentials = state.credentials ?? [];
+  for (const credential of credentials) {
+    await database.staffCredential.upsert({
+      where: { userId: credential.userId },
+      create: {
+        userId: credential.userId,
+        passwordHash: credential.passwordHash,
+        updatedAt: date(credential.updatedAt)
+      },
+      update: {
+        passwordHash: credential.passwordHash,
+        updatedAt: date(credential.updatedAt)
+      }
+    });
+  }
+  await database.staffCredential.deleteMany({
+    where: { userId: { notIn: credentials.map((credential) => credential.userId) } }
+  });
+
+  const authTokens = state.authTokens ?? [];
+  for (const token of authTokens) {
+    await database.staffAuthToken.upsert({
+      where: { id: token.id },
+      create: {
+        id: token.id,
+        userId: token.userId,
+        purpose: token.purpose,
+        tokenHash: token.tokenHash,
+        createdById: token.createdById,
+        createdAt: date(token.createdAt),
+        expiresAt: date(token.expiresAt),
+        usedAt: token.usedAt ? date(token.usedAt) : null
+      },
+      update: {
+        usedAt: token.usedAt ? date(token.usedAt) : null
+      }
+    });
+  }
+  await database.staffAuthToken.deleteMany({
+    where: { id: { notIn: authTokens.map((token) => token.id) } }
+  });
 
   for (const child of state.children) {
     const approvedContext = child.contextLabel || child.supportContext || child.contextSource

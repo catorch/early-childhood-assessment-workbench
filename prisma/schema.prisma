@@ -54,6 +54,7 @@ enum SupportEventType {
   DECISION_SAVED
   PROCESSING_RETRIED
   ACCESS_CHANGED
+  CREDENTIAL_CHANGED
   ASSIGNMENT_CHANGED
   ROSTER_IMPORTED
   ASSESSMENT_FINALIZED
@@ -79,6 +80,31 @@ model User {
   videoAccessRecords   VideoAccessGrantRecord[]
   requestedRuns        ProcessingRun[]   @relation("RunRequester")
   reviewDecisions      ReviewDecision[]
+  credential           StaffCredential?
+  authTokens           StaffAuthToken[]  @relation("StaffAuthTokens")
+}
+
+model StaffCredential {
+  userId       String   @id
+  passwordHash String
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StaffAuthToken {
+  id          String    @id @default(cuid())
+  userId      String
+  purpose     String
+  tokenHash   String    @unique
+  createdById String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  usedAt      DateTime?
+
+  user User @relation("StaffAuthTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, usedAt])
 }
 
 model AccessProvision {

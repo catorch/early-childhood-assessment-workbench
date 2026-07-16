@@ -1,8 +1,30 @@
 /** Sanitized local-only records used while production contracts remain unresolved. */
 
-import type { PilotState } from "./models";
+import { scryptSync } from "node:crypto";
+
+import type { PilotState, StaffCredential } from "./models";
 
 const NOW = "2026-07-13T14:00:00.000Z";
+
+/** Development-only sign-in password for the three sanitized profiles when the email/password adapter is selected locally. */
+export const SANITIZED_FIXTURE_PASSWORD = "sanitized-pilot-password";
+const FIXTURE_SALT = Buffer.from("help-review-fixture!", "utf8").subarray(0, 16);
+let fixturePasswordHash: string | undefined;
+
+function sanitizedCredentials(): StaffCredential[] {
+  if (process.env.NODE_ENV === "production") return [];
+  fixturePasswordHash ??= [
+    "scrypt",
+    "16384.8.1",
+    FIXTURE_SALT.toString("base64url"),
+    scryptSync(SANITIZED_FIXTURE_PASSWORD, FIXTURE_SALT, 32, { N: 16_384, r: 8, p: 1 }).toString("base64url")
+  ].join("$");
+  return ["user-educator-1", "user-educator-2", "user-admin-1"].map((userId) => ({
+    userId,
+    passwordHash: fixturePasswordHash!,
+    updatedAt: NOW
+  }));
+}
 
 export function createSanitizedPilotState(): PilotState {
   return {
@@ -115,6 +137,8 @@ export function createSanitizedPilotState(): PilotState {
         updatedById: "user-admin-1"
       }
     ],
+    credentials: sanitizedCredentials(),
+    authTokens: [],
     supportEvents: [],
     videoAccessGrants: []
   };

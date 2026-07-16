@@ -109,11 +109,11 @@ The live GCP smoke used the 64,256-byte synthetic MP4 through ordinary browser c
 
 On July 14, 2026, `prisma migrate deploy` applied the GCP processing runtime migration after the earlier contract migration. That fourth migration added GCS object metadata and Eventarc delivery/idempotency fields.
 
-On July 15, 2026, the additive roster-import audit and shared-rate-limit migrations were applied and `prisma migrate status` reported all six migrations current against the configured Neon direct endpoint.
+On July 15, 2026, the additive roster-import audit, shared-rate-limit, and staff-credential migrations were applied and `prisma migrate status` reported all seven migrations current against the configured Neon direct endpoint.
 
 All six checked-in migrations were also applied to a fresh isolated PostgreSQL 18 database. They completed successfully and the temporary database container was removed.
 
-On July 15, `pnpm db:recovery-drill -- --confirm-temporary-schema` first exercised a real logical recovery on the configured Neon endpoint at the five-migration revision. It created an isolated schema, inserted one synthetic marker, produced a 52,120-byte custom-format backup, restored and verified the schema, and cleaned every artifact in 33.4 seconds. After the sixth migration, the same guarded drill passed against isolated PostgreSQL 18 with all six migrations, the marker, and a 53,842-byte archive in 1.636 seconds. The shared-rate-limit drill also serialized 12 concurrent increments from 1 through 12 and removed its opaque bucket. No drill printed a database URL or touched shared application tables. QA2 subsequently proved immutable-image rollback/roll-forward, session-secret rotation, session revocation, and recovery sign-in. Provider point-in-time recovery and final organization notification receipt remain separate launch evidence.
+On July 15, `pnpm db:recovery-drill -- --confirm-temporary-schema` first exercised a real logical recovery on the configured Neon endpoint at the five-migration revision. It created an isolated schema, inserted one synthetic marker, produced a 52,120-byte custom-format backup, restored and verified the schema, and cleaned every artifact in 33.4 seconds. After the sixth migration, the same guarded drill passed against isolated PostgreSQL 18 with all six migrations, the marker, and a 53,842-byte archive in 1.636 seconds. After the staff-credential migration, it passed again with all seven migrations, the marker, and a 58,867-byte archive in 36.615 seconds; temporary schema and archive removal both passed. The shared-rate-limit drill also serialized 12 concurrent increments from 1 through 12 and removed its opaque bucket. No drill printed a database URL or touched shared application tables. QA2 subsequently proved immutable-image rollback/roll-forward, session-secret rotation, session revocation, and recovery sign-in. Provider point-in-time recovery and final organization notification receipt remain separate launch evidence.
 
 ## Verification Evidence
 
@@ -121,9 +121,9 @@ On July 15, `pnpm db:recovery-drill -- --confirm-temporary-schema` first exercis
 |---|---|
 | TypeScript | pass |
 | ESLint | pass |
-| Vitest | 27 files, 165 tests pass |
+| Vitest | 27 files, 166 tests pass |
 | HELP catalogue | versioned fixture validates; exact version/status/hash and real-data rejection tests pass |
-| Prisma schema/migrations | schema valid; six migrations current on sanitized Neon; clean-schema deploy, shared-counter concurrency, and isolated logical backup/restore pass |
+| Prisma schema/migrations | schema valid; seven migrations current on sanitized Neon; clean-schema deploy, shared-counter concurrency, and isolated logical backup/restore pass |
 | Behavioral browser contracts | 46 tests pass, including managed identity, canonical user-story behaviors, workflow, route/UI, security, and performance contracts |
 | Accessibility/reflow | 6 representative keyboard/focus/zoom checks and every accepted screen's serious/critical axe audit pass; the full local Educator/Admin keyboard record closed two focus-loss defects, while supported-screen-reader acceptance remains open |
 | Accepted visual states | screens 01-45 pass deterministic baselines |

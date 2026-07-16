@@ -155,6 +155,21 @@ var init_domain = __esm({
 });
 
 // lib/help-review/fixtures.ts
+import { scryptSync } from "node:crypto";
+function sanitizedCredentials() {
+  if (process.env.NODE_ENV === "production") return [];
+  fixturePasswordHash ??= [
+    "scrypt",
+    "16384.8.1",
+    FIXTURE_SALT.toString("base64url"),
+    scryptSync(SANITIZED_FIXTURE_PASSWORD, FIXTURE_SALT, 32, { N: 16384, r: 8, p: 1 }).toString("base64url")
+  ].join("$");
+  return ["user-educator-1", "user-educator-2", "user-admin-1"].map((userId) => ({
+    userId,
+    passwordHash: fixturePasswordHash,
+    updatedAt: NOW
+  }));
+}
 function createSanitizedPilotState() {
   return {
     fixtureVersion: 1,
@@ -266,15 +281,19 @@ function createSanitizedPilotState() {
         updatedById: "user-admin-1"
       }
     ],
+    credentials: sanitizedCredentials(),
+    authTokens: [],
     supportEvents: [],
     videoAccessGrants: []
   };
 }
-var NOW;
+var NOW, SANITIZED_FIXTURE_PASSWORD, FIXTURE_SALT, fixturePasswordHash;
 var init_fixtures = __esm({
   "lib/help-review/fixtures.ts"() {
     "use strict";
     NOW = "2026-07-13T14:00:00.000Z";
+    SANITIZED_FIXTURE_PASSWORD = "sanitized-pilot-password";
+    FIXTURE_SALT = Buffer.from("help-review-fixture!", "utf8").subarray(0, 16);
   }
 });
 
@@ -379,6 +398,8 @@ async function loadState(database) {
   });
   const supportEvents = await database.supportEvent.findMany({ orderBy: { occurredAt: "asc" } });
   const videoAccessGrants = await database.videoAccessGrantRecord.findMany({ orderBy: { issuedAt: "asc" } });
+  const credentials = await database.staffCredential.findMany({ orderBy: { userId: "asc" } });
+  const authTokens = await database.staffAuthToken.findMany({ orderBy: { createdAt: "asc" } });
   const userBySubject = new Map(users.map((user) => [user.externalSubject, user]));
   const userByEmail = new Map(
     users.filter((user) => user.email).map((user) => [user.email.toLowerCase(), user])
@@ -530,6 +551,21 @@ async function loadState(database) {
       purpose: "EDUCATOR_REVIEW",
       issuedAt: grant.issuedAt.toISOString(),
       expiresAt: grant.expiresAt.toISOString()
+    })),
+    credentials: credentials.map((credential) => ({
+      userId: credential.userId,
+      passwordHash: credential.passwordHash,
+      updatedAt: credential.updatedAt.toISOString()
+    })),
+    authTokens: authTokens.map((token) => ({
+      id: token.id,
+      userId: token.userId,
+      purpose: token.purpose === "INVITE" ? "INVITE" : "PASSWORD_RESET",
+      tokenHash: token.tokenHash,
+      createdById: token.createdById,
+      createdAt: token.createdAt.toISOString(),
+      expiresAt: token.expiresAt.toISOString(),
+      usedAt: token.usedAt ? token.usedAt.toISOString() : null
     }))
   };
 }
@@ -554,6 +590,46 @@ async function persistState(database, state) {
       }
     });
   }
+  const credentials = state.credentials ?? [];
+  for (const credential of credentials) {
+    await database.staffCredential.upsert({
+      where: { userId: credential.userId },
+      create: {
+        userId: credential.userId,
+        passwordHash: credential.passwordHash,
+        updatedAt: date(credential.updatedAt)
+      },
+      update: {
+        passwordHash: credential.passwordHash,
+        updatedAt: date(credential.updatedAt)
+      }
+    });
+  }
+  await database.staffCredential.deleteMany({
+    where: { userId: { notIn: credentials.map((credential) => credential.userId) } }
+  });
+  const authTokens = state.authTokens ?? [];
+  for (const token of authTokens) {
+    await database.staffAuthToken.upsert({
+      where: { id: token.id },
+      create: {
+        id: token.id,
+        userId: token.userId,
+        purpose: token.purpose,
+        tokenHash: token.tokenHash,
+        createdById: token.createdById,
+        createdAt: date(token.createdAt),
+        expiresAt: date(token.expiresAt),
+        usedAt: token.usedAt ? date(token.usedAt) : null
+      },
+      update: {
+        usedAt: token.usedAt ? date(token.usedAt) : null
+      }
+    });
+  }
+  await database.staffAuthToken.deleteMany({
+    where: { id: { notIn: authTokens.map((token) => token.id) } }
+  });
   for (const child of state.children) {
     const approvedContext = child.contextLabel || child.supportContext || child.contextSource ? {
       label: child.contextLabel,
@@ -2497,15 +2573,22 @@ function assertRuntimeConfiguration(environment = process.env) {
   } else {
     throw new Error("An acknowledged sanitized deployment must use an authenticated private Blob store or GCS bucket.");
   }
-  if (!(/* @__PURE__ */ new Set(["sandbox", "identity-platform"])).has(identityAdapter)) {
+  if (!(/* @__PURE__ */ new Set(["sandbox", "email-password"])).has(identityAdapter)) {
     throw new Error("The selected identity adapter is not supported.");
   }
-  if (identityAdapter === "identity-platform") {
-    if (!(environment.HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID || environment.GOOGLE_CLOUD_PROJECT)) {
-      throw new Error("Identity Platform requires HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID or GOOGLE_CLOUD_PROJECT.");
+  if (identityAdapter === "email-password" && serviceRole === "web") {
+    const emailAdapter = environment.HELP_REVIEW_EMAIL_ADAPTER ?? "console";
+    if (emailAdapter === "console") {
+      throw new Error("Production email/password sign-in requires a real email adapter (HELP_REVIEW_EMAIL_ADAPTER=resend) for invitations and resets.");
     }
-    if (serviceRole === "web" && !environment.HELP_REVIEW_IDENTITY_PLATFORM_API_KEY) {
-      throw new Error("The Identity Platform web service requires HELP_REVIEW_IDENTITY_PLATFORM_API_KEY.");
+    if (emailAdapter !== "resend") {
+      throw new Error("The selected email adapter is not supported.");
+    }
+    if (!environment.RESEND_API_KEY || !isDeliverableSupportEmail(environment.HELP_REVIEW_EMAIL_FROM)) {
+      throw new Error("The Resend email adapter requires RESEND_API_KEY and a deliverable HELP_REVIEW_EMAIL_FROM.");
+    }
+    if (!/^https:\/\//.test(environment.HELP_REVIEW_APP_ORIGIN ?? "")) {
+      throw new Error("Production email/password sign-in requires an https HELP_REVIEW_APP_ORIGIN for account setup links.");
     }
   }
   if (!(/* @__PURE__ */ new Set(["fake", "gemini", "vertex"])).has(scoringAdapter)) {
@@ -2581,6 +2664,8 @@ async function readPilotState() {
   }
   parsed.supportEvents ??= [];
   parsed.videoAccessGrants ??= [];
+  parsed.credentials ??= [];
+  parsed.authTokens ??= [];
   for (const admin of parsed.users.filter((user) => user.role === "ADMIN")) {
     if (!parsed.access.some((provision) => provision.userId === admin.id)) {
       parsed.access.push({

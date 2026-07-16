@@ -69,6 +69,8 @@ export async function readPilotState(): Promise<PilotState> {
   }
   parsed.supportEvents ??= [];
   parsed.videoAccessGrants ??= [];
+  parsed.credentials ??= [];
+  parsed.authTokens ??= [];
   for (const admin of parsed.users.filter((user) => user.role === "ADMIN")) {
     if (!parsed.access.some((provision) => provision.userId === admin.id)) {
       parsed.access.push({

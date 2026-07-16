@@ -11,8 +11,8 @@ Screen catalogue: `docs/specs/help-review-production-platform/ui-ux-screens/SCRE
 - Implement the July 10 pilot requirements and later explicit stakeholder decisions only.
 - Treat all 45 accepted images as route-state and responsive acceptance references, not as permission to invent unsupported behavior.
 - Treat every image in `ui-ux-screens/_rejected/` as excluded design exploration.
-- Implement exactly the selected Google Identity Platform path. Do not ship HELP Connect in parallel or a custom password store.
-- Keep excluded version-one features absent and server-rejected: add-on flags, manual omitted-skill creation, alternate final outputs, and the non-selected identity path.
+- Identity is relaxed: any standard email/password approach is approved. The selected implementation is the first-party application path with securely hashed credential storage, verification, recovery, and rate limiting; Google Identity Platform is retired, while HELP Connect remains a possible future replacement if its contract is supplied. Run one active production sign-in path at a time.
+- Keep excluded version-one features absent and server-rejected: add-on flags, manual omitted-skill creation, and alternate final outputs.
 - Keep AI suggestions separate from Educator decisions and derive all progress/final values on the server.
 - Enforce assignment and state authorization in services/repositories and route handlers, not only in navigation.
 - Use sanitized data until the selected identity, storage, retention, deletion, vendor, and incident configurations are applied and the exact build is exercised.
@@ -21,11 +21,11 @@ Screen catalogue: `docs/specs/help-review-production-platform/ui-ux-screens/SCRE
 
 ## Implementation Status
 
-As of July 15, 2026, **77 of 91 task checkboxes are complete** and **137 of 146 canonical user stories pass**. The remaining 9 stories are 8 partial integration, operational, or manual-verification items and one incomplete exact-build release-acceptance item. The complete Educator journey and minimal Admin workflow are implemented: live Google Identity Platform or visibly sanitized local sign-in, signed provisioned sessions, controlled roster onboarding, assignment-scoped navigation, direct verified Cloud Storage upload, Eventarc-delivered browser-independent processing, a private Cloud Run processor, Vertex AI scoring against the canonical `gs://` video, secure byte-range playback, every approved review decision path and origin, revision conflicts, server-derived summary/finalization, access and assignment changes, and failed/stuck processing retry. The full local keyboard journey is also recorded in `docs/quality/accessibility-manual-acceptance-2026-07-15.md`; the actual supported-screen-reader session remains open.
+As of July 15, 2026, **78 of 92 task checkboxes are complete** and **140 of 149 canonical user stories pass**. The remaining 9 stories are 8 partial integration, operational, or manual-verification items and one incomplete exact-build release-acceptance item. The complete Educator journey and minimal Admin workflow are implemented: first-party email/password or visibly sanitized local sign-in, signed provisioned sessions, controlled roster onboarding, assignment-scoped navigation, direct verified Cloud Storage upload, Eventarc-delivered browser-independent processing, a private Cloud Run processor, Vertex AI scoring against the canonical `gs://` video, secure byte-range playback, every approved review decision path and origin, revision conflicts, server-derived summary/finalization, access and assignment changes, and failed/stuck processing retry. The full local keyboard journey is also recorded in `docs/quality/accessibility-manual-acceptance-2026-07-15.md`; the actual supported-screen-reader session remains open.
 
 The architecture now uses injectable identity, authorization, repository, child, assessment, video, dispatch, processing, scoring, review, Admin, and support boundaries. The first-party `evidence-first-v1` scorer separates timestamped Gemini video observation from catalogue adjudication, and the development-only 127-item reference corpus supplies source-attributed, explicitly video-scoreable candidates while licensed HELP content is pending. Browser responses use explicit public projections and exclude storage keys, checksums, uploader/requester IDs, temporary URLs, unrestricted provider payloads, and protected runtime configuration. Production-mode configuration fails closed unless durable Neon/GCS/Eventarc adapters, strong secrets, and the explicit sanitized acknowledgement are present; real-data mode rejects sandbox identity and unaccepted scoring configuration.
 
-Current automated evidence is green: TypeScript, ESLint, 27 Vitest files with 165 tests, 46 behavioral browser tests, 6 accessibility/reflow tests, and 52 visual tests. The visual suite covers every accepted screen ID 01-45, four dense/long/localized stress states, and three smoke baselines. Managed-identity and processor production builds, both versioned catalogue artifacts, Prisma schema, six-migration clean-schema check, controlled roster CLI preview, isolated shared-rate-limit and logical backup/restore drills, Terraform validation, local two-process processing, the digest-pinned QA1 GCS/Eventarc/Vertex smoke, and the QA2 live managed-identity, rollback, and secret-rotation exercises also pass; the final Terraform refresh has no changes. Story-level evidence, defects, fixes, and retests are canonical in `docs/quality/help-review-feature-status.csv`.
+Current automated evidence is green: TypeScript, ESLint, 27 Vitest files with 166 tests, 46 behavioral browser tests, 6 accessibility/reflow tests, and 52 visual tests. The visual suite covers every accepted screen ID 01-45, four dense/long/localized stress states, and three smoke baselines. Email/password and processor production builds, both versioned catalogue artifacts, Prisma schema, seven-migration clean-schema check, controlled roster CLI preview, isolated shared-rate-limit and logical backup/restore drills, Terraform validation, local two-process processing, the digest-pinned QA1 GCS/Eventarc/Vertex smoke, and the historical QA2 managed-identity, rollback, and secret-rotation exercises also pass. Story-level evidence, defects, fixes, and retests are canonical in `docs/quality/help-review-feature-status.csv`.
 
 The Google Cloud development environment remains a **sanitized deployment**, not an organization-owned, exact-build-accepted real-data production environment. The public web service, private processor, GCS bucket, Eventarc trigger, Vertex gateway, Secret Manager configuration, Artifact Registry images, and Neon migration are deployed in project `help-review-dev-20260714`; live-path evidence is in `deployment-evidence.md`. Real child data remains disabled.
 
@@ -36,7 +36,7 @@ All product, privacy, storage, vendor, identity, and infrastructure permissions 
 1. Import and validate the authoritative HELP content and Yi's versioned scoring package/data contract, then run their sanitized contract fixtures against the existing Vertex gateway.
 2. Run the implemented `help-roster-v1` preview/apply path with the approved staging roster, resolve every safe validation issue, and record reconciliation plus replay evidence.
 3. Apply the Terraform/Cloud Build stack in organization-owned staging and production with final domain, support address, secrets, regions, service owners, retention/deletion values, immutable image tags, and the chosen PostgreSQL home.
-4. Apply all six migrations and the proven recovery drill in final staging/production, then record application compatibility and provider point-in-time recovery during promotion.
+4. Apply all seven migrations and the proven recovery drill in final staging/production, then record application compatibility and provider point-in-time recovery during promotion.
 5. Verify final notification delivery, observed alert thresholds, escalation ownership, and execute the target storage/provider and named incident drills with timings. Managed identity, immutable rollback, session-secret rotation, and revocation are already exercised.
 6. Run representative supported-screen-reader sessions, then run the organization CI workflow including the exact scoring-contract job. The manual all-workflow keyboard pass is complete.
 7. Run permissioned exact-build staging acceptance across all 146 tracker stories, close every defect, and record production handoff plus the real-data launch decision.
@@ -81,11 +81,11 @@ The July 14 status notes below are retained as historical implementation context
 
 - [ ] 1.5 Confirm selected identity and Google Cloud ownership (2-4 hours)
   - Document HELP Connect's identity provider/protocol, stable subject, login/callback/logout behavior, session and deactivation behavior, account lifecycle, sandbox, and technical owner.
-  - Select HELP Connect reuse or one managed email/password provider. Record why, provider-hosted setup/recovery, rate limiting, revocation, and future federation/migration; do not implement both.
+  - Select the identity path: a first-party email/password implementation, one managed provider, or HELP Connect reuse — all are approved. Record why, the setup/recovery, rate-limiting, and revocation approach (application-owned or provider-hosted), and any future federation/migration intent; run one active path at a time.
   - Record the target organization-controlled Google Cloud organization/project, service and budget owners, secret ownership, cost visibility, transfer path, and deployment constraints.
   - _Screens: 01, 10, 11, 15, 40_
   - _Requirements: R1, R8, NFR-4, NFR-6_
-  - **Status (July 15):** Google Identity Platform is the selected managed fallback and is implemented in application code and Terraform; HELP Connect is not implemented in parallel. QA2 live-tested setup, verification/reset action codes, exact linking, sign-in/logout, deactivation/reactivation, session revocation, and shared abuse limits. Closure now requires only the final project/folder, domain, service, secret, region, technical, and budget ownership values (D-012-D-017).
+  - **Status (July 15, revised):** the first-party email/password path is now the implemented production identity in application code and Terraform: scrypt-hashed application credentials, single-use invitation/reset links through the configured email adapter, `pnpm admin:bootstrap` for the first Admin, and one active sign-in path per release. Google Identity Platform (QA2 live-tested earlier the same day) and firebase-admin are removed under the relaxed identity rule; the retired contract remains documented for reference. Closure now requires only the final project/folder, domain, service, secret, region, technical, and budget ownership values plus the Resend sender configuration (D-012-D-018).
 
 - [x] 1.6 Publish the decision register and change gate (2-3 hours)
   - Record owner, date, evidence, decision, affected requirement/design/task IDs, and release behavior for each gate in Tasks 1.1-1.5.
@@ -117,7 +117,7 @@ The July 14 status notes below are retained as historical implementation context
   - Generate and validate migration SQL, then test apply and forward/rollback recovery against an approved non-production database.
   - _Files: `prisma/schema.prisma`, migrations, schema tests_
   - _Requirements: R1-R8, NFR-2, NFR-4, NFR-6_
-  - **Status (July 15):** the lean constrained schema and all six migrations validate, apply to a clean temporary schema, and are current on sanitized Neon. Guarded drills then verified shared rate-limit atomicity and migrated an isolated schema, inserted a synthetic marker, created a logical backup, dropped and restored the schema, verified all six migrations plus the marker, and removed every temporary artifact. Final target deployment compatibility remains part of Tasks 12.1 and 12.7 rather than the schema implementation.
+  - **Status (July 15):** the lean constrained schema and all seven migrations validate, apply to a clean temporary schema, and are current on sanitized Neon. Guarded drills then verified shared rate-limit atomicity and migrated an isolated schema, inserted a synthetic marker, created a logical backup, dropped and restored the schema, verified all seven migrations plus the marker, and removed every temporary artifact. Final target deployment compatibility remains part of Tasks 12.1 and 12.7 rather than the schema implementation.
 
 - [x] 2.5 Keep the HELP domain lean and deterministic (2-3 hours)
   - Retain two roles, four canonical credits, four decision origins, state validation, sanitized fixtures, and no speculative manual-add origin.
@@ -147,21 +147,21 @@ The July 14 status notes below are retained as historical implementation context
 
 ## 3. Implement Identity, Sessions, And Protected Access
 
-- [x] 3.1 Integrate exactly the selected identity adapter (3-4 hours)
+- [x] 3.1 Integrate the selected identity adapter (3-4 hours)
   - Validate provider results server-side, map stable subject to active provisioned access, establish/validate the selected session contract, and implement sign-out/deactivation.
-  - For managed email/password only, hand setup, verification, recovery, brute-force protection, and credential storage to the approved provider.
+  - For managed email/password, the provider owns setup, verification, recovery, brute-force protection, and credential storage; a first-party adapter may instead implement these directly with standard controls.
   - Reject public signup and return non-enumerating responses.
   - _Files: selected auth adapter, session middleware, `/api/session` or provider routes_
   - _Requirements: R1, R8_
-  - **Status (July 15):** Google Identity Platform email/password is the single selected managed path. Browser credentials go directly to Google; the server verifies ID tokens and revocation, links only exact pre-provisioned emails to stable subjects, issues one-hour issuer-bound sessions, rejects public signup/role drift, and mirrors Admin deactivation/reactivation. The sandbox adapter remains local/sanitized only.
+  - **Status (July 15, revised):** the first-party email/password adapter replaced Google Identity Platform under the relaxed identity rule. The application stores scrypt-hashed credentials, verifies email/password server-side against active provisions only, issues issuer-bound sessions, rejects public signup, and delivers single-use invitation/reset links through the configured email adapter. The sandbox adapter remains local/sanitized only; firebase-admin and the Identity Platform Terraform surface are removed.
 
 - [x] 3.2 Build fallback sign-in and safe failure states (3-4 hours)
-  - Implement `/sign-in` idle/submitting/safe-error behavior for the managed fallback, or replace it with the approved HELP Connect handoff.
-  - Clear secrets after failure, restore error focus, preserve only approved email state, and wire provider-owned recovery/help.
+  - Implement `/sign-in` idle/submitting/safe-error behavior for the selected email/password path (first-party or managed), or replace it with the approved HELP Connect handoff.
+  - Clear secrets after failure, restore error focus, preserve only approved email state, and wire the selected recovery/help flow (provider-hosted or first-party).
   - Validate desktop and mobile composition.
   - _Screens: 01, 10, 40_
   - _Requirements: R1, NFR-1, NFR-5_
-  - **Status (July 15):** managed and sandbox idle, pending, non-enumerating error, recovery, email preservation/password clearing, error-focus, desktop, and mobile states pass. Provider-owned reset and verification calls use Identity Toolkit directly; the application receives only an ID token.
+  - **Status (July 15, revised):** email/password and sandbox idle, pending, non-enumerating error, recovery, email preservation/password clearing, error-focus, desktop, and mobile states pass. Reset requests go to the non-enumerating first-party `/api/auth/request-reset` endpoint, and `/set-password` consumes single-use invitation/reset links with auto sign-in on success.
 
 - [x] 3.3 Implement session interruption and authorized resume (3-4 hours)
   - Detect expiry for navigation and mutations; do not show a failed mutation as saved.
@@ -472,7 +472,7 @@ The July 14 status notes below are retained as historical implementation context
   - Leave credentials with the selected provider and record effective actor/time/revision.
   - Revoke or reject continued access according to the identity contract and make concurrent duplicate commands safe.
   - _Requirements: R1, R7, R8, NFR-2_
-  - **Status (July 15):** exact provision, activate/deactivate, assign/unassign, actor/time/revision, immediate authorization effects, and replay safety are implemented. Managed mode also creates provider accounts idempotently without handling credentials and mirrors deactivation/reactivation to Identity Platform after authorization and conflict checks.
+  - **Status (July 15, revised):** exact provision, activate/deactivate, assign/unassign, actor/time/revision, immediate authorization effects, and replay safety are implemented. In email/password mode, provisioning also issues a single-use hashed invitation token after authorization checks; credentials never pass through Admin commands.
 
 - [x] 10.2 Build the populated pilot-access surface (3-4 hours)
   - Implement URL-backed filters/search, provision form/provider handoff, staff status/role, assignment controls, and authoritative refresh after mutation.
@@ -528,6 +528,15 @@ The July 14 status notes below are retained as historical implementation context
   - _Requirements: R1, R4, R7, R8, NFR-1, NFR-2, NFR-6_
   - **Status (July 15):** every Admin command, confirmation, empty/error state, revocation effect, role boundary, safe job field, eligible/ineligible/concurrent retry, managed provider mapping/lifecycle contract, and screen fixture passes. QA2 then live-tested provider creation through the Admin route, verification/recovery, deactivation, disabled-account rejection, reactivation, and assignment-scoped Educator sign-in.
 
+- [x] 10.11 Expand Admin staff management: invite, edit, remove (4-6 hours)
+  - Add an invitation command that sends a secure account-setup message to the exact provisioned email through the selected identity path (provider action link or application-owned invite token); never create, display, or transmit a usable password.
+  - Add staff editing for display name and role with actor/time/revision recording and next-request effect.
+  - Add staff removal that immediately revokes sessions and assignments, retains attributable historical decisions and finalized records, deletes or disables the provider/application account per the selected identity path, and frees the email for re-provisioning.
+  - Keep every command Admin-only, idempotent, replay-safe, and covered by focused tests plus updated `/admin/access` screen states.
+  - _Screens: 08, 28, 30, 31_
+  - _Requirements: R1, R7, R8, NFR-2_
+  - **Status (July 15, implemented):** invitation delivery through the email boundary (console adapter locally, Resend in production), staff display-name/role editing with actor protections, and full removal with retained attribution, freed email, and revoked credentials/tokens are implemented, unit-tested, and covered by tracker stories ADMIN-ACCESS-012 through ADMIN-ACCESS-014. The visual stress pass caught and fixed a long-name overlap in the staff detail header.
+
 ## 11. Harden And Validate The Entire Platform
 
 - [x] 11.1 Apply the application security baseline (3-4 hours)
@@ -567,7 +576,7 @@ The July 14 status notes below are retained as historical implementation context
   - Fail CI on schema drift, production fake/local adapter selection, missing conditional gates, or newly reachable out-of-scope routes.
   - Publish concise artifacts for failed screen IDs and contract cases without sensitive payloads.
   - _Requirements: R1-R8, NFR-1-NFR-6_
-  - **Status (July 15):** CI installs PostgreSQL/Chromium and gates diff hygiene, types, lint, 165 unit/service tests, catalogue validation, six migrations, shared-counter concurrency, 46 browser tests, 6 a11y tests, 52 visual tests, the processor build, the selected managed-identity production build, Terraform, and retained Playwright diagnostics. It remains open for Yi's exact provider contract job and one recorded organization CI execution/artifact check.
+  - **Status (July 15):** CI installs PostgreSQL/Chromium and gates diff hygiene, types, lint, 166 unit/service tests, catalogue validation, seven migrations, shared-counter concurrency, 46 browser tests, 6 a11y tests, 52 visual tests, the processor build, the selected email/password production build, Terraform, and retained Playwright diagnostics. It remains open for Yi's exact provider contract job and one recorded organization CI execution/artifact check.
 
 - [x] 11.7 Audit scope and conditional-feature closure (2-3 hours)
   - Confirm no dashboard, batch, reliability, prompt/model manager, research roles, rubric editor, DAL, manual skill entry, PDF/export, amendment, public signup, parallel auth, native/offline/live recording, or generalized audit product is reachable.
@@ -580,13 +589,13 @@ The July 14 status notes below are retained as historical implementation context
   - Map web runtime, PostgreSQL, private object storage, background trigger/worker, identity, secrets, and telemetry to approved services in the confirmed account.
   - Record technical owner, budget owner, cost expectation, region, data boundary, and transfer responsibility for each dependency.
   - _Requirements: R1, R8, NFR-4, NFR-6_
-  - **Status (July 15):** Cloud Run web/processor, PostgreSQL through Prisma, private GCS, Eventarc, Vertex AI, Identity Platform, Secret Manager, Artifact Registry, Cloud Build, and Cloud Logging are the accepted topology and Terraform-managed in development. Final organization project/folder IDs, PostgreSQL endpoint, domain, technical/budget owner values, costs, and transfer record remain to be applied.
+  - **Status (July 15):** Cloud Run web/processor, PostgreSQL through Prisma, private GCS, Eventarc, Vertex AI, first-party email/password, Resend, Secret Manager, Artifact Registry, Cloud Build, and Cloud Logging are the accepted topology; the non-identity GCP development resources are Terraform-managed. Final organization project/folder IDs, PostgreSQL endpoint, sender domain, technical/budget owner values, costs, and transfer record remain to be applied.
 
 - [ ] 12.2 Provision database and validate migrations (3-4 hours)
   - Create separated development/staging/production configuration, apply least-privilege access, run migrations, seed sanitized staging records only, and verify backup/restore.
   - Test application compatibility during deploy and document forward recovery/rollback.
   - _Requirements: NFR-2, NFR-4, NFR-6_
-  - **Status (July 15):** sanitized Neon uses separate pooled/direct URLs, all six migrations are current and clean-schema verified, and both Cloud Run services use Secret Manager injection. Separate owned environments, provider backup/restore, and a rollback exercise remain open.
+  - **Status (July 15):** sanitized Neon uses separate pooled/direct URLs, all seven migrations are current and clean-schema verified, and both Cloud Run services use Secret Manager injection. Separate owned environments, provider backup/restore, and a rollback exercise remain open.
 
 - [ ] 12.3 Provision private storage and lifecycle controls (3-4 hours)
   - Configure private access, encryption, CORS/media range behavior, upload limits, temporary grant expiry, incomplete-upload cleanup, and only the approved retention/deletion policy.
@@ -604,7 +613,7 @@ The July 14 status notes below are retained as historical implementation context
   - Use organization-controlled secrets and callback/redirect origins, run provider contract tests, verify subject mapping/deactivation, and verify scoring submission/result handling.
   - Remove test adapters and alternative identity routes from production build/configuration.
   - _Requirements: R1, R4, R8, NFR-4_
-  - **Status (July 15):** managed Identity Platform plus signed local sandbox fixtures and Vertex AI are configured with service-account/Secret Manager credentials and fail-closed runtime guards. QA2 completed the live managed-identity lifecycle and provider recovery exercise. Yi's scientist-owned acceptance package remains open.
+  - **Status (July 15, revised):** the first-party email/password identity plus signed local sandbox fixtures and Vertex AI are configured with Secret Manager credentials (including the Resend API key secret) and fail-closed runtime guards. QA2's live managed-identity lifecycle exercise predates the July 15 replacement; a first-party staging sign-in/invite/reset exercise replaces it as the outstanding record. Yi's scientist-owned acceptance package remains open.
 
 - [ ] 12.6 Configure safe observability and support response (3-4 hours)
   - Add health/readiness, structured redacted logs, request/run outcome metrics, safe correlation IDs, alert thresholds from observed staging behavior, and named escalation owners.
@@ -616,7 +625,7 @@ The July 14 status notes below are retained as historical implementation context
   - Deploy a release candidate, run migration/smoke checks, exercise application rollback or forward recovery, restore a non-production backup, rotate a secret, revoke a session, and handle a failed run.
   - Record timings, owners, evidence, and any launch blocker.
   - _Requirements: NFR-2, NFR-4, NFR-6_
-  - **Status (July 15):** digest-pinned QA1/QA2 images are deployed and smoke-verified; the Eventarc/Vertex terminal failure and monitoring signal are recorded, access revocation and failed-run recovery are tested, and isolated PostgreSQL drills proved atomic shared limiting plus logical backup/restore with all six migrations and synthetic data, then cleaned their artifacts. QA2 rolled back to QA1 and forward in 44 seconds each, rotated the session secret in 14 seconds, rejected the old cookie, restored managed sign-in, and ended on a clean Terraform plan. Final organization notification receipt and named real-data incident acceptance remain tracked under 12.6/12.9 rather than this engineering procedure.
+  - **Status (July 15):** digest-pinned QA1/QA2 images are deployed and smoke-verified; the Eventarc/Vertex terminal failure and monitoring signal are recorded, access revocation and failed-run recovery are tested, and isolated PostgreSQL drills proved atomic shared limiting plus logical backup/restore with all seven migrations and synthetic data, then cleaned their artifacts. Historical QA2 rolled back to QA1 and forward in 44 seconds each, rotated the session secret in 14 seconds, rejected the old cookie, and restored managed sign-in. Final organization notification receipt and named real-data incident acceptance remain tracked under 12.6/12.9 rather than this engineering procedure.
 
 - [ ] 12.8 Run permissioned staging acceptance (3-4 hours)
   - Demonstrate provisioned sign-in, assigned child, upload, leave/return processing, review actions and conflict recovery, incomplete/complete summary, finalization/reopen, Admin deactivation/unassignment, and failed-run retry.

@@ -8,10 +8,11 @@ help_catalog_path    = "content/help-catalog.sanitized.json"
 help_catalog_version = "help-2-provisional-2026-07"
 help_catalog_sha256  = "7d604579d6c8f8fdf5ac0f3d0ef0643a1d4479806d6d6be38cb1bc2f92c451d2"
 
-# Managed staging/production identity. Leave sandbox only for sanitized development.
-# identity_adapter            = "identity-platform"
-# identity_authorized_domains = ["review.example.org"]
-# identity_allowed_referrers  = ["https://review.example.org/*"]
+# First-party email/password identity for staging/production. Leave sandbox only
+# for sanitized development. Add a version to the help-review-resend-api-key secret.
+# identity_adapter = "email-password"
+# email_from       = "invites@review.example.org"
+# app_origin       = "https://review.example.org"
 
 # Enable only after exact-build acceptance is recorded.
 # real_data_enabled     = true

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, Filter, Plus, RefreshCw, Search, UserRoundCheck, UserRoundX, UsersRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, Filter, MailPlus, Pencil, Plus, RefreshCw, Search, Trash2, UserRoundCheck, UserRoundX, UsersRound } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -19,11 +19,14 @@ interface AccessProjection {
   readonly children: PilotChild[];
   readonly access: AccessProvision[];
   readonly assignments: ChildAssignment[];
+  readonly credentialStates?: Record<string, { readonly hasPassword: boolean; readonly invitePending: boolean }>;
+  readonly identityMode: "sandbox" | "email-password";
   readonly actorId: string;
 }
 
 type Confirmation =
   | { readonly kind: "DEACTIVATE"; readonly staffMember: PilotUser }
+  | { readonly kind: "REMOVE"; readonly staffMember: PilotUser }
   | { readonly kind: "UNASSIGN"; readonly staffMember: PilotUser; readonly child: PilotChild };
 
 function AdminAccessContent() {
@@ -40,6 +43,10 @@ function AdminAccessContent() {
   const [provisionName, setProvisionName] = useState("");
   const [provisionEmail, setProvisionEmail] = useState("");
   const [provisionRole, setProvisionRole] = useState<Role>("EDUCATOR");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState<Role>("EDUCATOR");
+  const [notice, setNotice] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const provisionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const headerProvisionTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -127,9 +134,10 @@ function AdminAccessContent() {
       if (handleProtectedResponse(response, router, "/admin/access")) return;
       if (!response.ok) setError(await responseError(response, "Staff access could not be provisioned."));
       else {
-        const payload = await response.json() as { educator: PilotUser };
+        const payload = await response.json() as { educator: PilotUser; inviteEmail?: "SENT" | "FAILED"; inviteUrl?: string };
         await load();
         setSelectedUserId(payload.educator.id);
+        setNotice(describeInvite(payload));
         setProvisionName("");
         setProvisionEmail("");
         setProvisionRole("EDUCATOR");
@@ -146,17 +154,57 @@ function AdminAccessContent() {
     if (!confirmation) return;
     const succeeded = confirmation.kind === "DEACTIVATE"
       ? await mutate({ action: "SET_ACCESS", userId: confirmation.staffMember.id, active: false }, "access")
-      : await mutate({ action: "SET_ASSIGNMENT", userId: confirmation.staffMember.id, childId: confirmation.child.id, active: false }, confirmation.child.id);
-    if (succeeded) setConfirmation(null);
+      : confirmation.kind === "REMOVE"
+        ? await mutate({ action: "REMOVE_STAFF", userId: confirmation.staffMember.id }, "remove")
+        : await mutate({ action: "SET_ASSIGNMENT", userId: confirmation.staffMember.id, childId: confirmation.child.id, active: false }, confirmation.child.id);
+    if (succeeded) {
+      if (confirmation.kind === "REMOVE") setSelectedUserId(null);
+      setConfirmation(null);
+    }
+  }
+
+  function describeInvite(payload: { readonly inviteEmail?: "SENT" | "FAILED"; readonly inviteUrl?: string }): string | null {
+    if (payload.inviteEmail === "FAILED") return "The invitation email could not be sent. Use Send invite again once email delivery is available.";
+    if (payload.inviteEmail !== "SENT") return null;
+    return payload.inviteUrl
+      ? `Invitation created. Development email adapter is active — setup link: ${payload.inviteUrl}`
+      : "An invitation email with a secure account-setup link is on its way.";
+  }
+
+  async function resendInvite(userId: string) {
+    setPendingKey("invite");
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/admin/access", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "RESEND_INVITE", userId }) });
+      if (handleProtectedResponse(response, router, "/admin/access")) return;
+      if (!response.ok) setError(await responseError(response, "The invitation could not be sent."));
+      else {
+        setNotice(describeInvite(await response.json() as { inviteEmail?: "SENT" | "FAILED"; inviteUrl?: string }));
+        await load();
+      }
+    } catch {
+      setError("The network interrupted this invitation. Refresh before trying again.");
+    } finally {
+      setPendingKey(null);
+    }
+  }
+
+  async function saveEdit(event: FormEvent) {
+    event.preventDefault();
+    if (!selected) return;
+    const succeeded = await mutate({ action: "EDIT_STAFF", userId: selected.id, displayName: editName, role: editRole }, "edit");
+    if (succeeded) setEditOpen(false);
   }
 
   return (
     <PageShell>
       <header className="flex items-end justify-between gap-6 max-sm:items-start max-sm:flex-col"><div><Eyebrow>Pilot administration</Eyebrow><h1 className="mt-1 font-heading text-4xl font-normal leading-tight max-sm:text-[30px]">Pilot access</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Provision approved staff, then assign children to educators.</p></div><Button aria-controls="provision-staff-form" aria-expanded={provisionOpen} onClick={(event) => { provisionTriggerRef.current = event.currentTarget; setProvisionOpen(true); }} ref={headerProvisionTriggerRef} type="button"><Plus aria-hidden="true" size={17} /> Provision staff</Button></header>
       {error && data ? <Alert className="mt-7" variant="destructive"><AlertDescription className="flex items-center justify-between gap-4">{error}<button className="font-extrabold underline underline-offset-4" onClick={() => void load()} type="button">Try again</button></AlertDescription></Alert> : null}
+      {notice ? <Alert className="mt-7"><AlertDescription className="flex items-center justify-between gap-4 break-all">{notice}<button className="shrink-0 font-extrabold underline underline-offset-4" onClick={() => setNotice(null)} type="button">Dismiss</button></AlertDescription></Alert> : null}
       {provisionOpen ? (
         <form className="mt-7 grid grid-cols-[minmax(210px,1fr)_minmax(150px,.65fr)_minmax(200px,.8fr)_120px_auto] items-end gap-4 border-y border-border border-t-[3px] border-t-primary bg-surface p-5 max-lg:grid-cols-2 max-lg:[&>div:first-child]:col-span-full max-md:grid-cols-1 max-md:[&>div:first-child]:col-span-1 max-sm:p-4" id="provision-staff-form" onSubmit={provision}>
-          <div><Eyebrow>Approved staff</Eyebrow><h2 className="mt-1 font-heading text-xl font-normal">Provision pilot access</h2><p className="mt-1 text-xs text-muted-foreground">The selected identity provider owns credential setup and recovery.</p></div>
+          <div><Eyebrow>Approved staff</Eyebrow><h2 className="mt-1 font-heading text-xl font-normal">Provision pilot access</h2><p className="mt-1 text-xs text-muted-foreground">{data?.identityMode === "email-password" ? "An invitation email with a secure account-setup link is sent after provisioning." : "Sanitized sandbox profiles sign in without credentials."}</p></div>
           <label className="grid gap-1.5 text-[11px] font-extrabold uppercase text-muted-foreground">Display name<Input autoFocus maxLength={100} onChange={(event) => setProvisionName(event.target.value)} required value={provisionName} /></label>
           <label className="grid gap-1.5 text-[11px] font-extrabold uppercase text-muted-foreground">Exact email<Input maxLength={254} onChange={(event) => setProvisionEmail(event.target.value)} required type="email" value={provisionEmail} /></label>
           <label className="grid gap-1.5 text-[11px] font-extrabold uppercase text-muted-foreground">Role<select className="h-10 rounded-md border border-border-strong bg-surface px-2.5 text-sm text-ink" onChange={(event) => setProvisionRole(event.target.value as Role)} value={provisionRole}><option value="EDUCATOR">Educator</option><option value="ADMIN">Admin</option></select></label>
@@ -171,12 +219,29 @@ function AdminAccessContent() {
         <div className="mt-7 grid grid-cols-[minmax(280px,.7fr)_minmax(0,1.3fr)] items-start gap-7 max-md:grid-cols-1">
           <section className="border-r border-border pr-7 max-md:border-r-0 max-md:border-b max-md:pr-0 max-md:pb-6" aria-labelledby="educator-list-title"><div className="mb-4 flex items-end justify-between"><div><Eyebrow>Pilot staff</Eyebrow><h2 className="mt-1 font-heading text-2xl font-normal" id="educator-list-title">Staff</h2></div><span className="text-[13px] text-muted-foreground">{visibleStaff.length}</span></div>{visibleStaff.length === 0 ? <p className="border-t border-border py-7 text-muted-foreground">No staff match these filters.</p> : visibleStaff.map((staffMember) => { const access = data.access.find((candidate) => candidate.userId === staffMember.id); return <button className={cn("grid w-full grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 border-t border-border px-2 py-3 text-left hover:bg-surface-soft", selectedUserId === staffMember.id && "bg-accent shadow-[inset_3px_0_0_var(--primary)]")} key={staffMember.id} onClick={() => setSelectedUserId(staffMember.id)} type="button"><span className="grid size-[42px] place-items-center rounded-full border border-[#b8d8d3] bg-accent text-xs font-extrabold text-primary-strong">{staffMember.displayName.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span><span className="grid min-w-0 gap-1"><strong>{staffMember.displayName}</strong><small className="truncate text-xs text-muted-foreground">{staffMember.role === "ADMIN" ? "Admin" : "Educator"} · {staffMember.email}</small></span><span className={cn("rounded-full px-2 py-1 text-[10px] font-extrabold", access?.active ? "bg-success-soft text-success" : "bg-surface-soft text-muted-foreground")}>{access?.active ? "Active" : "Inactive"}</span></button>; })}</section>
           {selected ? <section className="border border-border bg-surface p-5" aria-labelledby="access-editor-title">
-            <header className="flex items-center gap-3 border-b border-border pb-5">
-              <span className="grid size-12 place-items-center rounded-full border border-[#b8d8d3] bg-accent text-sm font-extrabold text-primary-strong">{selected.displayName.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span>
-              <div><Eyebrow>{selected.role === "ADMIN" ? "Admin access" : "Educator access"}</Eyebrow><h2 className="mt-1 font-heading text-2xl font-normal" id="access-editor-title">{selected.displayName}</h2><p className="mt-1 text-sm text-muted-foreground">{selected.email}</p></div>
+            <header className="flex flex-wrap items-center gap-3 border-b border-border pb-5">
+              <span className="grid size-12 shrink-0 place-items-center rounded-full border border-[#b8d8d3] bg-accent text-sm font-extrabold text-primary-strong">{selected.displayName.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span>
+              <div className="min-w-0 flex-1 basis-52"><Eyebrow>{selected.role === "ADMIN" ? "Admin access" : "Educator access"}</Eyebrow><h2 className="mt-1 break-words font-heading text-2xl font-normal" id="access-editor-title">{selected.displayName}</h2><p className="mt-1 truncate text-sm text-muted-foreground">{selected.email}</p></div>
+              <div className="flex shrink-0 gap-2">
+                <Button aria-controls="edit-staff-form" aria-expanded={editOpen} disabled={pendingKey !== null} onClick={() => { setEditName(selected.displayName); setEditRole(selected.role); setEditOpen((open) => !open); }} size="sm" type="button" variant="secondary"><Pencil aria-hidden="true" size={15} /> Edit</Button>
+                {selected.id !== data.actorId ? <Button disabled={pendingKey !== null} onClick={(event) => { setError(null); confirmationTriggerRef.current = event.currentTarget; setConfirmation({ kind: "REMOVE", staffMember: selected }); }} size="sm" type="button" variant="destructive-outline"><Trash2 aria-hidden="true" size={15} /> Remove staff</Button> : null}
+              </div>
             </header>
+            {editOpen ? (
+              <form className="grid grid-cols-[minmax(180px,1fr)_140px_auto] items-end gap-4 border-b border-border py-5 max-md:grid-cols-1" id="edit-staff-form" onSubmit={saveEdit}>
+                <label className="grid gap-1.5 text-[11px] font-extrabold uppercase text-muted-foreground">Display name<Input autoFocus maxLength={100} minLength={2} onChange={(event) => setEditName(event.target.value)} required value={editName} /></label>
+                <label className="grid gap-1.5 text-[11px] font-extrabold uppercase text-muted-foreground">Role<select className="h-10 rounded-md border border-border-strong bg-surface px-2.5 text-sm text-ink" disabled={selected.id === data.actorId} onChange={(event) => setEditRole(event.target.value as Role)} value={editRole}><option value="EDUCATOR">Educator</option><option value="ADMIN">Admin</option></select></label>
+                <div className="flex gap-2 max-sm:flex-col-reverse"><Button disabled={pendingKey === "edit"} onClick={() => setEditOpen(false)} type="button" variant="secondary">Cancel</Button><Button disabled={pendingKey === "edit"} type="submit">{pendingKey === "edit" ? "Saving..." : "Save changes"}</Button></div>
+              </form>
+            ) : null}
+            {data.identityMode === "email-password" ? (
+              <div className="flex items-center justify-between gap-4 border-b border-border py-5 max-sm:items-start max-sm:flex-col">
+                <span className="flex items-center gap-3"><MailPlus aria-hidden="true" className="text-primary" size={19} /><span className="grid gap-1"><strong>{data.credentialStates?.[selected.id]?.hasPassword ? "Password set" : data.credentialStates?.[selected.id]?.invitePending ? "Invitation pending" : "No password yet"}</strong><small className="text-xs text-muted-foreground">Invitations and resets send a single-use secure link; no password is ever displayed.</small></span></span>
+                <Button disabled={pendingKey === "invite" || !selectedAccess?.active} onClick={() => void resendInvite(selected.id)} size="sm" type="button" variant="secondary">{pendingKey === "invite" ? "Sending..." : data.credentialStates?.[selected.id]?.hasPassword ? "Send reset link" : "Send invite again"}</Button>
+              </div>
+            ) : null}
             <div className="flex items-center justify-between gap-4 border-b border-border py-5 max-sm:items-start max-sm:flex-col">
-              <span className="flex items-center gap-3">{selectedAccess?.active ? <UserRoundCheck aria-hidden="true" className="text-success" /> : <UserRoundX aria-hidden="true" className="text-destructive" />}<span className="grid gap-1"><strong>Pilot access {selectedAccess?.active ? "active" : "inactive"}</strong><small className="text-xs text-muted-foreground">Credential lifecycle remains with the selected identity provider.</small></span></span>
+              <span className="flex items-center gap-3">{selectedAccess?.active ? <UserRoundCheck aria-hidden="true" className="text-success" /> : <UserRoundX aria-hidden="true" className="text-destructive" />}<span className="grid gap-1"><strong>Pilot access {selectedAccess?.active ? "active" : "inactive"}</strong><small className="text-xs text-muted-foreground">Deactivation rejects the next request from any existing session.</small></span></span>
               {selectedAccess?.active
                 ? selected.id === data.actorId
                   ? <span className="whitespace-nowrap text-xs font-extrabold text-muted-foreground">Current session</span>
@@ -200,7 +265,7 @@ function AdminAccessContent() {
           </section> : null}
         </div>
       </> : null}
-      <ConfirmDialog confirmLabel={confirmation?.kind === "DEACTIVATE" ? "Deactivate access" : "Remove assignment"} description={confirmation?.kind === "DEACTIVATE" ? `${confirmation.staffMember.displayName} will no longer be able to sign in to the pilot.` : confirmation ? `${confirmation.staffMember.displayName} will immediately lose access to ${confirmation.child.externalChildId}.` : ""} details={confirmation?.kind === "DEACTIVATE" ? ["Active sessions will be rejected", "Existing assignments remain recorded", "Assessment records are retained"] : ["Direct child and assessment requests will be denied", "Saved assessment records are retained", "Only this assignment is removed"]} error={confirmation ? error : null} onCancel={() => { setError(null); setConfirmation(null); }} onConfirm={confirmMutation} open={confirmation !== null} pending={pendingKey !== null} returnFocusRef={confirmationTriggerRef} title={confirmation?.kind === "DEACTIVATE" ? "Deactivate pilot access?" : "Remove child assignment?"} />
+      <ConfirmDialog confirmLabel={confirmation?.kind === "DEACTIVATE" ? "Deactivate access" : confirmation?.kind === "REMOVE" ? "Remove staff member" : "Remove assignment"} description={confirmation?.kind === "DEACTIVATE" ? `${confirmation.staffMember.displayName} will no longer be able to sign in to the pilot.` : confirmation?.kind === "REMOVE" ? `${confirmation.staffMember.displayName} will be removed from the pilot immediately.` : confirmation ? `${confirmation.staffMember.displayName} will immediately lose access to ${confirmation.child.externalChildId}.` : ""} details={confirmation?.kind === "DEACTIVATE" ? ["Active sessions will be rejected", "Existing assignments remain recorded", "Assessment records are retained"] : confirmation?.kind === "REMOVE" ? ["Active sessions, assignments, and sign-in credentials are revoked", "Saved decisions and finalized assessments remain attributed to this name", "The email address can be provisioned again later"] : ["Direct child and assessment requests will be denied", "Saved assessment records are retained", "Only this assignment is removed"]} error={confirmation ? error : null} onCancel={() => { setError(null); setConfirmation(null); }} onConfirm={confirmMutation} open={confirmation !== null} pending={pendingKey !== null} returnFocusRef={confirmationTriggerRef} title={confirmation?.kind === "DEACTIVATE" ? "Deactivate pilot access?" : confirmation?.kind === "REMOVE" ? "Remove this staff member?" : "Remove child assignment?"} />
     </PageShell>
   );
 }

@@ -15,7 +15,7 @@ Generated mockups are route-state and responsive references, not data or behavio
 ## Implemented Platform
 
 - HMAC-signed, HTTP-only sandbox sessions with role, deactivation, expiry, and safe return-target enforcement
-- one selectable Google Identity Platform email/password path with direct browser credential exchange, server-side token/revocation verification, exact pre-provisioned email linking, provider-owned recovery, and one-hour issuer-bound application sessions
+- one selectable first-party email/password path with scrypt-hashed application credentials, single-use invitation/reset links, Admin invite/edit/remove staff management, and issuer-bound application sessions
 - Assignment-scoped child, history, assessment, and authoritative next-action navigation
 - Idempotent assessment creation and one-video intake with type, size, container, duration, and integrity checks
 - Private local or Google Cloud Storage, direct resumable upload, opaque object paths, purpose-bound signed playback, and byte ranges
@@ -34,7 +34,7 @@ The legacy Assessment Reliability Workbench, dashboards, batch/model/prompt tool
 
 Local development uses ignored `.data/` state/uploads and a standalone local processor. The shared Google Cloud development deployment uses normalized Prisma state on Neon, a private GCS bucket, Eventarc, a private Cloud Run processor, and Vertex AI. Both are restricted to deterministic or explicitly sanitized data.
 
-Real child data remains disabled while the approved production choices are wired and proven. The managed Google identity implementation is now selectable, while its live organization-staging email/reset/revocation exercise, the scientist-owned scoring package/service, authoritative HELP content, final video lifecycle values, organization-owned infrastructure, and remaining recovery evidence are concrete closure inputs rather than permission requests. The exact closure list is in `docs/specs/help-review-production-platform/external-launch-gates.md`.
+Real child data remains disabled while the approved production choices are wired and proven. The first-party email/password implementation is now selectable, while its live organization-staging invitation/reset/revocation exercise, the scientist-owned scoring package/service, authoritative HELP content, final video lifecycle values, organization-owned infrastructure, and remaining recovery evidence are concrete closure inputs rather than permission requests. The exact closure list is in `docs/specs/help-review-production-platform/external-launch-gates.md`.
 
 Production-mode startup fails closed unless durable adapters, private storage, strong secrets, and an explicit sanitized acknowledgement are configured. `HELP_REVIEW_REAL_DATA_ENABLED=true` cannot run with sandbox identity or the unaccepted development scoring contract.
 
@@ -58,11 +58,13 @@ HELP_REVIEW_SCORING_ADAPTER=fake
 HELP_REVIEW_IDENTITY_ADAPTER=sandbox
 ```
 
-Managed staging sets `HELP_REVIEW_IDENTITY_ADAPTER=identity-platform`, the
-Identity Platform project ID, and its referrer-restricted browser API key.
-Credentials go directly from the browser to Google; the app accepts only a
-verified ID token and never retains the provider refresh token. The full
-contract is in `docs/specs/help-review-production-platform/identity-platform-contract.md`.
+Staging and production set `HELP_REVIEW_IDENTITY_ADAPTER=email-password` plus a
+real email adapter (`HELP_REVIEW_EMAIL_ADAPTER=resend` with `RESEND_API_KEY` and
+`HELP_REVIEW_EMAIL_FROM`) and an https `HELP_REVIEW_APP_ORIGIN` for account-setup
+links. Passwords are scrypt-hashed in the application database; invitations and
+resets send single-use links, and `pnpm admin:bootstrap` creates the first Admin.
+The retired managed-provider contract is preserved in
+`docs/specs/help-review-production-platform/identity-platform-contract.md`.
 
 Use `HELP_REVIEW_FAKE_SCORING_SCENARIO` to exercise `accepted`, `uncertain`, `no-valid-results`, `invalid-credit`, `invalid-evidence`, `empty-result`, `slow`, `retryable-failure`, or `terminal-failure`.
 
@@ -97,7 +99,7 @@ pnpm test:visual
 pnpm build
 ```
 
-The canonical story and verification record is `docs/quality/help-review-feature-status.csv`. The current repository passes 165 unit/service checks, 46 behavioral browser checks, 6 accessibility/reflow checks, and 52 visual checks covering screens 01-45, 4 stress states, and 3 smoke baselines. Guarded drills preserve all six migrations plus a synthetic record through isolated logical backup/restore and serialize 12 concurrent shared rate-limit increments, then remove their temporary artifacts.
+The canonical story and verification record is `docs/quality/help-review-feature-status.csv`. The current repository passes 166 unit/service checks, 46 behavioral browser checks, 6 accessibility/reflow checks, and 52 visual checks covering screens 01-45, 4 stress states, and 3 smoke baselines. Guarded drills preserve all seven migrations plus a synthetic record through isolated logical backup/restore and serialize 12 concurrent shared rate-limit increments, then remove their temporary artifacts.
 
 ## Sanitized Google Cloud Deployment
 

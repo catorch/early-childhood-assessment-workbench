@@ -69,9 +69,11 @@ jobs:
           HELP_REVIEW_VIDEO_ADAPTER: gcs
           HELP_REVIEW_PROCESSING_ADAPTER: gcs-event
           HELP_REVIEW_SCORING_ADAPTER: vertex
-          HELP_REVIEW_IDENTITY_ADAPTER: identity-platform
-          HELP_REVIEW_IDENTITY_PLATFORM_PROJECT_ID: help-review-ci
-          HELP_REVIEW_IDENTITY_PLATFORM_API_KEY: restricted-ci-browser-key
+          HELP_REVIEW_IDENTITY_ADAPTER: email-password
+          HELP_REVIEW_EMAIL_ADAPTER: resend
+          RESEND_API_KEY: ci-resend-api-key
+          HELP_REVIEW_EMAIL_FROM: ci-invites@help-review.dev
+          HELP_REVIEW_APP_ORIGIN: https://ci.help-review.dev
           HELP_REVIEW_HELP_CATALOG_PATH: content/help-catalog.sanitized.json
           HELP_REVIEW_HELP_CATALOG_VERSION: help-2-provisional-2026-07
           HELP_REVIEW_HELP_CATALOG_SHA256: 7d604579d6c8f8fdf5ac0f3d0ef0643a1d4479806d6d6be38cb1bc2f92c451d2
