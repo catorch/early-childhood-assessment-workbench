@@ -60,7 +60,7 @@ These checks supplement axe and browser tests. They are not a substitute for Voi
 
 - Targeted post-fix Playwright: 2 passed (`ADMIN-ACCESS-004`, `ADMIN-JOBS-003/005/007`)
 - Manual retest: every row in the keyboard journey above passed after fixes
-- Full post-fix regression: TypeScript and ESLint pass; 26 Vitest files with 154 tests pass; 46 behavioral, 6 accessibility/reflow, and 52 visual browser tests pass; managed-identity web and processor production builds pass; catalogue, Prisma schema/status, and Terraform validation pass
+- Full post-fix regression: TypeScript and ESLint pass; 27 Vitest files with 165 tests pass; 46 behavioral, 6 accessibility/reflow, and 52 visual browser tests pass; managed-identity web and processor production builds pass; catalogue, Prisma schema/status, and Terraform validation pass
 
 ## Remaining accessibility acceptance
 

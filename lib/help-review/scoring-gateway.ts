@@ -166,9 +166,15 @@ function scoringPrompt(request: ScoringRequest): string {
     strand: candidate.strand,
     ageRangeMonths: [candidate.minimumAgeMonths, candidate.maximumAgeMonths],
     sourceOrder: candidate.sourceOrder,
+    sourceFramework: candidate.sourceFramework,
+    sourceReferenceUrl: candidate.sourceReferenceUrl,
+    sourceAgeMonths: candidate.sourceAgeMonths,
+    videoScoreability: candidate.videoScoreability,
     observableDefinition: candidate.observableDefinition,
     observableIndicators: candidate.observableIndicators,
     nonExamples: candidate.nonExamples,
+    observationConditions: candidate.observationConditions,
+    prohibitedInferences: candidate.prohibitedInferences,
     evidenceModalities: candidate.evidenceModalities,
     creditCriteria: candidate.creditCriteria
   }));

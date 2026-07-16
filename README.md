@@ -97,7 +97,7 @@ pnpm test:visual
 pnpm build
 ```
 
-The canonical story and verification record is `docs/quality/help-review-feature-status.csv`. The current repository passes 154 unit/service checks, 46 behavioral browser checks, 6 accessibility/reflow checks, and 52 visual checks covering screens 01-45, 4 stress states, and 3 smoke baselines. Guarded drills preserve all six migrations plus a synthetic record through isolated logical backup/restore and serialize 12 concurrent shared rate-limit increments, then remove their temporary artifacts.
+The canonical story and verification record is `docs/quality/help-review-feature-status.csv`. The current repository passes 165 unit/service checks, 46 behavioral browser checks, 6 accessibility/reflow checks, and 52 visual checks covering screens 01-45, 4 stress states, and 3 smoke baselines. Guarded drills preserve all six migrations plus a synthetic record through isolated logical backup/restore and serialize 12 concurrent shared rate-limit increments, then remove their temporary artifacts.
 
 ## Sanitized Google Cloud Deployment
 
@@ -130,6 +130,15 @@ HELP_REVIEW_WORKER_SECRET=<distinct worker secret>
 ```
 
 Cloud Run receives runtime secrets from Secret Manager. Uploads go directly to GCS, completion is verified server-side, and browsers receive neither storage keys nor unrestricted provider output. Vertex reads the same GCS object; Cloud Tasks, Redis, and Gemini Files are not part of this topology.
+
+For development while the licensed HELP artifact is pending, the repository also contains a source-attributed 0-36 month reference corpus. It is not HELP and cannot enable real-data mode:
+
+```bash
+pnpm catalog:build-reference
+pnpm catalog:validate content/developmental-skills.reference.json
+```
+
+Use the printed path/version/digest as the three `HELP_REVIEW_HELP_CATALOG_*` values. The research basis and limitations are documented in `docs/model/reference-skills-research.md`.
 
 ```bash
 pnpm db:migrate

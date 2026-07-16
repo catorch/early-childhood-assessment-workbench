@@ -64,6 +64,32 @@ describe("versioned HELP catalogue", () => {
       .toEqual([...candidates].map((candidate) => candidate.sourceOrder).sort((left, right) => left - right));
   });
 
+  it("loads the source-attributed reference catalogue and excludes longitudinal-only items from video candidates", () => {
+    const loaded = loadHelpCatalogFile(
+      "content/developmental-skills.reference.json",
+      "open-reference-cdc-elof-2026-07.2",
+      "88386c85b474621c538f23df53f72785b9dda9074e0ead42fb95534d6c08e3bd"
+    );
+    expect(loaded.catalog).toMatchObject({
+      status: "REFERENCE",
+      disclaimer: expect.stringContaining("not HELP content")
+    });
+    expect(loaded.catalog.skills).toHaveLength(127);
+    expect(loaded.catalog.sourceReferences).toHaveLength(13);
+    expect(loaded.catalog.skills.every((skill) =>
+      skill.observableDefinition &&
+      skill.creditCriteria &&
+      skill.videoScoreability &&
+      skill.sourceReferenceUrl
+    )).toBe(true);
+
+    const candidates = selectScoringCandidates(30, "NONE_REPORTED", loaded.catalog.skills, loaded.catalog);
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates.every((candidate) => candidate.videoScoreability !== "NOT_RELIABLY_SCOREABLE"))
+      .toBe(true);
+    expect(candidates.some((candidate) => candidate.sourceAgeMonths === 30)).toBe(true);
+  });
+
   it("allows only an authoritative artifact in real-data mode", () => {
     expect(() => assertConfiguredHelpCatalog({ NODE_ENV: "production", HELP_REVIEW_REAL_DATA_ENABLED: "true" }))
       .toThrow("authoritative HELP catalogue");
@@ -74,5 +100,12 @@ describe("versioned HELP catalogue", () => {
       HELP_REVIEW_HELP_CATALOG_VERSION: "help-contract-test-1",
       HELP_REVIEW_HELP_CATALOG_SHA256: "db976cffe239c99118eb40bed451b6fbb42e9a21da9c1fea8d1de66994cb2623"
     })).not.toThrow();
+    expect(() => assertConfiguredHelpCatalog({
+      NODE_ENV: "production",
+      HELP_REVIEW_REAL_DATA_ENABLED: "true",
+      HELP_REVIEW_HELP_CATALOG_PATH: "content/developmental-skills.reference.json",
+      HELP_REVIEW_HELP_CATALOG_VERSION: "open-reference-cdc-elof-2026-07.2",
+      HELP_REVIEW_HELP_CATALOG_SHA256: "88386c85b474621c538f23df53f72785b9dda9074e0ead42fb95534d6c08e3bd"
+    })).toThrow("authoritative HELP catalogue");
   });
 });

@@ -131,6 +131,21 @@ describe("evidence-first reference scorer", () => {
     expect(generate).toHaveBeenCalledOnce();
   });
 
+  it("never sends a longitudinal-only catalogue item to the short-video classifier", async () => {
+    const base = request();
+    const longitudinal = ScoringRequestSchema.parse({
+      ...base,
+      candidates: base.candidates.map((candidate) => ({
+        ...candidate,
+        videoScoreability: "NOT_RELIABLY_SCOREABLE"
+      }))
+    });
+    const { generate, result } = await scoreWith(ledger(), classification(), longitudinal);
+
+    expect(result).toMatchObject({ outcome: "NO_VALID_RESULTS", suggestions: [] });
+    expect(generate).toHaveBeenCalledOnce();
+  });
+
   it("retains relevant evidence but removes a draft credit below the configured confidence threshold", async () => {
     const { result } = await scoreWith(
       ledger(),

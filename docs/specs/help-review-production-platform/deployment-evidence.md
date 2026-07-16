@@ -121,7 +121,7 @@ On July 15, `pnpm db:recovery-drill -- --confirm-temporary-schema` first exercis
 |---|---|
 | TypeScript | pass |
 | ESLint | pass |
-| Vitest | 26 files, 154 tests pass |
+| Vitest | 27 files, 165 tests pass |
 | HELP catalogue | versioned fixture validates; exact version/status/hash and real-data rejection tests pass |
 | Prisma schema/migrations | schema valid; six migrations current on sanitized Neon; clean-schema deploy, shared-counter concurrency, and isolated logical backup/restore pass |
 | Behavioral browser contracts | 46 tests pass, including managed identity, canonical user-story behaviors, workflow, route/UI, security, and performance contracts |

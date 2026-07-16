@@ -274,9 +274,15 @@ function candidatePromptValue(candidate: ScoringCandidate): Record<string, unkno
     strand: candidate.strand,
     ageRangeMonths: [candidate.minimumAgeMonths, candidate.maximumAgeMonths],
     sourceOrder: candidate.sourceOrder,
+    sourceFramework: candidate.sourceFramework,
+    sourceReferenceUrl: candidate.sourceReferenceUrl,
+    sourceAgeMonths: candidate.sourceAgeMonths,
+    videoScoreability: candidate.videoScoreability,
     observableDefinition: candidate.observableDefinition,
     observableIndicators: candidate.observableIndicators,
     nonExamples: candidate.nonExamples,
+    observationConditions: candidate.observationConditions,
+    prohibitedInferences: candidate.prohibitedInferences,
     evidenceModalities: candidate.evidenceModalities,
     creditCriteria: candidate.creditCriteria
   };
@@ -301,6 +307,7 @@ export function buildClassificationPrompt(
     "PRESENT requires the complete observable criterion. EMERGING requires a directly observed partial or materially supported attempt.",
     "NOT_OBSERVED requires a directly observed opportunity and absence/noncompletion in the associated response; never infer it from silence elsewhere in the video.",
     "NOT_APPLICABLE requires directly observed context plus explicit catalogue support. Otherwise use null or omit the candidate.",
+    "Respect each candidate's videoScoreability and observationConditions. OPPORTUNITY_REQUIRED needs the triggering event and response; CONTEXT_DEPENDENT needs the named routine or setting; omit NOT_RELIABLY_SCOREABLE items.",
     "Use only event IDs from the ledger. Confidence measures evidence sufficiency for this video, not certainty about the child generally.",
     "</TASK>",
     "<OBSERVATION_CONTEXT>",
@@ -384,11 +391,24 @@ export async function runReferenceScorer(options: ReferenceScorerOptions): Promi
     });
   }
 
+  const scoreableCandidates = options.request.candidates.filter(
+    (candidate) => candidate.videoScoreability !== "NOT_RELIABLY_SCOREABLE"
+  );
+  if (scoreableCandidates.length === 0) {
+    return ScoringResultSchema.parse({
+      contractVersion: options.request.contractVersion,
+      runId: options.request.runId,
+      outcome: "NO_VALID_RESULTS",
+      scoringConfigurationReference: options.configurationReference,
+      suggestions: []
+    });
+  }
+
   const eventById = new Map(ledger.events.map((event) => [event.eventId, event]));
-  const candidateById = new Map(options.request.candidates.map((candidate) => [candidate.sourceSkillId, candidate]));
+  const candidateById = new Map(scoreableCandidates.map((candidate) => [candidate.sourceSkillId, candidate]));
   const evaluations: ReferenceClassification["evaluations"][number][] = [];
   const seenSkills = new Set<string>();
-  const candidateBatches = batches(options.request.candidates, batchSize);
+  const candidateBatches = batches(scoreableCandidates, batchSize);
 
   for (const [batchIndex, candidateBatch] of candidateBatches.entries()) {
     const classificationText = await options.generate({

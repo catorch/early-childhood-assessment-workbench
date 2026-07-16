@@ -26,8 +26,16 @@ const CreditDefinitionSchema = z.object({
 export const HelpCatalogSchema = z.object({
   schemaVersion: z.literal(HELP_CATALOG_SCHEMA_VERSION),
   catalogVersion: z.string().trim().min(1).max(160),
-  status: z.enum(["SANITIZED_FIXTURE", "AUTHORITATIVE"]),
+  status: z.enum(["SANITIZED_FIXTURE", "REFERENCE", "AUTHORITATIVE"]),
   sourceReference: z.string().trim().min(1).max(500),
+  attribution: z.string().trim().min(1).max(2_000).optional(),
+  disclaimer: z.string().trim().min(1).max(2_000).optional(),
+  sourceReferences: z.array(z.object({
+    id: z.string().trim().min(1).max(120),
+    title: z.string().trim().min(1).max(500),
+    url: z.url().max(1_000),
+    retrievedDate: z.iso.date()
+  }).strict()).max(100).optional(),
   creditDefinitions: z.array(CreditDefinitionSchema).length(4),
   selectionPolicy: z.object({
     ageRangeInclusive: z.literal(true),
@@ -161,7 +169,9 @@ export function selectScoringCandidates(
   policyCatalog?: HelpCatalog
 ): readonly ScoringCandidate[] {
   const catalog = policyCatalog ?? configuredHelpCatalog();
-  const source = candidates ?? catalog.skills;
+  const source = (candidates ?? catalog.skills).filter(
+    (candidate) => candidate.videoScoreability !== "NOT_RELIABLY_SCOREABLE"
+  );
   const policy = selectionPolicyFor(supportContext, catalog);
   const ageAppropriate = source.filter(
     (candidate) => ageMonths >= candidate.minimumAgeMonths && ageMonths <= candidate.maximumAgeMonths

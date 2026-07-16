@@ -44,6 +44,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm catalog:validate content/help-catalog.sanitized.json
+      - run: pnpm catalog:build-reference
+      - run: git diff --exit-code -- content/developmental-skills.reference.json
+      - run: pnpm catalog:validate content/developmental-skills.reference.json
       - run: pnpm db:validate
       - run: pnpm db:migrate
       - run: pnpm db:status

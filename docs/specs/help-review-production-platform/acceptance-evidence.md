@@ -13,7 +13,7 @@ This record explains why an implementation task is checked in `tasks.md`. A pass
 |---|---|---|
 | TypeScript | Pass | `pnpm typecheck` |
 | ESLint | Pass | `pnpm lint` |
-| Unit/service/adapter contracts | 26 files, 154 tests pass | `pnpm test` |
+| Unit/service/adapter contracts | 27 files, 165 tests pass | `pnpm test` |
 | Behavioral browser contracts | 46 tests pass | `pnpm test:e2e` |
 | Accessibility and reflow | 6 representative workflow tests pass | `pnpm test:a11y` |
 | Visual acceptance | 52 tests pass: screens 01-45, 4 stress states, 3 smoke baselines | `pnpm test:visual` |

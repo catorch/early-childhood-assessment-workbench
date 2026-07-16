@@ -17,6 +17,14 @@ export type SupportContext = z.infer<typeof SupportContextSchema>;
 export const EvidenceModalitySchema = z.enum(["VISUAL", "AUDIO", "VISUAL_AND_AUDIO", "CONTEXT"]);
 export type EvidenceModality = z.infer<typeof EvidenceModalitySchema>;
 
+export const VideoScoreabilitySchema = z.enum([
+  "DIRECT",
+  "OPPORTUNITY_REQUIRED",
+  "CONTEXT_DEPENDENT",
+  "NOT_RELIABLY_SCOREABLE"
+]);
+export type VideoScoreability = z.infer<typeof VideoScoreabilitySchema>;
+
 const CandidateCreditCriteriaSchema = z.object({
   present: z.string().trim().min(1).max(4_000),
   emerging: z.string().trim().min(1).max(4_000),
@@ -33,9 +41,15 @@ export const ScoringCandidateSchema = z.object({
   minimumAgeMonths: z.number().int().min(0).max(216),
   maximumAgeMonths: z.number().int().min(0).max(216),
   sourceOrder: z.number().int().nonnegative(),
+  sourceFramework: z.string().trim().min(1).max(160).optional(),
+  sourceReferenceUrl: z.url().max(1_000).optional(),
+  sourceAgeMonths: z.number().int().min(0).max(216).optional(),
+  videoScoreability: VideoScoreabilitySchema.optional(),
   observableDefinition: z.string().trim().min(1).max(4_000).optional(),
   observableIndicators: z.array(z.string().trim().min(1).max(1_000)).min(1).max(20).optional(),
   nonExamples: z.array(z.string().trim().min(1).max(1_000)).min(1).max(20).optional(),
+  observationConditions: z.array(z.string().trim().min(1).max(1_000)).min(1).max(20).optional(),
+  prohibitedInferences: z.array(z.string().trim().min(1).max(1_000)).min(1).max(20).optional(),
   evidenceModalities: z.array(EvidenceModalitySchema).min(1).max(4).optional(),
   creditCriteria: CandidateCreditCriteriaSchema.optional()
 }).strict().superRefine((candidate, context) => {
