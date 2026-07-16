@@ -136,11 +136,11 @@ creating log metrics before it creates alert policies because Google Monitoring
 propagates new user-defined metric descriptors asynchronously. Monitoring adds
 read-only fields to dashboard JSON, so later layout changes must be rolled out
 explicitly with `terraform apply -replace=google_monitoring_dashboard.operations`.
-Cloud Run also records the client/version and an operator-selected revision
-name during `gcloud` recovery operations. Terraform ignores only those three
-operational metadata fields so a secret-rotation revision does not create
-false drift; images, environment, secrets, scaling, ingress, IAM, and traffic
-remain managed.
+Cloud Run also records the client/version during `gcloud` recovery operations.
+Terraform ignores those two operator metadata fields, but it deliberately
+clears an operator-selected revision name on the next managed change so Cloud
+Run can generate a fresh, non-conflicting revision. Images, environment,
+secrets, scaling, ingress, IAM, and traffic remain managed.
 
 ## Smoke Checks
 

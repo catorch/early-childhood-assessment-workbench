@@ -374,7 +374,7 @@ resource "google_cloud_run_v2_service" "web" {
   ]
 
   lifecycle {
-    ignore_changes = [client, client_version, template[0].revision]
+    ignore_changes = [client, client_version]
   }
 }
 
@@ -446,7 +446,7 @@ resource "google_cloud_run_v2_service" "processor" {
 
 
   lifecycle {
-    ignore_changes = [client, client_version, template[0].revision]
+    ignore_changes = [client, client_version]
   }
 }
 
