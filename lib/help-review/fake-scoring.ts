@@ -107,7 +107,10 @@ export function createFakeScoringResult(runId: string): readonly SkillSuggestion
         draftCredit: "EMERGING",
         confidence: 0.72,
         uncertaintyReason: null,
-        evidence: [{ timestampSeconds: 91, explanation: "The child offers a toy, then pulls it back before the peer takes it." }],
+        evidence: [
+          { timestampSeconds: 91, explanation: "The child offers a toy, then pulls it back before the peer takes it." },
+          { timestampSeconds: 96, explanation: "After a prompt, the child offers the toy again but continues holding it." }
+        ],
         sourceOrder: 5
       },
       {
@@ -130,9 +133,9 @@ export function createFakeScoringResult(runId: string): readonly SkillSuggestion
         skillName: "Drinks from open cup with assistance",
         domain: "Self-Help",
         strand: "Feeding",
-        draftCredit: "NOT_APPLICABLE",
-        confidence: 0.91,
-        uncertaintyReason: null,
+        draftCredit: null,
+        confidence: null,
+        uncertaintyReason: "No open-cup opportunity occurs in this observation.",
         evidence: [{ timestampSeconds: 106, explanation: "No open-cup opportunity occurs in the observation." }],
         sourceOrder: 7
       }

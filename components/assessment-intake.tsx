@@ -368,7 +368,7 @@ export function AssessmentIntake() {
   return (
     <PageShell>
       <Link className={backLinkClass} href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link>
-      <header className="max-w-[720px]"><Eyebrow>New observation</Eyebrow><h1 className="mt-1 font-heading text-4xl font-normal leading-tight max-sm:text-[30px]">Upload an observation</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Add one short observation video for this assessment.</p></header>
+      <header className="max-w-[720px]"><Eyebrow>New observation</Eyebrow><h1 className="mt-1 font-heading text-4xl font-normal leading-tight max-sm:text-[30px]">Upload observational video</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Add one short observational video for this assessment.</p></header>
       {error ? <Alert className="mt-7" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
       <div className="mt-8 grid grid-cols-[minmax(0,1fr)_310px] items-start gap-12 max-md:grid-cols-1">
         <section className="border-t border-border pt-7" aria-labelledby="observation-details-title">

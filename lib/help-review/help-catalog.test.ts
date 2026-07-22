@@ -56,12 +56,34 @@ describe("versioned HELP catalogue", () => {
     expect(() => loadHelpCatalogFile(duplicatePath)).toThrow("unique");
   });
 
+  it("allows duplicate displayed skill codes while row identifiers stay unique", () => {
+    const duplicateCodePath = temporaryCatalog((catalog) => {
+      const skills = catalog.skills as Array<Record<string, unknown>>;
+      skills[1].skillCode = skills[0].skillCode;
+    });
+    expect(() => loadHelpCatalogFile(duplicateCodePath)).not.toThrow();
+  });
+
   it("uses the configured policy and immutable source order for candidate selection", () => {
     const catalog = configuredHelpCatalog({ NODE_ENV: "test" });
     const candidates = selectScoringCandidates(19, "IFSP", catalog.skills, catalog);
     expect(candidates.length).toBeGreaterThan(0);
     expect(candidates.map((candidate) => candidate.sourceOrder))
       .toEqual([...candidates].map((candidate) => candidate.sourceOrder).sort((left, right) => left - right));
+  });
+
+  it("does not expand downward and still includes always-assess skills", () => {
+    const catalog = configuredHelpCatalog({ NODE_ENV: "test" });
+    const source = catalog.skills.slice(0, 3).map((skill, index) => ({
+      ...skill,
+      sourceSkillId: `selection-${index}`,
+      sourceOrder: index,
+      minimumAgeMonths: index === 0 ? 6 : 24,
+      maximumAgeMonths: index === 0 ? 12 : 30,
+      alwaysAssess: index === 2
+    }));
+    const selected = selectScoringCandidates(20, "IFSP", source, catalog);
+    expect(selected.map((skill) => skill.sourceSkillId)).toEqual(["selection-2"]);
   });
 
   it("loads the source-attributed reference catalogue and excludes longitudinal-only items from video candidates", () => {

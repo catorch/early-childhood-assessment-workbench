@@ -42,13 +42,39 @@ function request() {
 }
 
 describe("scoring contract v0", () => {
-  it("selects an ordered age-first candidate set with bounded downward coverage", () => {
+  it("selects an ordered within-age candidate set without downward expansion", () => {
     const candidates = selectScoringCandidates(19, "IFSP");
     expect(candidates.length).toBeGreaterThan(0);
     expect(candidates.map((candidate) => candidate.sourceOrder)).toEqual(
       [...candidates].map((candidate) => candidate.sourceOrder).sort((left, right) => left - right)
     );
-    expect(candidates.every((candidate) => candidate.minimumAgeMonths <= 19)).toBe(true);
+    expect(candidates.every((candidate) => candidate.alwaysAssess === true || (
+      candidate.minimumAgeMonths <= 19 && candidate.maximumAgeMonths >= 19
+    ))).toBe(true);
+  });
+
+  it("rejects educator-only credits in a model result", () => {
+    const parsed = ScoringResultSchema.safeParse({
+      contractVersion: SCORING_CONTRACT_VERSION,
+      runId: "run-contract-1",
+      outcome: "VALID",
+      scoringConfigurationReference: "fixture:test",
+      suggestions: [{
+        id: "suggestion-1",
+        sourceSkillId: "help-4.68",
+        skillCode: "4.68",
+        skillName: "Builds tower using two cubes",
+        domain: "Fine Motor",
+        strand: "Block construction",
+        source: "MODEL",
+        draftCredit: "NOT_APPLICABLE",
+        confidence: 0.9,
+        uncertaintyReason: null,
+        evidence: [{ timestampSeconds: 4, explanation: "Context only." }],
+        sourceOrder: 0
+      }]
+    });
+    expect(parsed.success).toBe(false);
   });
 
   it("rejects partial suggestions for a no-valid-results outcome", () => {
@@ -87,6 +113,7 @@ describe("scoring contract v0", () => {
         skillName: "Builds tower using two cubes",
         domain: "Fine Motor",
         strand: "Block construction",
+        source: "MODEL" as const,
         draftCredit: "PRESENT" as const,
         confidence: 0.9,
         uncertaintyReason: null,

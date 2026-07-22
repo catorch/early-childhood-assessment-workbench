@@ -116,7 +116,7 @@ test("AUTH-006 and SHELL-003: support is actionable and sign-out clears the sess
 
   const support = page.getByRole("link", { name: "Contact pilot support" });
   await expect(support).toHaveAttribute("href", /^mailto:[^?@]+@[^?@]+\?/);
-  await expect(support).toHaveAttribute("href", /subject=HELP(?:%20|\+)Review(?:%20|\+)pilot(?:%20|\+)support/);
+  await expect(support).toHaveAttribute("href", /subject=HELP(?:%20|\+)AI(?:%20|\+)Crediting(?:%20|\+)Companion(?:%20|\+)support/);
   await expect(support).not.toHaveAttribute("href", /example\.(test|com|org|net)/);
 
   await page.getByRole("button", { name: "Sign out" }).click();
@@ -157,6 +157,22 @@ test("CHILD-009: a failed child detail load can be retried without stale content
   await expect(page.getByText("Child 1001", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByRole("heading", { name: "Child 1001" })).toBeVisible();
+});
+
+test("CHILD-010: repeated finalized assessments retain age snapshots and compare changed or removed skills", async ({ page }) => {
+  await resetScreenFixture(page, "14");
+  await signIn(page);
+  await page.goto("/children/child-1001");
+
+  await expect(page.getByRole("heading", { name: "Finalized assessments" })).toBeVisible();
+  await expect(page.getByText(/18 months · 3 skills · 3 strands/)).toBeVisible();
+  await expect(page.getByText(/19 months · 2 skills · 2 strands/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Changes since Jun 18, 2026" })).toBeVisible();
+  const comparison = page.getByRole("table", { name: "Skill credit changes between the latest two finalized assessments" });
+  await expect(comparison.getByText("Emerging", { exact: true })).toBeVisible();
+  await expect(comparison.getByText("Present", { exact: true }).first()).toBeVisible();
+  await expect(comparison.getByText("Not included", { exact: true })).toBeVisible();
+  await expect(page.getByText("In review", { exact: true })).toBeVisible();
 });
 
 test("CHILD-002 and CHILD-006: child loading and recovery never expose stale assignments", async ({ page }) => {
@@ -371,7 +387,7 @@ test("REVIEW-003: review load failure offers an honest retry and restores the wo
   await page.goto("/assessments/assessment-ready/review");
   await expect(page.getByRole("heading", { name: "Review could not be loaded" })).toBeVisible();
   await page.getByRole("button", { name: "Try again" }).click();
-  await expect(page.getByRole("heading", { name: "Review AI draft" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review AI suggestions" })).toBeVisible();
 });
 
 test("REVIEW-017: unsaved review edits block internal navigation until resolved", async ({ page }) => {
@@ -403,22 +419,101 @@ test("REVIEW-004: review routes resolve not-ready and finalized records to curre
   await expect(page.getByRole("heading", { name: "Assessment finalized" })).toBeVisible();
 });
 
-test("REVIEW-006 and REVIEW-008: suggestions remain grouped and evidence disclosures are stateful", async ({ page }) => {
+test("REVIEW-006 and REVIEW-008: suggestions remain grouped with categorical confidence and explained evidence", async ({ page }) => {
   await resetScreenFixture(page, "05");
   await signIn(page);
   await page.goto("/assessments/assessment-ready/review");
 
   const suggestions = page.getByRole("region", { name: "AI skill suggestions" });
-  for (const label of ["Needs your review", "Present", "Emerging", "Not observed", "Not applicable"]) {
+  const editor = page.locator("#review-editor");
+  for (const label of ["Present", "Emerging", "Not observed", "Leave blank"]) {
     await expect(suggestions.locator(`xpath=./section/header//strong[normalize-space()="${label}"]`)).toBeVisible();
   }
+  await expect(suggestions.getByText("Needs your review", { exact: true })).toHaveCount(0);
+  await expect(suggestions.getByText("AI confidence: Not sure", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("AI confidence is not an accuracy score.", { exact: true })).toBeVisible();
+  await expect(suggestions).not.toContainText(/\b\d{1,3}%\b/);
   await expect(suggestions.locator("article")).toHaveCount(8);
+  await expect(suggestions.locator("article").first()).toContainText("Looks for object that has fallen out of sight");
+  await expect(editor).toContainText("Looks for object that has fallen out of sight");
 
-  const disclosure = suggestions.getByRole("button", { name: "What the AI noticed" }).first();
+  const disclosure = suggestions.getByRole("button", { name: "Why the AI left this blank" }).first();
   await expect(disclosure).toHaveAttribute("aria-expanded", "false");
   await disclosure.click();
   await expect(disclosure).toHaveAttribute("aria-expanded", "true");
   await expect(disclosure.locator("xpath=following-sibling::div")).toBeVisible();
+
+  const emerging = suggestions.locator("article").filter({ hasText: "Shares object spontaneously" });
+  await expect(emerging.getByRole("button", { name: /Primary · 0:01/ })).toBeVisible();
+  await expect(emerging.getByRole("button", { name: /Supporting 1 · 0:02/ })).toBeVisible();
+  await emerging.getByRole("button", { name: "Edit / add note" }).click();
+  await expect(editor.getByRole("region", { name: "Why the AI suggested +/- Emerging" })).toContainText("pulls it back");
+  await expect(editor.getByRole("button", { name: /Primary moment · 0:01/ })).toBeVisible();
+  await expect(editor.getByRole("button", { name: /Supporting moment 1 · 0:02/ })).toBeVisible();
+});
+
+test("REVIEW-027: simple review actions expose one clear next step and remain reversible", async ({ page }) => {
+  await resetScreenFixture(page, "05");
+  await signIn(page);
+  await page.goto("/assessments/assessment-ready/review");
+
+  const suggestions = page.getByRole("region", { name: "AI skill suggestions" });
+  const first = suggestions.locator("article").first();
+  const second = suggestions.locator("article").nth(1);
+  const editor = page.locator("#review-editor");
+
+  await expect(editor.getByRole("button", { name: "Save decision" })).toBeEnabled();
+  await expect(first.getByRole("button", { name: "Accept Present" })).toBeVisible();
+  await expect(first.getByRole("button", { name: "Edit / add note" })).toBeVisible();
+  await expect(first.getByRole("button", { name: /Dismiss/ })).toHaveCount(0);
+
+  await first.getByRole("button", { name: "Accept Present" }).click();
+  await expect(first.getByText("Accepted: Present", { exact: true })).toBeVisible();
+  await expect(first.getByRole("button", { name: "Accept Present" })).toHaveCount(0);
+  await expect(first.getByRole("button", { name: "Change decision" })).toBeVisible();
+  await expect(page.getByText("1 of 8 reviewed", { exact: false })).toBeVisible();
+
+  await second.getByRole("button", { name: "Edit / add note" }).click();
+  await editor.getByRole("button", { name: "Dismiss suggestion" }).click();
+  await expect(second.getByText("Dismissed", { exact: true })).toBeVisible();
+  await expect(second.getByRole("button", { name: "Change decision" })).toBeVisible();
+  await expect(page.getByText("2 of 8 reviewed", { exact: false })).toBeVisible();
+
+  await editor.getByRole("button", { name: /Present/ }).click();
+  await editor.getByRole("button", { name: "Save changes" }).click();
+  await expect(second.getByText("Accepted: Present", { exact: true })).toBeVisible();
+});
+
+test("REVIEW-025: an educator can add and score a skill the AI missed, and it survives reload", async ({ page }) => {
+  await resetScreenFixture(page, "05", "manual-add");
+  await signIn(page);
+  await page.goto("/assessments/assessment-ready/review");
+
+  const suggestions = page.getByRole("region", { name: "AI skill suggestions" });
+  await expect(suggestions.locator("article")).toHaveCount(5);
+  await page.getByRole("button", { name: "Add a skill the AI missed" }).click();
+
+  const addPanel = page.getByRole("region", { name: "Add a skill the AI missed" });
+  await addPanel.getByLabel("Domain / section").selectOption({ index: 1 });
+  await addPanel.getByLabel("Strand").selectOption({ index: 1 });
+  await addPanel.getByLabel("Skill").selectOption({ index: 1 });
+  const chosenSkill = await addPanel.getByLabel("Skill").locator("option:checked").textContent();
+  await addPanel.getByRole("combobox", { name: "Credit", exact: true }).selectOption("EMERGING");
+  await addPanel.getByLabel("Note (optional)").fill("Seen during free play.");
+  await addPanel.getByRole("button", { name: "Add and score skill" }).click();
+
+  await expect(suggestions.locator("article")).toHaveCount(6);
+  const addedRow = suggestions.locator("article").filter({ hasText: "Added by you" });
+  await expect(addedRow).toHaveCount(1);
+  await expect(addedRow.getByText("Added:", { exact: false })).toBeVisible();
+  await expect(addedRow.getByRole("button", { name: /^Why the AI/ })).toHaveCount(0);
+  expect(chosenSkill).toBeTruthy();
+
+  await page.reload();
+  await expect(suggestions.locator("article").filter({ hasText: "Added by you" })).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Review summary" }).click();
+  await expect(page.getByText("Added by educator").first()).toBeVisible();
 });
 
 test("REVIEW-016 REVIEW-021 and REVIEW-022: notes persist progress is server-derived and clean finish opens summary", async ({ page }) => {
@@ -426,20 +521,44 @@ test("REVIEW-016 REVIEW-021 and REVIEW-022: notes persist progress is server-der
   await signIn(page);
   await page.goto("/assessments/assessment-ready/review");
   const editor = page.locator("#review-editor");
-  await expect(page.getByText("0 of 8 actioned", { exact: false })).toBeVisible();
+  await expect(page.getByText("0 of 8 reviewed", { exact: false })).toBeVisible();
 
   await editor.getByLabel("Educator note optional").fill("Observed after the second prompt.");
   await editor.getByRole("button", { name: /Emerging/ }).click();
-  await editor.getByRole("button", { name: "Save decision" }).click();
-  await expect(page.getByText("1 of 8 actioned", { exact: false })).toBeVisible();
+  await editor.getByRole("button", { name: /^Save (decision|changes)$/ }).click();
+  await expect(page.getByText("1 of 8 reviewed", { exact: false })).toBeVisible();
   await expect(page.getByText("Unsaved changes", { exact: true })).toHaveCount(0);
 
   await page.reload();
   await expect(editor.getByLabel("Educator note optional")).toHaveValue("Observed after the second prompt.");
-  await expect(page.getByText("1 of 8 actioned", { exact: false })).toBeVisible();
-  await page.getByRole("button", { name: "Finish & review" }).click();
+  await expect(page.getByText("1 of 8 reviewed", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Review summary" }).click();
   await expect(page).toHaveURL(/\/assessments\/assessment-ready\/summary$/);
   await expect(page.getByRole("heading", { name: "Review assessment summary" })).toBeVisible();
+});
+
+test("REVIEW-026: intentional Blank and the additive O concern flag persist as distinct educator actions", async ({ page }) => {
+  await resetScreenFixture(page, "05");
+  await signIn(page);
+  await page.goto("/assessments/assessment-ready/review");
+  const editor = page.locator("#review-editor");
+  await editor.getByText("N/A, atypical, or concern options", { exact: true }).click();
+
+  await editor.getByRole("button", { name: /Blank/ }).click();
+  await expect(editor.getByLabel("O concern flag")).toBeDisabled();
+  await editor.getByRole("button", { name: /^Save (decision|changes)$/ }).click();
+  await expect(page.getByText("1 of 8 reviewed", { exact: false })).toBeVisible();
+  let projection = await (await page.request.get("/api/assessments/assessment-ready/review")).json() as {
+    decisions: Array<{ suggestionId: string; finalCredit: string; concernFlag: boolean }>;
+  };
+  expect(projection.decisions[0]).toMatchObject({ finalCredit: "BLANK", concernFlag: false });
+
+  await editor.getByRole("button", { name: /Present/ }).click();
+  await editor.getByLabel("O concern flag").check();
+  await editor.getByRole("button", { name: /^Save (decision|changes)$/ }).click();
+  await expect(page.getByText("Unsaved changes", { exact: true })).toHaveCount(0);
+  projection = await (await page.request.get("/api/assessments/assessment-ready/review")).json();
+  expect(projection.decisions[0]).toMatchObject({ finalCredit: "PRESENT", concernFlag: true });
 });
 
 test("REVIEW-019: a failed save keeps edits and succeeds through the explicit retry", async ({ page }) => {
@@ -453,15 +572,15 @@ test("REVIEW-019: a failed save keeps edits and succeeds through the explicit re
   const editor = page.locator("#review-editor");
   await editor.getByLabel("Educator note optional").fill("Keep this context through retry.");
   await editor.getByRole("button", { name: /Emerging/ }).click();
-  await editor.getByRole("button", { name: "Save decision" }).click();
+  await editor.getByRole("button", { name: /^Save (decision|changes)$/ }).click();
   await expect(editor.getByText("Decision needs attention")).toBeVisible();
   await expect(editor.getByLabel("Educator note optional")).toHaveValue("Keep this context through retry.");
-  await expect(page.getByText("0 of 8 actioned", { exact: false })).toBeVisible();
+  await expect(page.getByText("0 of 8 reviewed", { exact: false })).toBeVisible();
 
   failSave = false;
   await editor.getByRole("button", { name: "Retry save" }).click();
   await expect(editor.getByText("Decision needs attention")).toHaveCount(0);
-  await expect(page.getByText("1 of 8 actioned", { exact: false })).toBeVisible();
+  await expect(page.getByText("1 of 8 reviewed", { exact: false })).toBeVisible();
 });
 
 test("REVIEW-020: a revision conflict can adopt the authoritative decision", async ({ page }) => {
@@ -473,9 +592,9 @@ test("REVIEW-020: a revision conflict can adopt the authoritative decision", asy
       code: "REVISION_CONFLICT",
       error: "This item changed in another session.",
       currentDecision: {
-        suggestionId: "run-ready-suggestion-1",
+        suggestionId: "run-ready-suggestion-3",
         educatorId: "user-educator-1",
-        origin: "SCORED_INDEPENDENTLY",
+        origin: "ACCEPTED",
         finalCredit: "PRESENT",
         dismissed: false,
         note: "Latest saved context.",
@@ -489,7 +608,7 @@ test("REVIEW-020: a revision conflict can adopt the authoritative decision", asy
   const editor = page.locator("#review-editor");
   await editor.getByLabel("Educator note optional").fill("My competing context.");
   await editor.getByRole("button", { name: /Emerging/ }).click();
-  await editor.getByRole("button", { name: "Save decision" }).click();
+  await editor.getByRole("button", { name: /^Save (decision|changes)$/ }).click();
 
   const conflict = page.getByRole("alertdialog");
   await expect(conflict).toContainText("My competing context.");
@@ -554,6 +673,22 @@ test("SUMMARY-005 and SUMMARY-006: final items stay reconciled and finalization 
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
+});
+
+test("SUMMARY-010: the final record exposes coverage counts and a real PDF download", async ({ page }) => {
+  await resetScreenFixture(page, "07");
+  await signIn(page);
+  await page.goto("/assessments/assessment-final/final");
+
+  await expect(page.getByRole("heading", { name: "Assessment coverage" })).toBeVisible();
+  await expect(page.getByText("Developmental domains", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Download PDF" })).toBeVisible();
+
+  const response = await page.request.get("/api/assessments/assessment-final/final/download");
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["content-type"]).toBe("application/pdf");
+  expect(response.headers()["content-disposition"]).toContain("attachment;");
+  expect((await response.body()).subarray(0, 4).toString("ascii")).toBe("%PDF");
 });
 
 test("ADMIN-ACCESS-004 and ADMIN-ACCESS-011: access filters are URL-backed and failed confirmation remains recoverable", async ({ page }) => {

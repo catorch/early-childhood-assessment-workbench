@@ -147,8 +147,7 @@ The web application SHALL NOT edit or execute the scientist's prompts or model c
 13. WHEN any decision is saved THEN the system SHALL update visible progress and restore the saved state after refresh or a later session.
 14. WHEN saving fails THEN the system SHALL retain the Educator's visible input and offer retry without falsely showing it as saved.
 15. WHEN the viewport is narrow THEN the video, item list, and editor SHALL remain usable without overlapping or clipped controls.
-
-Adding a rubric skill that the model did not return is not required unless the content owner explicitly confirms that workflow.
+16. WHEN the model did not surface a catalogue skill the Educator observed THEN the Educator SHALL be able to add that skill from the current catalogue and score it in one step, recorded with a distinct educator-added origin, with the server owning the skill's identity and labels and rejecting duplicates, unknown skills, and finalized assessments.
 
 ### R6. Finish Review And Final Summary
 
@@ -350,7 +349,6 @@ Every accepted screen is an acceptance state of an existing route, not a separat
 - Prompt editing, prompt experiments, model configuration promotion, or model training
 - Rubric authoring and generalized rubric-version administration
 - DAL calculation unless Acelero separately supplies and approves it for this pilot
-- Manual addition of skills omitted by the model unless explicitly confirmed
 - PDF generation, export jobs, or a generalized export center
 - Amendment/version-history workflows beyond a single finalized pilot record
 - Configurable retention engines, legal-hold tooling, or automated deletion orchestration before the actual policy is confirmed
@@ -398,7 +396,6 @@ A feature without one of these bases requires an explicit requirements change be
 | Negative credit wording | Use canonical code `NOT_OBSERVED` internally and mark release content as unresolved. | Apply one approved display label consistently across review, summaries, final records, tests, and accessibility names. |
 | `ATYPICAL` and `FAMILY_CONCERN` flags | Hide the flag controls and reject flag values at the production API boundary. | Enable only the approved names, symbols, eligibility, summary behavior, and persistence rules. |
 | Child roster source | Use sanitized fixtures or controlled seed data; the Admin UI can assign only those existing records. | Implement the approved controlled import or upstream integration for child records while retaining the minimal access/assignment UI represented by the screens. |
-| Manual omitted-skill entry | Do not show an add-skill control and reject manually created review items. | Add it only through a requirements revision that defines rubric source, validation, origin, and summary behavior. |
 | Final output format | Ship the authorized on-screen final record only. | Add an integration payload or downloadable artifact only after its schema, authorization, storage, and retention contract is approved. |
 | Real child video policy | Keep real child data disabled and use sanitized fixtures. | Enable real data only after permission, vendor, storage, retention, deletion, and incident ownership approvals are recorded. |
 

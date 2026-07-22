@@ -12,7 +12,7 @@ Screen catalogue: `docs/specs/help-review-production-platform/ui-ux-screens/SCRE
 - Treat all 45 accepted images as route-state and responsive acceptance references, not as permission to invent unsupported behavior.
 - Treat every image in `ui-ux-screens/_rejected/` as excluded design exploration.
 - Identity is relaxed: any standard email/password approach is approved. The selected implementation is the first-party application path with securely hashed credential storage, verification, recovery, and rate limiting; Google Identity Platform is retired, while HELP Connect remains a possible future replacement if its contract is supplied. Run one active production sign-in path at a time.
-- Keep excluded version-one features absent and server-rejected: add-on flags, manual omitted-skill creation, and alternate final outputs.
+- Keep excluded version-one features absent and server-rejected: add-on flags and alternate final outputs. Educator-added skills are approved and implemented (D-010 revision, R5.16).
 - Keep AI suggestions separate from Educator decisions and derive all progress/final values on the server.
 - Enforce assignment and state authorization in services/repositories and route handlers, not only in navigation.
 - Use sanitized data until the selected identity, storage, retention, deletion, vendor, and incident configurations are applied and the exact build is exercised.
@@ -21,7 +21,7 @@ Screen catalogue: `docs/specs/help-review-production-platform/ui-ux-screens/SCRE
 
 ## Implementation Status
 
-As of July 15, 2026, **78 of 92 task checkboxes are complete** and **140 of 149 canonical user stories pass**. The remaining 9 stories are 8 partial integration, operational, or manual-verification items and one incomplete exact-build release-acceptance item. The complete Educator journey and minimal Admin workflow are implemented: first-party email/password or visibly sanitized local sign-in, signed provisioned sessions, controlled roster onboarding, assignment-scoped navigation, direct verified Cloud Storage upload, Eventarc-delivered browser-independent processing, a private Cloud Run processor, Vertex AI scoring against the canonical `gs://` video, secure byte-range playback, every approved review decision path and origin, revision conflicts, server-derived summary/finalization, access and assignment changes, and failed/stuck processing retry. The full local keyboard journey is also recorded in `docs/quality/accessibility-manual-acceptance-2026-07-15.md`; the actual supported-screen-reader session remains open.
+As of July 16, 2026, **79 of 93 task checkboxes are complete** and **141 of 150 canonical user stories pass**. The remaining 9 stories are 8 partial integration, operational, or manual-verification items and one incomplete exact-build release-acceptance item. The complete Educator journey and minimal Admin workflow are implemented: first-party email/password or visibly sanitized local sign-in, signed provisioned sessions, controlled roster onboarding, assignment-scoped navigation, direct verified Cloud Storage upload, Eventarc-delivered browser-independent processing, a private Cloud Run processor, Vertex AI scoring against the canonical `gs://` video, secure byte-range playback, every approved review decision path and origin, revision conflicts, server-derived summary/finalization, access and assignment changes, and failed/stuck processing retry. The full local keyboard journey is also recorded in `docs/quality/accessibility-manual-acceptance-2026-07-15.md`; the actual supported-screen-reader session remains open.
 
 The architecture now uses injectable identity, authorization, repository, child, assessment, video, dispatch, processing, scoring, review, Admin, and support boundaries. The first-party `evidence-first-v1` scorer separates timestamped Gemini video observation from catalogue adjudication, and the development-only 127-item reference corpus supplies source-attributed, explicitly video-scoreable candidates while licensed HELP content is pending. Browser responses use explicit public projections and exclude storage keys, checksums, uploader/requester IDs, temporary URLs, unrestricted provider payloads, and protected runtime configuration. Production-mode configuration fails closed unless durable Neon/GCS/Eventarc adapters, strong secrets, and the explicit sanitized acknowledgement are present; real-data mode rejects sandbox identity and unaccepted scoring configuration.
 
@@ -33,15 +33,12 @@ All product, privacy, storage, vendor, identity, and infrastructure permissions 
 
 ### Remaining Closure Actions
 
-1. Import and validate the authoritative HELP content and Yi's versioned scoring package/data contract, then run their sanitized contract fixtures against the existing Vertex gateway.
-2. Run the implemented `help-roster-v1` preview/apply path with the approved staging roster, resolve every safe validation issue, and record reconciliation plus replay evidence.
-3. Apply the Terraform/Cloud Build stack in organization-owned staging and production with final domain, support address, secrets, regions, service owners, retention/deletion values, immutable image tags, and the chosen PostgreSQL home.
-4. Apply all seven migrations and the proven recovery drill in final staging/production, then record application compatibility and provider point-in-time recovery during promotion.
-5. Verify final notification delivery, observed alert thresholds, escalation ownership, and execute the target storage/provider and named incident drills with timings. Managed identity, immutable rollback, session-secret rotation, and revocation are already exercised.
-6. Run representative supported-screen-reader sessions, then run the organization CI workflow including the exact scoring-contract job. The manual all-workflow keyboard pass is complete.
-7. Run permissioned exact-build staging acceptance across all 146 tracker stories, close every defect, and record production handoff plus the real-data launch decision.
+1. Import the client's licensed HELP catalogue through the existing `help-catalog-v1` contract.
+2. Decide the scoring model: integrate Yi's package behind the existing gateway, or adopt the built-in `evidence-first-v1` scorer (a small educator-scored comparison set settles it).
+3. When the company is ready to host: point the stack at their account and domain, configure the invitation-email sender, bootstrap their first Admin, and import their real roster.
+4. Do a final click-through QA pass with the real content before educators start using it.
 
-The July 14 status notes below are retained as historical implementation context. Where they describe an approval as pending, this July 15 closure list supersedes that wording: the remaining condition is the named artifact, configuration, implementation, drill, or acceptance record.
+This project is a small platform for one client company that will operate it themselves — see `CLAUDE.md`. The status notes below are retained as historical implementation context; where older wording describes drills, sign-off records, or launch-decision ceremony, treat it as historical detail rather than required process.
 
 ## 1. Resolve Live-Integration Contracts
 
@@ -73,7 +70,7 @@ The July 14 status notes below are retained as historical implementation context
 - [ ] 1.4 Confirm HELP content and final-output contracts (2-4 hours)
   - Select one display label for canonical `NOT_OBSERVED` and approve the four primary credit descriptions.
   - Confirm uncertain-item behavior, evidence fields, dismiss semantics, note limits, and whether `ATYPICAL`/`FAMILY_CONCERN` flags are approved, renamed, or omitted.
-  - Confirm that manual omitted-skill entry remains excluded or define a requirements change before implementation.
+  - Manual omitted-skill entry was approved and implemented on July 16 (R5.16, D-010 revision, story REVIEW-025).
   - Confirm whether the on-screen final record is sufficient or define an authorized integration/download contract.
   - _Screens: 05, 06, 07, 27, 37, 38, 39, 41, 42, 43_
   - _Requirements: R5, R6, NFR-1, NFR-4_
@@ -120,7 +117,7 @@ The July 14 status notes below are retained as historical implementation context
   - **Status (July 15):** the lean constrained schema and all seven migrations validate, apply to a clean temporary schema, and are current on sanitized Neon. Guarded drills then verified shared rate-limit atomicity and migrated an isolated schema, inserted a synthetic marker, created a logical backup, dropped and restored the schema, verified all seven migrations plus the marker, and removed every temporary artifact. Final target deployment compatibility remains part of Tasks 12.1 and 12.7 rather than the schema implementation.
 
 - [x] 2.5 Keep the HELP domain lean and deterministic (2-3 hours)
-  - Retain two roles, four canonical credits, four decision origins, state validation, sanitized fixtures, and no speculative manual-add origin.
+  - Retain two roles, four canonical credits, the approved decision origins (including the July 16 `MANUALLY_ADDED` educator-add origin), state validation, and sanitized fixtures.
   - Revalidate current domain tests against the expanded requirements and conditional-feature gates.
   - _Files: `lib/help-review/domain.ts`, domain tests_
   - _Requirements: R5, R6, R8, NFR-4_
@@ -340,7 +337,7 @@ The July 14 status notes below are retained as historical implementation context
 
 - [x] 7.3 Implement decision command validation (3-4 hours)
   - Validate expected revision, final credit/dismissal invariant, note limit, suggestion membership, finalized immutability, and approved flag allowlist.
-  - Reject unsupported/hidden flags and manually created suggestions at the API boundary.
+  - Reject unsupported/hidden flags at the API boundary; educator-added skills are accepted only through the server-validated catalogue add command (July 16).
   - Return normalized saved/current decision shapes and field errors only.
   - _Requirements: R5, R6, R8, NFR-2_
 
@@ -422,6 +419,14 @@ The July 14 status notes below are retained as historical implementation context
   - Assert real media has non-zero rendered pixels/dimensions, timestamp seeking changes time, reload restores decisions, and dirty/conflict paths never falsely save.
   - Capture screen fixtures 05, 23, 24, 25, 26, 37, 38, 42, and 44.
   - _Requirements: R4, R5, R8, NFR-1, NFR-2, NFR-3, NFR-5_
+
+- [x] 8.11 Let educators add and score a skill the AI missed (3-4 hours)
+  - Add the `MANUALLY_ADDED` origin, a `source: MODEL | EDUCATOR` suggestion marker, and the atomic add-skill-with-decision service command validated against the configured catalogue.
+  - Expose age-appropriate unsuggested catalogue skills in the review projection and an "Add a skill the AI missed" panel in the workspace with an "Added by you" badge and summary origin label.
+  - Reject duplicates (pointing at the existing item), unknown skills, finalized assessments, and any model result claiming an educator source.
+  - _Screens: 05, 06, 37_
+  - _Requirements: R5.16, R6, R8, NFR-2_
+  - **Status (July 16, implemented):** approved by stakeholder direction (D-010 revision). Domain/service/e2e tests pass (story REVIEW-025), summary and final screens show the new origin tile, and migration `20260716160000_manual_skill_addition` is applied to sanitized Neon.
 
 ## 9. Implement Summary And Finalization
 
@@ -579,7 +584,7 @@ The July 14 status notes below are retained as historical implementation context
   - **Status (July 15):** CI installs PostgreSQL/Chromium and gates diff hygiene, types, lint, 166 unit/service tests, catalogue validation, seven migrations, shared-counter concurrency, 46 browser tests, 6 a11y tests, 52 visual tests, the processor build, the selected email/password production build, Terraform, and retained Playwright diagnostics. It remains open for Yi's exact provider contract job and one recorded organization CI execution/artifact check.
 
 - [x] 11.7 Audit scope and conditional-feature closure (2-3 hours)
-  - Confirm no dashboard, batch, reliability, prompt/model manager, research roles, rubric editor, DAL, manual skill entry, PDF/export, amendment, public signup, parallel auth, native/offline/live recording, or generalized audit product is reachable.
+  - Confirm no dashboard, batch, reliability, prompt/model manager, research roles, rubric editor, DAL, PDF/export, amendment, public signup, parallel auth, native/offline/live recording, or generalized audit product is reachable. (Manual skill entry became an approved feature on July 16.)
   - Confirm unresolved flags and output modes are hidden and server-rejected.
   - _Requirements: Explicitly Out Of Scope, NFR-4_
 
@@ -681,4 +686,4 @@ Tasks 11-12 complete. Security, privacy, accessibility, visual, resilience, prov
 
 ## Completion Rule
 
-The platform is complete only when all unchecked tasks are complete, every accepted screen ID has a passing deterministic state and route-level behavior, the selected live provider contracts pass in organization-owned staging/production, all summary and authorization invariants hold under direct/concurrent requests, and the exact-build launch decision is recorded. Generated images alone, the local file-backed spike, or a successful happy-path demo do not satisfy production completion.
+The platform is complete when the Educator and Admin workflows work end to end with the client's real HELP content and chosen scoring model, and the client company can run it on their own account with their own staff accounts. The automated suites (unit, browser, accessibility, visual) staying green is the regression bar.

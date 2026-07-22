@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
     if (issued) {
       await sendAuthEmail({
         to: exactEmail,
-        subject: "HELP Review password reset",
-        bodyText: "A password reset was requested for your HELP Review pilot account. Use the link below within two hours to set a new password.",
+        subject: "HELP AI Crediting Companion password reset",
+        bodyText: "A password reset was requested for your HELP AI Crediting Companion account. Use the link below within two hours to set a new password.",
         actionUrl: setPasswordUrl(issued.rawToken)
       }).catch((error) => {
         console.error(JSON.stringify({ event: "help_review_auth_email_failure", errorType: error instanceof Error ? error.name : "UnknownError" }));

@@ -19,13 +19,15 @@ import { creditPresentation } from "@/lib/help-review/presentation";
 interface DecisionIntent {
   readonly finalCredit: PrimaryCredit | null;
   readonly dismissed: boolean;
+  readonly concernFlag: boolean;
   readonly note: string | null;
 }
 
 function describe(value: DecisionIntent | SavedReviewDecision | null): string {
   if (!value) return "No saved decision";
   if (value.dismissed) return "Dismissed";
-  return value.finalCredit ? creditPresentation[value.finalCredit].label : "No credit";
+  const credit = value.finalCredit ? creditPresentation[value.finalCredit].label : "No credit";
+  return value.concernFlag ? `${credit} + O concern flag` : credit;
 }
 
 export function ReviewConflictDialog({

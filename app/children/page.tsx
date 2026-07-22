@@ -97,7 +97,7 @@ export default function ChildrenPage() {
         {visibleChildren.map((child) => {
           const latest = child.assessments[0];
           const status = latest ? assessmentStatusPresentation[latest.status] : null;
-          const emptyActionLabel = child.processingAllowed ? "Upload observation" : "View permission";
+          const emptyActionLabel = child.processingAllowed ? "Upload observational video" : "View permission";
           return (
             <article className="grid min-h-[104px] grid-cols-[50px_minmax(180px,1fr)_minmax(170px,.8fr)_auto] items-center gap-4 border-b border-border px-2 py-[18px] max-md:grid-cols-[46px_1fr_auto] max-sm:grid-cols-[42px_minmax(0,1fr)_auto] max-sm:gap-2.5 max-sm:px-0 max-sm:py-4" key={child.id}>
               <div className="grid size-[46px] place-items-center rounded-full border border-[#b8d8d3] bg-accent text-[13px] font-extrabold text-primary-strong max-sm:size-10" aria-hidden="true">{child.externalChildId.split(" ").at(-1)?.slice(-2)}</div>

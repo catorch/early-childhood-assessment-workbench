@@ -1,4 +1,4 @@
-const supportSubject = "HELP Review pilot support";
+const supportSubject = "HELP AI Crediting Companion support";
 const reservedDomains = new Set([
   "example.com",
   "example.net",

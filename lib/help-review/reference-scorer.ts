@@ -72,7 +72,7 @@ export type ObservationLedger = z.infer<typeof ObservationLedgerSchema>;
 
 const ReferenceSkillEvaluationSchema = z.object({
   sourceSkillId: z.string().trim().min(1).max(120),
-  draftCredit: z.enum(["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"]).nullable(),
+  draftCredit: z.enum(["PRESENT", "EMERGING", "NOT_OBSERVED"]).nullable(),
   confidence: z.number().min(0).max(1),
   uncertaintyReason: z.string().trim().min(1).max(2_000).nullable(),
   evidenceEventIds: z.array(z.string().trim().regex(/^event-[1-9][0-9]{0,3}$/)).min(1).max(12)
@@ -148,12 +148,6 @@ const DEFAULT_CREDIT_DEFINITIONS = [
     symbol: "-",
     label: "Not observed",
     description: "A relevant opportunity occurred, but the target behavior was not observed. Mere absence is insufficient."
-  },
-  {
-    value: "NOT_APPLICABLE",
-    symbol: "N/A",
-    label: "N/A",
-    description: "Observable context makes the skill inapplicable to this decision under the supplied rubric."
   }
 ] as const;
 
@@ -234,7 +228,7 @@ export function classificationResponseSchema(): Record<string, unknown> {
             sourceSkillId: { type: "string" },
             draftCredit: {
               anyOf: [
-                { type: "string", enum: ["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"] },
+                { type: "string", enum: ["PRESENT", "EMERGING", "NOT_OBSERVED"] },
                 { type: "null" }
               ]
             },
@@ -306,7 +300,7 @@ export function buildClassificationPrompt(
     "Map directly relevant ledger events to the supplied candidate skills.",
     "PRESENT requires the complete observable criterion. EMERGING requires a directly observed partial or materially supported attempt.",
     "NOT_OBSERVED requires a directly observed opportunity and absence/noncompletion in the associated response; never infer it from silence elsewhere in the video.",
-    "NOT_APPLICABLE requires directly observed context plus explicit catalogue support. Otherwise use null or omit the candidate.",
+    "N/A, atypical credits, and family/environment concern flags are educator-only; never draft them.",
     "Respect each candidate's videoScoreability and observationConditions. OPPORTUNITY_REQUIRED needs the triggering event and response; CONTEXT_DEPENDENT needs the named routine or setting; omit NOT_RELIABLY_SCOREABLE items.",
     "Use only event IDs from the ledger. Confidence measures evidence sufficiency for this video, not certainty about the child generally.",
     "</TASK>",
@@ -462,10 +456,6 @@ export async function runReferenceScorer(options: ReferenceScorerOptions): Promi
       draftCredit = null;
       uncertaintyReason = uncertaintyReason ?? "No direct opportunity-response evidence supports a not-observed draft.";
     }
-    if (draftCredit === "NOT_APPLICABLE" && !typedEvents.some((event) => event.eventKind === "CONTEXT")) {
-      draftCredit = null;
-      uncertaintyReason = uncertaintyReason ?? "No directly observed context supports an N/A draft.";
-    }
     if (draftCredit !== null && evaluation.confidence < minimumDraftConfidence) {
       draftCredit = null;
       uncertaintyReason = uncertaintyReason ?? "Evidence confidence is below the configured draft-credit threshold.";
@@ -478,6 +468,7 @@ export async function runReferenceScorer(options: ReferenceScorerOptions): Promi
       skillName: candidate.skillName,
       domain: candidate.domain,
       strand: candidate.strand,
+      source: "MODEL",
       draftCredit,
       confidence: evaluation.confidence,
       uncertaintyReason,

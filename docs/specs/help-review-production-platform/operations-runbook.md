@@ -1,8 +1,13 @@
 # HELP Review Operations Runbook
 
-Updated: July 15, 2026
+Updated: July 16, 2026
 Applies to: local development, CI, and the sanitized Google Cloud/Neon deployment  
 Real child data: disabled
+
+Scope note: this is reference material for a small platform that the client company
+will operate themselves with direct personal contact to its educators. Use it to look
+up commands and behavior when something breaks — it does not prescribe drills,
+on-call rotations, or escalation process.
 
 ## Runtime Matrix
 

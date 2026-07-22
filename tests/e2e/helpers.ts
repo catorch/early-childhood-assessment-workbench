@@ -10,7 +10,7 @@ export async function signIn(page: Page, profile: "Alex Morgan" | "Jordan Lee" |
 export async function resetScreenFixture(
   page: Page,
   screenId: string,
-  stress?: "long-skill" | "dense-results" | "long-email" | "localized-label"
+  stress?: "long-skill" | "dense-results" | "long-email" | "localized-label" | "manual-add"
 ) {
   const response = await page.request.post("/api/internal/test-fixtures", {
     headers: { "x-help-review-fixture-key": "playwright" },

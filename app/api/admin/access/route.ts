@@ -30,8 +30,8 @@ async function deliverInvite(invite: IssuedInvite): Promise<{ readonly inviteEma
   try {
     await sendAuthEmail({
       to: invite.email,
-      subject: "Your HELP Review pilot account",
-      bodyText: "You have been invited to the HELP Review pilot. Use the link below within seven days to set your password and sign in.",
+      subject: "Your HELP AI Crediting Companion account",
+      bodyText: "You have been invited to HELP AI Crediting Companion. Use the link below within seven days to set your password and sign in.",
       actionUrl
     });
     const developmentConsole = process.env.NODE_ENV !== "production" && selectedEmailAdapter() === "console";

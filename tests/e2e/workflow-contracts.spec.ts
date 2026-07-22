@@ -341,7 +341,7 @@ test("every approved review origin is server-derived and restored after reload",
   await resetScreenFixture(page, "05");
   await signIn(page);
   const initial = await responseJson<{
-    suggestions: Array<{ id: string; draftCredit: "PRESENT" | "EMERGING" | "NOT_OBSERVED" | "NOT_APPLICABLE" | null }>;
+    suggestions: Array<{ id: string; draftCredit: "PRESENT" | "EMERGING" | "NOT_OBSERVED" | null }>;
   }>(await page.request.get("/api/assessments/assessment-ready/review"));
   const drafted = initial.suggestions.filter((suggestion) => suggestion.draftCredit !== null);
   const uncertain = initial.suggestions.find((suggestion) => suggestion.draftCredit === null)!;
@@ -391,7 +391,7 @@ test("review selection and bounded scroll context survive a hard refresh", async
   await resetScreenFixture(page, "05");
   await signIn(page);
   await page.goto("/assessments/assessment-ready/review");
-  const editButtons = page.getByRole("button", { name: "Edit", exact: true });
+  const editButtons = page.getByRole("button", { name: "Edit / add note", exact: true });
   await expect(editButtons.first()).toBeVisible();
   expect(await editButtons.count()).toBeGreaterThan(2);
   await editButtons.nth(2).click();

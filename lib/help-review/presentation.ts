@@ -8,7 +8,12 @@ export const creditPresentation: Record<
   PRESENT: { symbol: "+", label: "Present", shortLabel: "Present" },
   EMERGING: { symbol: "+/-", label: "Emerging", shortLabel: "Emerging" },
   NOT_OBSERVED: { symbol: "-", label: "Not observed", shortLabel: "Not observed" },
-  NOT_APPLICABLE: { symbol: "N/A", label: "Not applicable", shortLabel: "N/A" }
+  BLANK: { symbol: "B", label: "Intentionally blank", shortLabel: "Blank" },
+  NOT_APPLICABLE: { symbol: "N/A", label: "Not applicable", shortLabel: "N/A" },
+  ATYPICAL: { symbol: "A", label: "Atypical", shortLabel: "Atypical" },
+  ATYPICAL_PLUS: { symbol: "A+", label: "Atypical plus", shortLabel: "A+" },
+  ATYPICAL_MINUS: { symbol: "A-", label: "Atypical minus", shortLabel: "A-" },
+  ATYPICAL_EMERGING: { symbol: "A+/-", label: "Atypical emerging", shortLabel: "A+/-" }
 };
 
 export const assessmentStatusPresentation: Record<

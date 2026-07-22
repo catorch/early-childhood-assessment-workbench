@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  outputFileTracingIncludes: {
+    "/*": ["./content/help-catalog.sanitized.json"]
+  },
   async headers() {
     return [
       {

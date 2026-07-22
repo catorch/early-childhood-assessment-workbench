@@ -56,7 +56,8 @@ export function AppHeader() {
             href={visibleUser?.role === "ADMIN" ? "/admin/access" : visibleUser ? "/children" : "/"}
           >
             <ClipboardCheck aria-hidden="true" className="text-primary" size={isSignIn ? 18 : 22} strokeWidth={2.2} />
-            <span>HELP Review</span>
+            <span className="max-sm:hidden">HELP AI Crediting Companion</span>
+            <span className="hidden max-sm:inline">HELP AI Companion</span>
           </Link>
           {visibleUser ? (
             <div className="flex items-center gap-2 max-sm:gap-1">

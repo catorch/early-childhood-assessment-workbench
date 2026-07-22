@@ -73,7 +73,7 @@ test("@a11y review works across desktop, tablet, mobile editor, and zoom", async
 
   await page.setViewportSize({ width: 360, height: 800 });
   await page.reload();
-  const openEditor = page.getByRole("button", { name: "Open decision editor" });
+  const openEditor = page.getByRole("button", { name: "Edit / add note" }).first();
   await openEditor.focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: "Back to items" })).toBeVisible();

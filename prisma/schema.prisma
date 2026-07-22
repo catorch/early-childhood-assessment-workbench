@@ -39,13 +39,19 @@ enum PrimaryCredit {
   PRESENT
   EMERGING
   NOT_OBSERVED
+  BLANK
   NOT_APPLICABLE
+  ATYPICAL
+  ATYPICAL_PLUS
+  ATYPICAL_MINUS
+  ATYPICAL_EMERGING
 }
 
 enum DecisionOrigin {
   ACCEPTED
   OVERRIDDEN
   SCORED_INDEPENDENTLY
+  MANUALLY_ADDED
   DISMISSED
 }
 
@@ -292,6 +298,7 @@ model SkillSuggestion {
   skillName         String
   domain            String
   strand            String?
+  source            String         @default("MODEL")
   draftCredit       PrimaryCredit?
   confidence        Float?
   uncertaintyReason String?
@@ -314,6 +321,7 @@ model ReviewDecision {
   origin       DecisionOrigin
   finalCredit  PrimaryCredit?
   dismissed    Boolean        @default(false)
+  concernFlag  Boolean        @default(false)
   note         String?
   revision     Int            @default(1)
   decidedAt    DateTime       @default(now())

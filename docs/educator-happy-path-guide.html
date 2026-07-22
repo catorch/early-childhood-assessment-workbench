@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HELP AI Crediting Companion Educator Happy Path</title>
+    <style>
+      @page {
+        size: Letter;
+        margin: 0;
+      }
+
+      :root {
+        --navy: #183b56;
+        --ink: #102f3e;
+        --teal: #087d73;
+        --teal-dark: #00665f;
+        --green: #278458;
+        --green-soft: #e1f4e9;
+        --amber: #a96700;
+        --amber-soft: #fff3d2;
+        --red: #a83c31;
+        --paper: #ffffff;
+        --canvas: #eef3f4;
+        --line: #cbd8db;
+        --muted: #4d6672;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        color: var(--ink);
+        background: var(--canvas);
+        font-family: Arial, Helvetica, sans-serif;
+        letter-spacing: 0;
+      }
+
+      body {
+        counter-reset: guide-page;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      ul,
+      ol,
+      figure {
+        margin-top: 0;
+      }
+
+      h1,
+      h2 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 700;
+      }
+
+      .page {
+        position: relative;
+        width: 8.5in;
+        height: 11in;
+        padding: 0.58in 0.62in 0.48in;
+        overflow: hidden;
+        background: var(--paper);
+        break-after: page;
+        page-break-after: always;
+        counter-increment: guide-page;
+      }
+
+      .page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+
+      .top-rule {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 0.14in;
+        background: var(--navy);
+      }
+
+      .footer {
+        position: absolute;
+        right: 0.62in;
+        bottom: 0.25in;
+        left: 0.62in;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--line);
+        padding-top: 0.1in;
+        color: var(--muted);
+        font-size: 7.5pt;
+      }
+
+      .page-number::after {
+        content: counter(guide-page);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.11in;
+        color: var(--navy);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 17pt;
+        font-weight: 700;
+      }
+
+      .brand-mark {
+        position: relative;
+        width: 0.24in;
+        height: 0.29in;
+        border: 2px solid var(--teal);
+        border-radius: 3px;
+      }
+
+      .brand-mark::before {
+        content: "";
+        position: absolute;
+        top: -0.07in;
+        left: 50%;
+        width: 0.11in;
+        height: 0.07in;
+        border: 2px solid var(--teal);
+        border-bottom: 0;
+        border-radius: 3px 3px 0 0;
+        transform: translateX(-50%);
+      }
+
+      .brand-mark::after {
+        content: "";
+        position: absolute;
+        top: 0.08in;
+        left: 0.065in;
+        width: 0.07in;
+        height: 0.035in;
+        border-bottom: 2px solid var(--teal);
+        border-left: 2px solid var(--teal);
+        transform: rotate(-45deg);
+      }
+
+      .eyebrow {
+        margin-bottom: 0.1in;
+        color: var(--teal-dark);
+        font-size: 8.5pt;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        display: inline-block;
+        width: 0.18in;
+        height: 2px;
+        margin: 0 0.09in 0.03in 0;
+        background: var(--teal);
+      }
+
+      .step-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.25in;
+        margin: 0.14in 0 0.24in;
+      }
+
+      .step-number {
+        flex: 0 0 auto;
+        min-width: 0.86in;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.08in 0.12in;
+        color: var(--navy);
+        background: #f6f9f9;
+        font-size: 8pt;
+        font-weight: 700;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .step-title {
+        margin-bottom: 0.07in;
+        color: var(--ink);
+        font-size: 27pt;
+        line-height: 1.05;
+      }
+
+      .lede {
+        max-width: 6.2in;
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 10.2pt;
+        line-height: 1.42;
+      }
+
+      .screen {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #b8c9cd;
+        border-radius: 4px;
+        background: #f2f6f6;
+        box-shadow: 0 8px 20px rgba(16, 47, 62, 0.11);
+      }
+
+      .screen img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .screen-caption {
+        margin: 0.08in 0 0;
+        color: var(--muted);
+        font-size: 7.5pt;
+        line-height: 1.35;
+      }
+
+      .screen-caption strong {
+        color: var(--ink);
+      }
+
+      .notes-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.18in;
+        margin-top: 0.2in;
+      }
+
+      .note {
+        min-height: 0.92in;
+        border-top: 3px solid var(--teal);
+        padding: 0.13in 0.15in 0.1in;
+        background: #f7faf9;
+      }
+
+      .note.check {
+        border-top-color: var(--green);
+        background: #f3fbf6;
+      }
+
+      .note.caution {
+        border-top-color: var(--amber);
+        background: #fffaf0;
+      }
+
+      .note h3 {
+        margin-bottom: 0.05in;
+        color: var(--ink);
+        font-size: 9.2pt;
+        line-height: 1.25;
+      }
+
+      .note p,
+      .note li {
+        color: var(--muted);
+        font-size: 8.2pt;
+        line-height: 1.38;
+      }
+
+      .note p:last-child,
+      .note ul:last-child {
+        margin-bottom: 0;
+      }
+
+      .note ul {
+        margin-bottom: 0;
+        padding-left: 0.18in;
+      }
+
+      .callout {
+        display: flex;
+        gap: 0.12in;
+        align-items: flex-start;
+        margin-top: 0.16in;
+        border-left: 4px solid var(--amber);
+        padding: 0.13in 0.16in;
+        background: var(--amber-soft);
+        color: #62450c;
+        font-size: 8.4pt;
+        line-height: 1.42;
+      }
+
+      .callout strong {
+        color: #493304;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.08in;
+        margin: 0.13in 0 0;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.06in 0.1in;
+        background: #fff;
+        color: var(--ink);
+        font-size: 7.6pt;
+        font-weight: 700;
+      }
+
+      .cover {
+        padding-top: 0.48in;
+        background: #f4f8f8;
+      }
+
+      .cover-band {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: 0.24in;
+        background: var(--navy);
+      }
+
+      .cover .brand {
+        margin-bottom: 0.62in;
+      }
+
+      .cover h1 {
+        max-width: 6.6in;
+        margin-bottom: 0.14in;
+        color: var(--ink);
+        font-size: 43pt;
+        line-height: 0.98;
+      }
+
+      .cover-deck {
+        max-width: 6.2in;
+        margin-bottom: 0.3in;
+        color: var(--muted);
+        font-size: 14pt;
+        line-height: 1.35;
+      }
+
+      .cover-meta {
+        display: flex;
+        gap: 0.18in;
+        margin-bottom: 0.32in;
+        color: var(--muted);
+        font-size: 8pt;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .cover-shot {
+        height: 4.26in;
+      }
+
+      .cover-shot img {
+        height: 100%;
+        object-fit: cover;
+        object-position: top;
+      }
+
+      .cover-note {
+        display: grid;
+        grid-template-columns: 0.28in 1fr;
+        gap: 0.1in;
+        align-items: start;
+        margin-top: 0.24in;
+        border-top: 1px solid var(--line);
+        padding-top: 0.17in;
+        color: var(--muted);
+        font-size: 8.4pt;
+        line-height: 1.4;
+      }
+
+      .cover-note-badge {
+        display: grid;
+        width: 0.25in;
+        height: 0.25in;
+        place-items: center;
+        border-radius: 50%;
+        color: #fff;
+        background: var(--navy);
+        font-size: 8pt;
+        font-weight: 700;
+      }
+
+      .overview-title {
+        margin: 0.14in 0 0.08in;
+        font-size: 30pt;
+      }
+
+      .journey {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.13in;
+        margin: 0.25in 0 0.28in;
+      }
+
+      .journey-step {
+        position: relative;
+        min-height: 1.08in;
+        border: 1px solid var(--line);
+        padding: 0.14in 0.13in 0.12in 0.49in;
+        background: #f8fbfb;
+      }
+
+      .journey-step span {
+        position: absolute;
+        top: 0.14in;
+        left: 0.13in;
+        display: grid;
+        width: 0.25in;
+        height: 0.25in;
+        place-items: center;
+        border-radius: 50%;
+        color: #fff;
+        background: var(--teal);
+        font-size: 7.5pt;
+        font-weight: 700;
+      }
+
+      .journey-step h3 {
+        margin-bottom: 0.04in;
+        font-size: 9pt;
+      }
+
+      .journey-step p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 7.5pt;
+        line-height: 1.35;
+      }
+
+      .three-columns {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.14in;
+        margin-top: 0.18in;
+      }
+
+      .role-box {
+        border-top: 4px solid var(--navy);
+        padding: 0.14in;
+        background: #f5f8f9;
+      }
+
+      .role-box.ai {
+        border-top-color: var(--amber);
+      }
+
+      .role-box.educator {
+        border-top-color: var(--teal);
+      }
+
+      .role-box.final {
+        border-top-color: var(--green);
+      }
+
+      .role-box h3 {
+        margin-bottom: 0.05in;
+        font-size: 9pt;
+      }
+
+      .role-box p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 7.6pt;
+        line-height: 1.38;
+      }
+
+      .checklist {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.1in 0.18in;
+        margin-top: 0.16in;
+      }
+
+      .check-item {
+        position: relative;
+        padding: 0.1in 0.12in 0.1in 0.39in;
+        border: 1px solid #bcd5c7;
+        background: #f3fbf6;
+        color: #315c47;
+        font-size: 8pt;
+        line-height: 1.35;
+      }
+
+      .check-item::before {
+        content: "";
+        position: absolute;
+        top: 0.12in;
+        left: 0.13in;
+        width: 0.13in;
+        height: 0.07in;
+        border-bottom: 2px solid var(--green);
+        border-left: 2px solid var(--green);
+        transform: rotate(-45deg);
+      }
+
+      .detail-layout {
+        display: grid;
+        grid-template-columns: 3.2in 1fr;
+        gap: 0.28in;
+        align-items: start;
+        margin-top: 0.32in;
+      }
+
+      .detail-layout .screen {
+        max-height: none;
+      }
+
+      .detail-layout .screen img {
+        height: auto;
+        object-fit: contain;
+        background: #edf3f4;
+      }
+
+      .detail-copy {
+        padding-top: 0.04in;
+      }
+
+      .detail-copy h3 {
+        margin: 0.22in 0 0.08in;
+        color: var(--ink);
+        font-size: 11pt;
+      }
+
+      .detail-copy h3:first-child {
+        margin-top: 0;
+      }
+
+      .detail-copy p,
+      .detail-copy li {
+        color: var(--muted);
+        font-size: 8.7pt;
+        line-height: 1.46;
+      }
+
+      .detail-copy ul {
+        padding-left: 0.19in;
+      }
+
+      .compact-screen {
+        max-height: 5.2in;
+      }
+
+      .compact-screen img {
+        width: 100%;
+        height: 5.2in;
+        object-fit: cover;
+        object-position: top;
+      }
+
+      .short-screen {
+        max-height: 4.55in;
+      }
+
+      .short-screen img {
+        height: 4.55in;
+        object-fit: cover;
+        object-position: top;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="page cover">
+      <div class="cover-band"></div>
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span>HELP AI Crediting Companion</div>
+      <div class="eyebrow">Educator workflow guide</div>
+      <h1>Educator happy path</h1>
+      <p class="cover-deck">From an assigned child and private observation video to a human-approved, read-only assessment record.</p>
+      <div class="cover-meta">
+        <span>Sanitized pilot walkthrough</span>
+        <span>Desktop workflow</span>
+        <span>July 21, 2026</span>
+      </div>
+      <figure class="screen cover-shot">
+        <img src="assets/educator-happy-path/07-review-workspace.png" alt="HELP AI Crediting Companion educator review workspace" />
+      </figure>
+      <div class="cover-note">
+        <span class="cover-note-badge">i</span>
+        <span>All names, child identifiers, dates, results, and video content shown here are deterministic sanitized pilot data. Real child data is disabled in the captured environment.</span>
+      </div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Educator happy path</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="eyebrow">Workflow map</div>
+      <h2 class="overview-title">The journey at a glance</h2>
+      <p class="lede">The application always exposes the next valid action. Educators select an assigned child, submit one private observation, review every suggestion, and deliberately lock the final record.</p>
+      <div class="journey">
+        <div class="journey-step"><span>1</span><h3>Sign in</h3><p>Use the provisioned Educator account or sanitized pilot profile.</p></div>
+        <div class="journey-step"><span>2</span><h3>Choose a child</h3><p>Only children assigned to the signed-in educator appear.</p></div>
+        <div class="journey-step"><span>3</span><h3>Open the record</h3><p>Review context and history, then begin an observation.</p></div>
+        <div class="journey-step"><span>4</span><h3>Upload one video</h3><p>Confirm date and permission, then verify the private upload.</p></div>
+        <div class="journey-step"><span>5</span><h3>Run analysis</h3><p>Processing continues in the background and can be revisited.</p></div>
+        <div class="journey-step"><span>6</span><h3>Start review</h3><p>Open the validated draft once the status is Ready for review.</p></div>
+        <div class="journey-step"><span>7</span><h3>Action every item</h3><p>Inspect evidence and accept, edit, note, leave blank, or dismiss.</p></div>
+        <div class="journey-step"><span>8</span><h3>Check the summary</h3><p>Verify coverage, credits, decision paths, and included skills.</p></div>
+        <div class="journey-step"><span>9</span><h3>Finalize</h3><p>Confirm once. The resulting educator record is read-only.</p></div>
+      </div>
+      <div class="eyebrow">Decision ownership</div>
+      <div class="three-columns">
+        <div class="role-box ai"><h3>AI draft</h3><p>Proposes Present, Emerging, Not observed, or an unscored item with evidence. It does not determine the final assessment.</p></div>
+        <div class="role-box educator"><h3>Educator review</h3><p>The educator watches the observation, decides every final HELP credit, and can add a missed skill.</p></div>
+        <div class="role-box final"><h3>Final record</h3><p>Finalization preserves the educator-approved result as a read-only record.</p></div>
+      </div>
+      <div class="callout"><span><strong>Before starting:</strong> confirm the child is assigned, processing permission is approved, and the observation is a supported MP4, WebM, or MOV file. The local pilot policy accepts one video up to 100 MB and five minutes.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Workflow map</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Secure entry</div><h2 class="step-title">Sign in as an Educator</h2><p class="lede">The captured sandbox uses approved staff profiles. A configured email/password environment instead shows the provisioned credential form.</p></div>
+        <div class="step-number">Step 1</div>
+      </div>
+      <div class="detail-layout">
+        <figure class="screen">
+          <img src="assets/educator-happy-path/01-sign-in-detail.png" alt="Sanitized HELP AI Crediting Companion sign-in profiles" />
+        </figure>
+        <div class="detail-copy">
+          <h3>What to do</h3>
+          <p>Select <strong>Alex Morgan</strong>, the sanitized Educator profile with assigned children.</p>
+          <h3>What happens</h3>
+          <p>The server creates an Educator-scoped session and opens <strong>Assigned children</strong>. The session controls which children and assessments can be viewed.</p>
+          <h3>Check before continuing</h3>
+          <ul>
+            <li>Your name appears in the application header.</li>
+            <li>The current navigation item is Children.</li>
+            <li>The sanitized-data banner remains visible in the pilot.</li>
+          </ul>
+          <div class="callout"><span><strong>Access is provisioned.</strong> There is no public signup path. Contact the pilot administrator when access or assignments are missing.</span></div>
+        </div>
+      </div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Sign in</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Educator workspace</div><h2 class="step-title">Choose an assigned child</h2><p class="lede">The first screen is a focused roster, not a dashboard. Each row shows the child's current assessment state and the authoritative next action.</p></div>
+        <div class="step-number">Step 2</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/02-assigned-children.png" alt="Assigned children list with assessment statuses" />
+      </figure>
+      <p class="screen-caption"><strong>Example:</strong> Child 1001 has a Draft, Child 1024 is In Review, and Child 1048 is waiting for processing permission.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>What to do</h3><p>Use the local search when needed, then select <strong>Child 1001</strong> to open the child record. A status action can also resume the current assessment directly.</p></div>
+        <div class="note check"><h3>What to check</h3><p>Confirm the child identifier and context before proceeding. Only currently assigned children should be visible.</p></div>
+      </div>
+      <div class="callout"><span><strong>Status-aware actions prevent dead ends.</strong> Draft goes to intake, Processing goes to status, Ready for Review goes to review, and In Review resumes unfinished decisions.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Assigned children</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Child context</div><h2 class="step-title">Open the record and begin</h2><p class="lede">The child record keeps age, IFSP context, and assessment history together so the educator can orient before adding a new observation.</p></div>
+        <div class="step-number">Step 3</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/03-child-record.png" alt="Child record with assessment history and upload observational video action" />
+      </figure>
+      <p class="screen-caption"><strong>Primary action:</strong> Upload observational video starts a new assessment for this assigned child.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>What to do</h3><p>Review the child header and recent history. Select <strong>Upload observational video</strong> when the new video belongs to this child.</p></div>
+        <div class="note check"><h3>What the history tells you</h3><p>Each assessment remains a separate dated record. Finalized observations also show age snapshots and changes from the prior assessment.</p></div>
+      </div>
+      <div class="callout"><span><strong>Stop if the context is wrong.</strong> Return to Assigned children instead of uploading an observation to the wrong record.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Child record</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Private intake</div><h2 class="step-title">Verify the video upload</h2><p class="lede">Intake binds one observation date and one private video to the assessment draft before any analysis can start.</p></div>
+        <div class="step-number">Step 4</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/04-upload-ready.png" alt="Verified private observation upload ready for processing" />
+      </figure>
+      <p class="screen-caption"><strong>Ready state:</strong> the date is locked, permission is approved, and the uploaded filename is shown as complete.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>What to do</h3><p>Confirm child, age, permission, and observation date. After the video says <strong>Upload complete</strong>, select <strong>Start processing</strong>.</p></div>
+        <div class="note check"><h3>Available controls</h3><p>Replace or remove the uploaded video before processing. <strong>Save and exit</strong> keeps the verified draft for later.</p></div>
+      </div>
+      <div class="callout"><span><strong>Private by default.</strong> The video is available only to the authorized scoring service and assigned educator; it is not a public asset.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Observation upload</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Background analysis</div><h2 class="step-title">Let processing run</h2><p class="lede">The status page separates upload, security, analysis, and review readiness so progress is visible without implying success too early.</p></div>
+        <div class="step-number">Step 5</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/05-processing.png" alt="Observation analysis in progress" />
+      </figure>
+      <p class="screen-caption"><strong>Current state:</strong> upload and security checks passed; analysis attempt 1 is still running.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>What to do</h3><p>Wait for the page to update automatically, or use <strong>Refresh status</strong>. You may safely return to children while processing continues.</p></div>
+        <div class="note check"><h3>What the system does</h3><p>It preserves a processing attempt, validates the result, and exposes review only after an all-or-nothing valid result is ready.</p></div>
+      </div>
+      <div class="callout"><span><strong>No open browser required.</strong> Closing or leaving this page does not cancel analysis.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Processing</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Validated draft</div><h2 class="step-title">Start professional review</h2><p class="lede">A successful run reports the validated suggestions and draft-credit distribution before the review workspace opens.</p></div>
+        <div class="step-number">Step 6</div>
+      </div>
+      <figure class="screen compact-screen">
+        <img src="assets/educator-happy-path/06-ready-for-review.png" alt="Analysis complete and ready for educator review" />
+      </figure>
+      <p class="screen-caption"><strong>Example result:</strong> 8 validated suggestions, including items the model intentionally left unscored.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>What to do</h3><p>Select <strong>Start review</strong>. Returning to children remains safe if the review must happen later.</p></div>
+        <div class="note check"><h3>What to check</h3><p>All four milestones show complete: upload, security, analysis, and review readiness.</p></div>
+      </div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Ready for review</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Human review</div><h2 class="step-title">Orient in the workspace</h2><p class="lede">Suggestions are grouped by AI draft credit on the left. The secure video and active decision editor stay together on the right.</p></div>
+        <div class="step-number">Step 7</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/07-review-workspace.png" alt="Desktop review workspace with grouped suggestions, video, and editor" />
+      </figure>
+      <p class="screen-caption"><strong>At the top:</strong> reviewed progress and Review summary. The list itself shows Present, Emerging, Not observed, and Leave blank groups.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>Use the two-panel workspace</h3><p>Compare the skill suggestion with the observation video and evidence before choosing an educator credit.</p></div>
+        <div class="note caution"><h3>AI is not the final scorer</h3><p>AI confidence is model certainty, not an accuracy score. The educator remains responsible for every included or dismissed item.</p></div>
+      </div>
+      <div class="pill-row">
+        <span class="pill">Accept draft credit</span><span class="pill">Edit / add note</span><span class="pill">Leave blank</span><span class="pill">Change decision</span><span class="pill">Dismiss suggestion</span>
+      </div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Review workspace</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Evidence review</div><h2 class="step-title">Inspect what the AI noticed</h2><p class="lede">Evidence is collapsed by default. Open it only when needed, then use its short explanation and timestamp to verify the observation yourself.</p></div>
+        <div class="step-number">Step 8</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/08-review-evidence.png" alt="Expanded AI evidence within the educator review workspace" />
+      </figure>
+      <p class="screen-caption"><strong>Action:</strong> open Why the AI suggested… under the current suggestion.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>Use evidence as a pointer</h3><p>Seek to the indicated moment, watch enough surrounding context, and decide whether the behavior supports a credit.</p></div>
+        <div class="note caution"><h3>Model uncertain</h3><p>An uncertain item has no proposed credit. The educator can choose Present, Emerging, Not observed, or Blank; N/A, Atypical, and the O concern flag remain educator-only choices.</p></div>
+      </div>
+      <div class="callout"><span><strong>Professional judgment wins.</strong> Evidence text helps locate the behavior; it does not replace watching the observation.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Evidence review</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Educator decision</div><h2 class="step-title">Save the final credit</h2><p class="lede">The editor records the educator-owned credit, optional O concern flag, context, and decision origin. Progress advances only after a successful save.</p></div>
+        <div class="step-number">Step 9</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/08-review-decision.png" alt="Educator decision saved as Emerging with an explanatory note" />
+      </figure>
+      <p class="screen-caption"><strong>Example:</strong> Emerging is selected and the note records that the behavior occurred after the second prompt.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>What to do</h3><p>Select the final credit, add useful observation context, then choose <strong>Save decision</strong>. Repeat for every suggestion.</p></div>
+        <div class="note check"><h3>Add anything missed</h3><p>Use Add skill AI missed, then choose Domain/section, Strand, Skill, and Credit. The added skill is clearly attributed to the educator.</p></div>
+      </div>
+      <div class="callout"><span><strong>Do not leave unsaved work.</strong> Internal navigation pauses when edits are pending so the educator can save or deliberately discard them.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Save decisions</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Pre-final review</div><h2 class="step-title">Check the assessment summary</h2><p class="lede">Review summary opens the server-derived totals. Finalization remains unavailable until every suggestion has an educator decision.</p></div>
+        <div class="step-number">Step 10</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/09-summary-overview.png" alt="Complete assessment summary with totals and decision paths" />
+      </figure>
+      <p class="screen-caption"><strong>Complete state:</strong> All items are actioned; 8 skills are included in the shown example.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>Verify coverage and scoring</h3><p>Review developmental-domain, strand, skill, and regulatory/sensory coverage, then check all credit totals and O concern flags.</p></div>
+        <div class="note check"><h3>Verify decision paths</h3><p>Accepted draft, Overridden, Scored independently, and Dismissed explain how the educator arrived at the result.</p></div>
+      </div>
+      <div class="callout"><span><strong>Something looks wrong?</strong> Use Return to review. The assessment is still editable until the final confirmation succeeds.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Assessment summary</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Included record</div><h2 class="step-title">Inspect the final skills</h2><p class="lede">The lower summary lists exactly what will be included, including credit, skill, domain, decision origin, and educator note when one exists.</p></div>
+        <div class="step-number">Step 11</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/10-summary-final-skills.png" alt="Domain summary and included final skills before confirmation" />
+      </figure>
+      <p class="screen-caption"><strong>Traceability:</strong> each item retains its path, such as Scored independently or Accepted draft.</p>
+      <div class="notes-grid">
+        <div class="note"><h3>What to check</h3><p>Read the included skills, confirm notes are appropriate, and make sure dismissed suggestions are not mixed into the included record.</p></div>
+        <div class="note check"><h3>Then continue</h3><p>When the list matches the educator's intended assessment, select <strong>Confirm final assessment</strong>.</p></div>
+      </div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Final skills</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Deliberate lock</div><h2 class="step-title">Confirm finalization</h2><p class="lede">The confirmation repeats the included and dismissed counts and makes the read-only consequence explicit before anything is locked.</p></div>
+        <div class="step-number">Step 12</div>
+      </div>
+      <div class="detail-layout">
+        <figure class="screen">
+          <img src="assets/educator-happy-path/11-finalization-confirmation-detail.png" alt="Final assessment confirmation dialog" />
+        </figure>
+        <div class="detail-copy">
+          <h3>Read the confirmation</h3>
+          <p>Verify the number of included skills and dismissed suggestions. The dialog states that educator decisions will be locked.</p>
+          <h3>Choose deliberately</h3>
+          <p>Select <strong>Cancel</strong> to keep editing, or <strong>Confirm final assessment</strong> to create the immutable record.</p>
+          <h3>Expected result</h3>
+          <p>A successful confirmation opens the finalized assessment for the same child and observation.</p>
+          <div class="callout"><span><strong>This is the point of no return.</strong> Do not confirm until the totals and included skills have been checked.</span></div>
+        </div>
+      </div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Final confirmation</span><span class="page-number"></span></div>
+    </section>
+
+    <section class="page">
+      <div class="top-rule"></div>
+      <div class="step-header">
+        <div><div class="eyebrow">Human-approved record</div><h2 class="step-title">Use the finalized assessment</h2><p class="lede">The final view identifies the child and observation, records who confirmed it and when, and presents the educator decisions as read-only.</p></div>
+        <div class="step-number">Step 13</div>
+      </div>
+      <figure class="screen short-screen">
+        <img src="assets/educator-happy-path/12-final-record.png" alt="Read-only finalized assessment for Child 1001" />
+      </figure>
+      <p class="screen-caption"><strong>Final state:</strong> Child 1001, observation Jul 11, 2026, confirmed by Alex Morgan in the sanitized pilot.</p>
+      <div class="notes-grid">
+        <div class="note check"><h3>What is preserved</h3><p>Coverage, credit totals, decision paths, domain summary, final skills, educator notes, confirmation identity, and confirmation time.</p></div>
+        <div class="note"><h3>What to do next</h3><p>Use <strong>Download PDF</strong> or <strong>Print</strong> when a portable record is needed, then return to the child's assessment history.</p></div>
+      </div>
+      <div class="eyebrow" style="margin-top: 0.2in;">Completion check</div>
+      <div class="checklist">
+        <div class="check-item">The heading says Assessment finalized.</div>
+        <div class="check-item">The confirmation names the educator.</div>
+        <div class="check-item">The record is explicitly read-only.</div>
+        <div class="check-item">The final totals match the reviewed summary.</div>
+      </div>
+      <div class="callout"><span><strong>Walkthrough complete.</strong> The workflow has moved from a private observation to an educator-approved record without treating the AI draft as the final assessment.</span></div>
+      <div class="footer"><span>HELP AI Crediting Companion</span><span>Final record</span><span class="page-number"></span></div>
+    </section>
+  </body>
+</html>

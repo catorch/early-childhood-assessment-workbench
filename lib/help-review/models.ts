@@ -2,6 +2,7 @@
 
 import type {
   AssessmentStatus,
+  PrimaryCredit,
   SavedReviewDecision,
   SkillSuggestion
 } from "./domain";
@@ -78,6 +79,26 @@ export interface AssessmentHistoryItem {
   readonly actionHref: string;
   readonly actionLabel: string;
   readonly video: ClientVideo | null;
+}
+
+export interface FinalizedAssessmentProgress {
+  readonly id: string;
+  readonly observationDate: string;
+  readonly ageMonthsAtObservation: number;
+  readonly coverage: {
+    readonly developmentalDomainCount: number;
+    readonly strandCount: number;
+    readonly skillCount: number;
+    readonly regulatorySensorySkillCount: number;
+  };
+  readonly skills: ReadonlyArray<{
+    readonly sourceSkillId: string;
+    readonly skillCode: string;
+    readonly skillName: string;
+    readonly domain: string;
+    readonly strand: string | null;
+    readonly finalCredit: PrimaryCredit;
+  }>;
 }
 
 export interface ProcessingRun {

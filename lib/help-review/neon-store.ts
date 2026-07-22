@@ -151,6 +151,7 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
           skillName: suggestion.skillName,
           domain: suggestion.domain,
           strand: suggestion.strand,
+          source: suggestion.source,
           draftCredit: suggestion.draftCredit,
           confidence: suggestion.confidence,
           uncertaintyReason: suggestion.uncertaintyReason,
@@ -166,6 +167,7 @@ async function loadState(database: DatabaseExecutor): Promise<PilotState> {
           origin: suggestion.decision.origin,
           finalCredit: suggestion.decision.finalCredit,
           dismissed: suggestion.decision.dismissed,
+          concernFlag: suggestion.decision.concernFlag,
           note: suggestion.decision.note,
           revision: suggestion.decision.revision,
           decidedAt: suggestion.decision.decidedAt.toISOString()
@@ -591,6 +593,7 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
           skillName: suggestion.skillName,
           domain: suggestion.domain,
           strand: suggestion.strand,
+          source: suggestion.source,
           draftCredit: suggestion.draftCredit,
           confidence: suggestion.confidence,
           uncertaintyReason: suggestion.uncertaintyReason,
@@ -604,6 +607,7 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
           skillName: suggestion.skillName,
           domain: suggestion.domain,
           strand: suggestion.strand,
+          source: suggestion.source,
           draftCredit: suggestion.draftCredit,
           confidence: suggestion.confidence,
           uncertaintyReason: suggestion.uncertaintyReason,
@@ -634,6 +638,7 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
           origin: decision.origin,
           finalCredit: decision.finalCredit,
           dismissed: decision.dismissed,
+          concernFlag: decision.concernFlag ?? false,
           note: decision.note,
           revision: decision.revision,
           decidedAt: date(decision.decidedAt)
@@ -643,6 +648,7 @@ async function persistState(database: DatabaseExecutor, state: PilotState): Prom
           origin: decision.origin,
           finalCredit: decision.finalCredit,
           dismissed: decision.dismissed,
+          concernFlag: decision.concernFlag ?? false,
           note: decision.note,
           revision: decision.revision,
           decidedAt: date(decision.decidedAt)

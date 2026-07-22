@@ -9,7 +9,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <head>
-        <title>HELP Review Pilot</title>
+        <title>HELP AI Crediting Companion</title>
         <meta content="Educator review of draft HELP assessment suggestions." name="description" />
       </head>
       <body>

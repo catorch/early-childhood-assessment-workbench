@@ -6,7 +6,7 @@ test("@visual @stress long skill content wraps inside the review workspace", asy
   await resetScreenFixture(page, "05", "long-skill");
   await signIn(page);
   await page.goto("/assessments/assessment-ready/review");
-  await expect(page.getByRole("heading", { name: "Review AI draft" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review AI suggestions" })).toBeVisible();
   await expect(page.getByText("Coordinates several small objects", { exact: false }).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await expect(page).toHaveScreenshot("stress-long-skill.png", { fullPage: true });
@@ -16,7 +16,7 @@ test("@visual @stress dense results retain stable navigation and readable rows",
   await resetScreenFixture(page, "05", "dense-results");
   await signIn(page);
   await page.goto("/assessments/assessment-ready/review");
-  await expect(page.getByText("of 32 actioned", { exact: false })).toBeVisible();
+  await expect(page.getByText("of 32 reviewed", { exact: false })).toBeVisible();
   await expect(page.locator('section[aria-label="AI skill suggestions"] article')).toHaveCount(32);
   await expectNoHorizontalOverflow(page);
   await expect(page).toHaveScreenshot("stress-dense-results.png", { fullPage: true });

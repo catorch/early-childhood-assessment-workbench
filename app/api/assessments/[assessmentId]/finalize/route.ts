@@ -18,12 +18,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ as
     if (!parsed.success) return validationError("The final confirmation is invalid. Refresh the summary and try again.");
     const result = await reviewService.finalize(request, assessmentId, parsed.data);
     if (!result.finalized) {
+      const sequenceConflict = "sequenceConflicts" in result ? result.sequenceConflicts?.[0] : undefined;
       return NextResponse.json(
         {
           error: "invalid" in result
             ? "A validated suggestion set is required before finalization."
             : "stale" in result
               ? "This assessment changed after the summary loaded. Refresh before confirming."
+              : sequenceConflict
+                ? `Resolve the strand sequence conflict between ${sequenceConflict.earlier.skillCode} (-) and ${sequenceConflict.later.skillCode} (+) before finalizing.`
             : `${result.remaining} review item(s) still need an action.`
         },
         { status: 409 }

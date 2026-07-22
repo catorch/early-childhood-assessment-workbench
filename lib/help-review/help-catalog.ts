@@ -36,7 +36,7 @@ export const HelpCatalogSchema = z.object({
     url: z.url().max(1_000),
     retrievedDate: z.iso.date()
   }).strict()).max(100).optional(),
-  creditDefinitions: z.array(CreditDefinitionSchema).length(4),
+  creditDefinitions: z.array(CreditDefinitionSchema).min(3).max(6),
   selectionPolicy: z.object({
     ageRangeInclusive: z.literal(true),
     standardDownwardWindowMonths: z.number().int().min(0).max(36),
@@ -51,9 +51,12 @@ export const HelpCatalogSchema = z.object({
   }).strict(),
   skills: z.array(ScoringCandidateSchema).min(1).max(25_000)
 }).strict().superRefine((catalog, context) => {
-  const requiredCredits = new Set(["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"]);
+  const requiredCredits = new Set(["PRESENT", "EMERGING", "NOT_OBSERVED"]);
   const credits = new Set(catalog.creditDefinitions.map((definition) => definition.value));
-  if (credits.size !== requiredCredits.size || [...requiredCredits].some((credit) => !credits.has(credit as never))) {
+  if (
+    credits.size !== catalog.creditDefinitions.length
+    || [...requiredCredits].some((credit) => !credits.has(credit as never))
+  ) {
     context.addIssue({
       code: "custom",
       path: ["creditDefinitions"],
@@ -62,19 +65,17 @@ export const HelpCatalogSchema = z.object({
   }
 
   const ids = new Set<string>();
-  const codes = new Set<string>();
   const orders = new Set<number>();
   for (const skill of catalog.skills) {
-    if (ids.has(skill.sourceSkillId) || codes.has(skill.skillCode) || orders.has(skill.sourceOrder)) {
+    if (ids.has(skill.sourceSkillId) || orders.has(skill.sourceOrder)) {
       context.addIssue({
         code: "custom",
         path: ["skills"],
-        message: "Skill identifiers, codes, and source order values must be unique."
+        message: "Skill row identifiers and source order values must be unique."
       });
       return;
     }
     ids.add(skill.sourceSkillId);
-    codes.add(skill.skillCode);
     orders.add(skill.sourceOrder);
   }
 });
@@ -148,23 +149,10 @@ export function assertConfiguredHelpCatalog(environment: NodeJS.ProcessEnv = pro
   }
 }
 
-function selectionPolicyFor(
-  supportContext: SupportContext,
-  catalog: HelpCatalog
-): { downwardWindow: number; fallbackCount: number; maximumCount: number } {
-  return {
-    downwardWindow: supportContext === "NONE_REPORTED"
-      ? catalog.selectionPolicy.standardDownwardWindowMonths
-      : catalog.selectionPolicy.supportedDownwardWindowMonths,
-    fallbackCount: catalog.selectionPolicy.fallbackCandidateCount,
-    maximumCount: catalog.selectionPolicy.maximumCandidateCount
-  };
-}
-
-/** Age-first selection with bounded downward expansion in the immutable catalogue order. */
+/** Selects only skills whose range contains the assessment age, plus always-assess exceptions. */
 export function selectScoringCandidates(
   ageMonths: number,
-  supportContext: SupportContext,
+  _supportContext: SupportContext,
   candidates?: readonly ScoringCandidate[],
   policyCatalog?: HelpCatalog
 ): readonly ScoringCandidate[] {
@@ -172,27 +160,11 @@ export function selectScoringCandidates(
   const source = (candidates ?? catalog.skills).filter(
     (candidate) => candidate.videoScoreability !== "NOT_RELIABLY_SCOREABLE"
   );
-  const policy = selectionPolicyFor(supportContext, catalog);
-  const ageAppropriate = source.filter(
-    (candidate) => ageMonths >= candidate.minimumAgeMonths && ageMonths <= candidate.maximumAgeMonths
+  const selected = source.filter(
+    (candidate) => candidate.alwaysAssess === true
+      || (ageMonths >= candidate.minimumAgeMonths && ageMonths <= candidate.maximumAgeMonths)
   );
-  const downward = source.filter(
-    (candidate) =>
-      candidate.maximumAgeMonths < ageMonths &&
-      candidate.maximumAgeMonths >= Math.max(0, ageMonths - policy.downwardWindow)
-  );
-  const closestLower = source
-    .filter((candidate) => candidate.maximumAgeMonths < ageMonths)
-    .sort((left, right) => right.maximumAgeMonths - left.maximumAgeMonths)
-    .slice(0, policy.fallbackCount);
-  const selected = ageAppropriate.length > 0
-    ? [...ageAppropriate, ...downward]
-    : downward.length > 0
-      ? downward
-      : closestLower.length > 0
-        ? closestLower
-        : source;
   return [...new Map(selected.map((candidate) => [candidate.sourceSkillId, candidate])).values()]
     .sort((left, right) => left.sourceOrder - right.sourceOrder)
-    .slice(0, policy.maximumCount);
+    .slice(0, catalog.selectionPolicy.maximumCandidateCount);
 }

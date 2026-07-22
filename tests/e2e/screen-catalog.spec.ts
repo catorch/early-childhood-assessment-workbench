@@ -54,7 +54,7 @@ async function openScreen(page: Page, mode: ScreenMode) {
   if (mode === "assessments") await page.goto("/assessments");
   if (["upload-progress", "upload-ready", "upload-validation", "upload-network"].includes(mode)) {
     await page.goto("/assessments/new?childId=child-1001&assessmentId=assessment-upload-ready");
-    await expect(page.getByRole("heading", { name: "Upload an observation" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Upload observational video" })).toBeVisible();
   }
   if (mode === "permission-blocked") await page.goto("/assessments/new?childId=child-1048");
   if (mode === "processing") await page.goto("/assessments/assessment-processing/processing");
@@ -72,7 +72,7 @@ async function openScreen(page: Page, mode: ScreenMode) {
         code: "REVISION_CONFLICT",
         error: "This item changed in another session.",
         currentDecision: {
-          suggestionId: "run-ready-suggestion-1", educatorId: "user-educator-1", origin: "SCORED_INDEPENDENTLY",
+          suggestionId: "run-ready-suggestion-3", educatorId: "user-educator-1", origin: "ACCEPTED",
           finalCredit: "PRESENT", dismissed: false, note: "Latest saved context.", revision: 1,
           decidedAt: "2026-07-14T14:00:00.000Z"
         },
@@ -128,7 +128,7 @@ async function openScreen(page: Page, mode: ScreenMode) {
     await expect(page.getByText("Choose an MP4, WebM, or MOV video.")).toBeVisible();
   }
   if (mode === "review-save-failure" || mode === "review-conflict") {
-    await expect(page.getByRole("heading", { name: "Review AI draft" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Review AI suggestions" })).toBeVisible();
     await page.getByRole("button", { name: "Emerging" }).last().click();
     await page.getByRole("button", { name: "Save decision" }).click();
     await expect(page.getByText(mode === "review-conflict" ? "Review changed in another session" : "Decision needs attention")).toBeVisible();
@@ -137,8 +137,8 @@ async function openScreen(page: Page, mode: ScreenMode) {
     await expect(page.getByText("Restore secure access to continue playback.", { exact: false })).toBeVisible();
   }
   if (mode === "review-editor") {
-    await expect(page.getByRole("button", { name: "Open decision editor" })).toBeVisible();
-    await page.getByRole("button", { name: "Open decision editor" }).click();
+    await expect(page.getByRole("button", { name: "Edit / add note" }).first()).toBeVisible();
+    await page.getByRole("button", { name: "Edit / add note" }).first().click();
   }
 }
 

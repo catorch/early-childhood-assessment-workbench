@@ -1,6 +1,6 @@
-# HELP Review Pilot
+# HELP AI Crediting Companion
 
-HELP Review is an Educator-first pilot for selecting an assigned child, uploading one private observation video, reviewing server-validated scoring suggestions, and confirming an immutable HELP assessment record. A deliberately small Admin surface manages provisioned access, assignments, and failed or stuck processing runs.
+HELP AI Crediting Companion is an Educator-first pilot for selecting an assigned child, uploading one private observation video, reviewing server-validated scoring suggestions, and confirming an immutable HELP assessment record. A deliberately small Admin surface manages provisioned access, assignments, and failed or stuck processing runs.
 
 The implementation follows:
 
@@ -22,19 +22,20 @@ Generated mockups are route-state and responsive references, not data or behavio
 - Persisted processing attempts, idempotent GCS markers, Eventarc delivery, a private Cloud Run processor, safe retry rules, and atomic all-or-nothing results
 - Versioned scoring schemas with deterministic fake scenarios and Gemini on Vertex AI reading the canonical `gs://` video
 - A versioned `help-catalog-v1` artifact loader with immutable version/hash validation and real-data rejection of the sanitized fixture
-- Full desktop, tablet, and mobile review including evidence seeking, all four decision origins, notes, dismissal, failed saves, revision conflicts, and secure media restoration
-- Server-derived incomplete/complete summaries, idempotent finalization, and read-only final records
+- Full desktop, tablet, and mobile review including four AI draft groups, categorical confidence, educator-only credits/O flags, dependent missing-skill controls, notes, dismissal, failed saves, revision conflicts, and secure media restoration
+- Server-derived coverage/credit summaries, strand-sequence validation, idempotent finalization, read-only final records, and PDF download
+- Repeated finalized assessments with age-at-observation snapshots and latest-versus-previous skill credit comparison on the child record
 - Admin provisioning/activation, controlled roster import and reconciliation, assignments, safe failed/stuck job details, and replay-safe retry
 - Public response projections, redacted errors/support records, security headers, origin/body/rate limits, and fail-closed conditional features
 - Deterministic acceptance coverage for all 45 approved screen states plus long-content stress cases
 
-The legacy Assessment Reliability Workbench, dashboards, batch/model/prompt tools, public signup, manual skill creation, add-on flags, PDF/export, alternate outputs, amendments, and parallel identity modes are not reachable.
+The legacy Assessment Reliability Workbench, dashboards, batch/model/prompt tools, public signup, alternate machine exports, amendments, and parallel identity modes are not reachable.
 
 ## Data Boundary
 
 Local development uses ignored `.data/` state/uploads and a standalone local processor. The shared Google Cloud development deployment uses normalized Prisma state on Neon, a private GCS bucket, Eventarc, a private Cloud Run processor, and Vertex AI. Both are restricted to deterministic or explicitly sanitized data.
 
-Real child data remains disabled while the approved production choices are wired and proven. The first-party email/password implementation is now selectable, while its live organization-staging invitation/reset/revocation exercise, the scientist-owned scoring package/service, authoritative HELP content, final video lifecycle values, organization-owned infrastructure, and remaining recovery evidence are concrete closure inputs rather than permission requests. The exact closure list is in `docs/specs/help-review-production-platform/external-launch-gates.md`.
+Real child data stays disabled until the client's licensed HELP content and chosen scoring model are in place and the platform runs on the client's own hosting. The short remaining-work list is in `docs/specs/help-review-production-platform/external-launch-gates.md`; project context and working style are in `CLAUDE.md`.
 
 Production-mode startup fails closed unless durable adapters, private storage, strong secrets, and an explicit sanitized acknowledgement are configured. `HELP_REVIEW_REAL_DATA_ENABLED=true` cannot run with sandbox identity or the unaccepted development scoring contract.
 
@@ -76,6 +77,15 @@ pnpm catalog:validate content/help-catalog.sanitized.json
 
 The command reports metadata and a SHA-256 digest only. Real-data mode requires a separately supplied `AUTHORITATIVE` artifact and exact matching `HELP_REVIEW_HELP_CATALOG_PATH`, `HELP_REVIEW_HELP_CATALOG_VERSION`, and `HELP_REVIEW_HELP_CATALOG_SHA256` values.
 
+The client-supplied workbook can be rebuilt deterministically without changing source order or collapsing duplicate displayed skill codes:
+
+```bash
+pnpm catalog:import-help
+pnpm catalog:validate content/help-catalog.client-reference.json
+```
+
+The generated 810-row artifact remains `REFERENCE`, not `AUTHORITATIVE`, until the client approves the release source and supplies the licensed Inside HELP definitions/credit notes. The sanitized catalog remains the default for the public demo. Yi's model repository is also still pending access, so no unverified Yi request/response schema is implemented.
+
 Controlled roster onboarding uses the versioned contract and template in `docs/specs/help-review-production-platform/`. Preview is the default and applying requires an explicit flag:
 
 ```bash
@@ -99,7 +109,7 @@ pnpm test:visual
 pnpm build
 ```
 
-The canonical story and verification record is `docs/quality/help-review-feature-status.csv`. The current repository passes 166 unit/service checks, 46 behavioral browser checks, 6 accessibility/reflow checks, and 52 visual checks covering screens 01-45, 4 stress states, and 3 smoke baselines. Guarded drills preserve all seven migrations plus a synthetic record through isolated logical backup/restore and serialize 12 concurrent shared rate-limit increments, then remove their temporary artifacts.
+The canonical story and verification record is `docs/quality/help-review-feature-status.csv`. The current repository passes 183 unit/service checks, 50 behavioral browser checks, 6 accessibility/reflow checks, and 52 visual checks covering screens 01-45, 4 stress states, and 3 smoke baselines. Guarded drills preserve all ten migrations plus a synthetic record through isolated logical backup/restore and serialize 12 concurrent shared rate-limit increments, then remove their temporary artifacts.
 
 ## Sanitized Google Cloud Deployment
 

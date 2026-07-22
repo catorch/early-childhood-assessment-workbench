@@ -8,6 +8,7 @@
 .env.*
 node_modules
 coverage
+content/help-catalog.client-reference.json
 dist-processor
 docs
 playwright-report

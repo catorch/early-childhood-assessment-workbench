@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { SkillSuggestionSchema } from "./domain";
+import { MODEL_DRAFT_CREDITS, ModelDraftCreditSchema, SkillSuggestionSchema } from "./domain";
 
 export const SCORING_CONTRACT_VERSION = "help-scoring-v0" as const;
 export const HELP_CATALOG_VERSION = process.env.HELP_REVIEW_HELP_CATALOG_VERSION ?? "help-2-provisional-2026-07";
@@ -37,13 +37,18 @@ export const ScoringCandidateSchema = z.object({
   skillCode: z.string().trim().min(1).max(40),
   skillName: z.string().trim().min(1).max(500),
   domain: z.string().trim().min(1).max(120),
+  domainCode: z.string().trim().min(1).max(20).optional(),
+  isDevelopmentalDomain: z.boolean().optional(),
   strand: z.string().trim().min(1).max(120).nullable(),
-  minimumAgeMonths: z.number().int().min(0).max(216),
-  maximumAgeMonths: z.number().int().min(0).max(216),
+  rawAgeRange: z.string().trim().min(1).max(120).optional(),
+  minimumAgeMonths: z.number().min(0).max(216),
+  maximumAgeMonths: z.number().min(0).max(216),
+  alwaysAssess: z.boolean().optional(),
+  sensoryCreditKeys: z.array(z.enum(["A_PLUS", "A_MINUS", "A_EMERGING"])).max(3).optional(),
   sourceOrder: z.number().int().nonnegative(),
   sourceFramework: z.string().trim().min(1).max(160).optional(),
   sourceReferenceUrl: z.url().max(1_000).optional(),
-  sourceAgeMonths: z.number().int().min(0).max(216).optional(),
+  sourceAgeMonths: z.number().min(0).max(216).optional(),
   videoScoreability: VideoScoreabilitySchema.optional(),
   observableDefinition: z.string().trim().min(1).max(4_000).optional(),
   observableIndicators: z.array(z.string().trim().min(1).max(1_000)).min(1).max(20).optional(),
@@ -64,21 +69,21 @@ export const ScoringCandidateSchema = z.object({
 export type ScoringCandidate = z.infer<typeof ScoringCandidateSchema>;
 
 const ScoringCreditDefinitionSchema = z.object({
-  value: z.enum(["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"]),
+  value: ModelDraftCreditSchema,
   symbol: z.string().trim().min(1).max(8),
   label: z.string().trim().min(1).max(120),
   description: z.string().trim().min(1).max(2_000)
 }).strict();
 
 export const ScoringRubricSchema = z.object({
-  creditDefinitions: z.array(ScoringCreditDefinitionSchema).length(4),
+  creditDefinitions: z.array(ScoringCreditDefinitionSchema).length(3),
   twoMinusRule: z.object({
     enabled: z.boolean(),
     consecutiveNotObserved: z.number().int().min(1).max(10),
     decisionReference: z.string().trim().min(1).max(500)
   }).strict()
 }).strict().superRefine((rubric, context) => {
-  const expected = new Set(["PRESENT", "EMERGING", "NOT_OBSERVED", "NOT_APPLICABLE"]);
+  const expected = new Set(MODEL_DRAFT_CREDITS);
   const actual = new Set(rubric.creditDefinitions.map((definition) => definition.value));
   if (actual.size !== expected.size || [...expected].some((credit) => !actual.has(credit as never))) {
     context.addIssue({
@@ -153,6 +158,14 @@ export const ScoringResultSchema = z.object({
   const sourceSkillIds = new Set<string>();
   const sourceOrders = new Set<number>();
   for (const suggestion of result.suggestions) {
+    if (suggestion.source !== "MODEL") {
+      context.addIssue({
+        code: "custom",
+        path: ["suggestions"],
+        message: "A scoring result may contain model suggestions only."
+      });
+      return;
+    }
     if (
       ids.has(suggestion.id) ||
       sourceSkillIds.has(suggestion.sourceSkillId) ||

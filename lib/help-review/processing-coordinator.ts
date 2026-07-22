@@ -9,6 +9,7 @@ import {
   type ScoringGateway
 } from "./scoring-contract";
 import { configuredHelpCatalog, selectScoringCandidates } from "./help-catalog";
+import { MODEL_DRAFT_CREDITS } from "./domain";
 import type { AssessmentContextSnapshot, PilotAssessment, PilotChild, PilotState } from "./models";
 import { selectedScoringGateway } from "./scoring-gateway";
 import { readPilotState, updatePilotState } from "./server-store";
@@ -231,7 +232,9 @@ async function executeClaim(
       checksumSha256: video.checksumSha256 ?? null
     },
     rubric: {
-      creditDefinitions: catalog.creditDefinitions,
+      creditDefinitions: catalog.creditDefinitions.filter((definition) =>
+        MODEL_DRAFT_CREDITS.some((credit) => credit === definition.value)
+      ),
       twoMinusRule: catalog.selectionPolicy.twoMinusRule
     },
     candidates

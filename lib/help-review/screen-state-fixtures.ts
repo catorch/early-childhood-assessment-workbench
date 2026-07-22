@@ -8,7 +8,7 @@ import { createSanitizedPilotState } from "./fixtures";
 import type { PilotAssessment, PilotState, ProcessingRun, StoredVideo } from "./models";
 
 export const SCREEN_IDS = Array.from({ length: 45 }, (_, index) => String(index + 1).padStart(2, "0"));
-export const SCREEN_STRESS_SCENARIOS = ["long-skill", "dense-results", "long-email", "localized-label"] as const;
+export const SCREEN_STRESS_SCENARIOS = ["long-skill", "dense-results", "long-email", "localized-label", "manual-add"] as const;
 export type ScreenStressScenario = typeof SCREEN_STRESS_SCENARIOS[number];
 
 interface VideoFixtureMetadata {
@@ -82,7 +82,7 @@ function decisionsFor(
     return {
       suggestionId: suggestion.id,
       educatorId: "user-educator-1",
-      origin: deriveDecisionOrigin(suggestion.draftCredit, mutation),
+      origin: deriveDecisionOrigin(suggestion, mutation),
       finalCredit,
       dismissed: false,
       note: mutation.note,
@@ -103,6 +103,7 @@ function assessment(
     readonly decisions?: SavedReviewDecision[];
     readonly childId?: string;
     readonly observationDate?: string;
+    readonly ageMonthsAtObservation?: number;
     readonly finalized?: boolean;
   }
 ): PilotAssessment {
@@ -113,7 +114,7 @@ function assessment(
     educatorId: "user-educator-1",
     observationDate: options.observationDate ?? "2026-07-14",
     contextSnapshot: {
-      ageMonthsAtObservation: options.childId === "child-1024" ? 31 : 19,
+      ageMonthsAtObservation: options.ageMonthsAtObservation ?? (options.childId === "child-1024" ? 31 : 19),
       supportContext: "NONE_REPORTED",
       contextLabel: options.childId === "child-1024" ? null : "IFSP: No",
       processingAllowedAtCreation: true,
@@ -137,26 +138,26 @@ function assessment(
   };
 }
 
+function fitEvidenceToFixture(suggestion: SkillSuggestion): SkillSuggestion {
+  const hasSupportingMoments = suggestion.evidence.length > 1;
+  return {
+    ...suggestion,
+    evidence: suggestion.evidence.map((evidence, index) => ({
+      ...evidence,
+      timestampSeconds: Math.min(evidence.timestampSeconds, hasSupportingMoments ? index + 1 : 2),
+      endTimestampSeconds: evidence.endTimestampSeconds === undefined ? undefined : 3
+    }))
+  };
+}
+
 /** Rich sanitized state shared by every accepted screen fixture. */
 export function createScreenFixtureState(screenId: string, metadata: VideoFixtureMetadata): PilotState {
   if (!SCREEN_IDS.includes(screenId)) throw new Error(`Unknown accepted screen ID: ${screenId}`);
   const state = createSanitizedPilotState();
-  const readySuggestions = [...createFakeScoringResult("run-ready")].map((suggestion) => ({
-    ...suggestion,
-    evidence: suggestion.evidence.map((evidence) => ({ ...evidence, timestampSeconds: Math.min(evidence.timestampSeconds, 2), endTimestampSeconds: evidence.endTimestampSeconds === undefined ? undefined : 3 }))
-  }));
-  const completeSuggestions = [...createFakeScoringResult("run-complete")].map((suggestion) => ({
-    ...suggestion,
-    evidence: suggestion.evidence.map((evidence) => ({ ...evidence, timestampSeconds: Math.min(evidence.timestampSeconds, 2), endTimestampSeconds: evidence.endTimestampSeconds === undefined ? undefined : 3 }))
-  }));
-  const incompleteSuggestions = [...createFakeScoringResult("run-incomplete")].map((suggestion) => ({
-    ...suggestion,
-    evidence: suggestion.evidence.map((evidence) => ({ ...evidence, timestampSeconds: Math.min(evidence.timestampSeconds, 2), endTimestampSeconds: evidence.endTimestampSeconds === undefined ? undefined : 3 }))
-  }));
-  const finalSuggestions = [...createFakeScoringResult("run-final")].map((suggestion) => ({
-    ...suggestion,
-    evidence: suggestion.evidence.map((evidence) => ({ ...evidence, timestampSeconds: Math.min(evidence.timestampSeconds, 2), endTimestampSeconds: evidence.endTimestampSeconds === undefined ? undefined : 3 }))
-  }));
+  const readySuggestions = [...createFakeScoringResult("run-ready")].map(fitEvidenceToFixture);
+  const completeSuggestions = [...createFakeScoringResult("run-complete")].map(fitEvidenceToFixture);
+  const incompleteSuggestions = [...createFakeScoringResult("run-incomplete")].map(fitEvidenceToFixture);
+  const finalSuggestions = [...createFakeScoringResult("run-final")].map(fitEvidenceToFixture);
 
   state.assessments = [
     assessment("upload-ready", metadata, { status: "DRAFT", runs: [], suggestions: [], video: video("upload-ready", metadata), observationDate: "2026-07-07" }),
@@ -169,11 +170,44 @@ export function createScreenFixtureState(screenId: string, metadata: VideoFixtur
     assessment("no-results", metadata, { status: "READY_FOR_REVIEW", runs: [run("no-results", "COMPLETED")], suggestions: [], observationDate: "2026-07-06" }),
     assessment("stuck", metadata, { status: "PROCESSING", runs: [run("stuck", "RUNNING", "2026-07-14T12:00:00.000Z")], childId: "child-1024", observationDate: "2026-07-05" })
   ];
+  if (screenId === "14") {
+    const firstProgressSuggestions = [...createFakeScoringResult("run-progress-first")].slice(0, 3);
+    const latestProgressSuggestions = [...createFakeScoringResult("run-progress-latest")].slice(0, 2);
+    const firstProgressDecisions = decisionsFor(firstProgressSuggestions).map((decision, index) => index === 0
+      ? { ...decision, origin: "OVERRIDDEN" as const, finalCredit: "EMERGING" as const }
+      : decision);
+    state.assessments.push(
+      assessment("progress-first", metadata, {
+        status: "FINALIZED",
+        runs: [run("progress-first", "COMPLETED")],
+        suggestions: firstProgressSuggestions,
+        decisions: firstProgressDecisions,
+        observationDate: "2026-06-18",
+        ageMonthsAtObservation: 18,
+        finalized: true
+      }),
+      assessment("progress-latest", metadata, {
+        status: "FINALIZED",
+        runs: [run("progress-latest", "COMPLETED")],
+        suggestions: latestProgressSuggestions,
+        decisions: decisionsFor(latestProgressSuggestions),
+        observationDate: "2026-07-02",
+        ageMonthsAtObservation: 19,
+        finalized: true
+      })
+    );
+  }
   return state;
 }
 
 /** Applies non-production layout pressure without changing the accepted screen IDs. */
 export function applyScreenStressScenario(state: PilotState, scenario: ScreenStressScenario): PilotState {
+  if (scenario === "manual-add") {
+    // Leave some catalogue skills unsuggested so the educator's add-skill path is exercisable.
+    state.assessments = state.assessments.map((candidate) => candidate.id !== "assessment-ready"
+      ? candidate
+      : { ...candidate, suggestions: candidate.suggestions.slice(0, 5) });
+  }
   if (scenario === "long-skill") {
     state.assessments = state.assessments.map((candidate) => candidate.id !== "assessment-ready"
       ? candidate

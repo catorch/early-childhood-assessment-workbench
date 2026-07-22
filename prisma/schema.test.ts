@@ -8,6 +8,10 @@ const migration = readFileSync(
   join(process.cwd(), "prisma/migrations/20260713150000_help_review_pilot/migration.sql"),
   "utf8"
 );
+const modelDraftBoundaryMigration = readFileSync(
+  join(process.cwd(), "prisma/migrations/20260721213000_model_draft_credit_boundary/migration.sql"),
+  "utf8"
+);
 
 function declarations(kind: "model" | "enum") {
   return [...schema.matchAll(new RegExp(`^${kind}\\s+(\\w+)`, "gm"))].map((match) => match[1]);
@@ -46,7 +50,6 @@ describe("lean pilot schema boundary", () => {
       "DalRuleSet",
       "ExportJob",
       "ReportArtifact",
-      "MANUALLY_ADDED",
       "tokenExpiresAt"
     ]) {
       expect(schema).not.toContain(forbidden);
@@ -75,5 +78,7 @@ describe("lean pilot schema boundary", () => {
     expect(migration).toContain("Assessment_finalization_check");
     expect(migration).toContain("ReviewDecision_credit_check");
     expect(migration).toContain("VideoAccessGrantRecord_expiry_check");
+    expect(modelDraftBoundaryMigration).toContain("SkillSuggestion_model_draft_credit_check");
+    expect(modelDraftBoundaryMigration).toContain("Requires educator judgment.");
   });
 });

@@ -832,7 +832,7 @@ Health endpoints expose only process/dependency readiness and a safe build ident
 
 ### Fail Closed On Conditional Content
 
-**Decision:** Negative-label content is centralized by canonical credit code. Add-on flags, omitted-skill creation, and alternate final outputs are absent and rejected at the server boundary until explicitly approved, and only the configured identity adapter is active.
+**Decision:** Negative-label content is centralized by canonical credit code. Add-on flags and alternate final outputs are absent and rejected at the server boundary until explicitly approved, and only the configured identity adapter is active. Educator-added skills are approved: the server resolves skill identity from the configured catalogue and records a distinct `MANUALLY_ADDED` origin.
 
 **Rationale:** A disabled-looking control or dormant endpoint still creates an implied product contract and security surface. Hiding only in the browser would also allow unsupported values through direct requests.
 

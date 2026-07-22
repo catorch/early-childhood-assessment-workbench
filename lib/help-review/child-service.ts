@@ -66,7 +66,27 @@ export function createChildService(dependencies: ChildServiceDependencies = defa
           actionLabel: assessmentActionLabel(assessment),
           video: clientVideo(assessment.video)
         }));
-      return { child, assessments };
+      const progress = state.assessments
+        .filter((assessment) => assessment.childId === child.id && assessment.educatorId === actor.id && assessment.status === "FINALIZED")
+        .sort((left, right) => left.observationDate.localeCompare(right.observationDate) || left.updatedAt.localeCompare(right.updatedAt))
+        .map((assessment) => {
+          const summary = deriveReviewSummary(assessment.suggestions, assessment.decisions);
+          return {
+            id: assessment.id,
+            observationDate: assessment.observationDate,
+            ageMonthsAtObservation: assessment.contextSnapshot?.ageMonthsAtObservation ?? child.ageMonths,
+            coverage: summary.coverage,
+            skills: summary.included.flatMap(({ suggestion, decision }) => decision.finalCredit === null ? [] : [{
+              sourceSkillId: suggestion.sourceSkillId,
+              skillCode: suggestion.skillCode,
+              skillName: suggestion.skillName,
+              domain: suggestion.domain,
+              strand: suggestion.strand,
+              finalCredit: decision.finalCredit
+            }])
+          };
+        });
+      return { child, assessments, progress };
     }
   };
 }

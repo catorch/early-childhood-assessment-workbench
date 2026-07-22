@@ -6,7 +6,7 @@ describe("support contact", () => {
   it("uses a configured deliverable address", () => {
     expect(isDeliverableSupportEmail("support@help-review.dev")).toBe(true);
     expect(supportContactHref("support@help-review.dev")).toBe(
-      "mailto:support@help-review.dev?subject=HELP%20Review%20pilot%20support"
+      "mailto:support@help-review.dev?subject=HELP%20AI%20Crediting%20Companion%20support"
     );
   });
 

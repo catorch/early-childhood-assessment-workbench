@@ -167,3 +167,26 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+@media print {
+  @page {
+    margin: 0.55in;
+    size: auto;
+  }
+
+  body,
+  main {
+    background: #ffffff !important;
+  }
+
+  nav,
+  .print-hidden {
+    display: none !important;
+  }
+
+  section,
+  article,
+  [role="table"] {
+    break-inside: avoid;
+  }
+}

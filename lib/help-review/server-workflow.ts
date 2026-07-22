@@ -2,8 +2,39 @@
 
 import { createFakeScoringResult } from "./fake-scoring";
 import { deriveReviewSummary } from "./domain";
+import { configuredHelpCatalog, selectScoringCandidates } from "./help-catalog";
 import type { PilotAssessment, PilotState, PilotUser } from "./models";
 import { AccessError, requireChildAssignment } from "./server-auth";
+
+/** Catalogue skills the educator can still add manually: age-appropriate candidates the model did not surface. */
+function manualSkillOptions(assessment: PilotAssessment, child: { readonly ageMonths: number }) {
+  if (!["READY_FOR_REVIEW", "IN_REVIEW"].includes(assessment.status)) return [];
+  const suggested = new Set(assessment.suggestions.map((suggestion) => suggestion.sourceSkillId));
+  const ageMonths = assessment.contextSnapshot?.ageMonthsAtObservation ?? child.ageMonths;
+  const supportContext = assessment.contextSnapshot?.supportContext ?? "UNKNOWN";
+  return selectScoringCandidates(ageMonths, supportContext)
+    .filter((candidate) => !suggested.has(candidate.sourceSkillId))
+    .map((candidate) => ({
+      sourceSkillId: candidate.sourceSkillId,
+      skillCode: candidate.skillCode,
+      skillName: candidate.skillName,
+      domain: candidate.domain,
+      domainCode: candidate.domainCode ?? null,
+      isDevelopmentalDomain: candidate.isDevelopmentalDomain ?? candidate.domainCode !== "0.0",
+      strand: candidate.strand ?? null,
+      rawAgeRange: candidate.rawAgeRange ?? null,
+      sensoryCreditKeys: candidate.sensoryCreditKeys ?? [],
+      sourceOrder: candidate.sourceOrder
+    }));
+}
+
+function skillCreditRules(assessment: PilotAssessment) {
+  const candidateById = new Map(configuredHelpCatalog().skills.map((candidate) => [candidate.sourceSkillId, candidate]));
+  return assessment.suggestions.map((suggestion) => ({
+    sourceSkillId: suggestion.sourceSkillId,
+    sensoryCreditKeys: candidateById.get(suggestion.sourceSkillId)?.sensoryCreditKeys ?? []
+  }));
+}
 
 export function findExistingAssessmentForCreate(
   state: PilotState,
@@ -65,6 +96,7 @@ export function reviewProjection(state: PilotState, assessment: PilotAssessment,
     assessment: {
       id: assessment.id,
       observationDate: assessment.observationDate,
+      ageMonthsAtObservation: assessment.contextSnapshot?.ageMonthsAtObservation ?? child.ageMonths,
       status: assessment.status,
       finalizedAt: assessment.finalizedAt,
       finalizedBy: state.users.find((candidate) => candidate.id === assessment.finalizedById)?.displayName ?? null,
@@ -81,8 +113,10 @@ export function reviewProjection(state: PilotState, assessment: PilotAssessment,
       : null,
     suggestions: assessment.suggestions,
     decisions: assessment.decisions,
+    availableSkills: manualSkillOptions(assessment, child),
+    skillCreditRules: skillCreditRules(assessment),
     summary: deriveReviewSummary(assessment.suggestions, assessment.decisions),
-    features: { addOnFlags: false }
+    features: { addOnFlags: true }
   };
 }
 
