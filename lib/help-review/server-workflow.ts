@@ -2,18 +2,17 @@
 
 import { createFakeScoringResult } from "./fake-scoring";
 import { deriveReviewSummary } from "./domain";
-import { configuredHelpCatalog, selectScoringCandidates } from "./help-catalog";
+import { configuredHelpCatalog } from "./help-catalog";
 import type { PilotAssessment, PilotState, PilotUser } from "./models";
 import { AccessError, requireChildAssignment } from "./server-auth";
 
-/** Catalogue skills the educator can still add manually: age-appropriate candidates the model did not surface. */
-function manualSkillOptions(assessment: PilotAssessment, child: { readonly ageMonths: number }) {
+/** Catalogue skills the educator can still add manually, independent of the model's age-filtered candidates. */
+function manualSkillOptions(assessment: PilotAssessment) {
   if (!["READY_FOR_REVIEW", "IN_REVIEW"].includes(assessment.status)) return [];
   const suggested = new Set(assessment.suggestions.map((suggestion) => suggestion.sourceSkillId));
-  const ageMonths = assessment.contextSnapshot?.ageMonthsAtObservation ?? child.ageMonths;
-  const supportContext = assessment.contextSnapshot?.supportContext ?? "UNKNOWN";
-  return selectScoringCandidates(ageMonths, supportContext)
+  return configuredHelpCatalog().skills
     .filter((candidate) => !suggested.has(candidate.sourceSkillId))
+    .sort((left, right) => left.sourceOrder - right.sourceOrder)
     .map((candidate) => ({
       sourceSkillId: candidate.sourceSkillId,
       skillCode: candidate.skillCode,
@@ -113,7 +112,7 @@ export function reviewProjection(state: PilotState, assessment: PilotAssessment,
       : null,
     suggestions: assessment.suggestions,
     decisions: assessment.decisions,
-    availableSkills: manualSkillOptions(assessment, child),
+    availableSkills: manualSkillOptions(assessment),
     skillCreditRules: skillCreditRules(assessment),
     summary: deriveReviewSummary(assessment.suggestions, assessment.decisions),
     features: { addOnFlags: true }

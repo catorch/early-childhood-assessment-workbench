@@ -6,6 +6,7 @@ import { assessmentActionLabel, assessmentDestination } from "./presentation";
 import {
   findExistingAssessmentForCreate,
   materializeCompletedRun,
+  reviewProjection,
   safeProcessingError
 } from "./server-workflow";
 
@@ -66,6 +67,20 @@ describe("assessment workflow state", () => {
     expect(assessment.suggestions).toEqual([]);
     expect(safeProcessingError("INVALID_RESULT").title).toBe("Review is not available");
     expect(safeProcessingError("PROCESSING_STUCK").title).toBe("Processing needs technical follow-up");
+  });
+
+  it("lets educators add any catalogue skill the model did not surface", () => {
+    const state = createSanitizedPilotState();
+    const assessment = processingAssessment();
+    materializeCompletedRun(assessment, new Date("2026-07-13T14:00:02.000Z"));
+    assessment.suggestions = assessment.suggestions.filter(
+      (suggestion) => suggestion.sourceSkillId !== "help-2.18"
+    );
+
+    const projection = reviewProjection(state, assessment);
+
+    expect(projection.availableSkills.map((skill) => skill.sourceSkillId)).toContain("help-2.18");
+    expect(projection.availableSkills.map((skill) => skill.sourceSkillId)).not.toContain("help-1.52");
   });
 
   it("resolves exactly one authoritative next route for each state", () => {
