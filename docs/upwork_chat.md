@@ -781,3 +781,15 @@ And yes, I can get an updated version of the web prototype over to you by 10am E
 
 
 See you at 2:15 ET!
+
+Wednesday, Jul 22
+SN
+Supraja Narayanaswamy
+2:53 PM
+Thanks Carlos!! I did not see the "add additional skills" part and I had some more notes / feedback which I will share by tonight
+
+Also here is a design/brand guide for the prototype
+
+BrandGuide_Product_ShineEarlyLearning_July2025.pdf
+BrandGuide_Product_ShineEarlyLearning_July2025.pdf
+5 MB

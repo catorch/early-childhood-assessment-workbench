@@ -3,26 +3,40 @@
 @import "shadcn/tailwind.css";
 
 :root {
-  --canvas: #f4f7f8;
+  --shine-ink: #223a7a;
+  --shine-blue: #465ed8;
+  --shine-blue-hover: #344ab8;
+  --shine-beige: #f9f5f1;
+  --shine-light-blue: #aae4f4;
+  --shine-yellow: #ffe054;
+  --shine-green: #33c87e;
+  --shine-purple: #cc99ff;
+  --shine-orange: #ffaa55;
+  --shine-red: #f05843;
+  --shine-light-green: #b6f2bc;
+  --shine-light-purple: #e8d4ff;
+  --shine-light-orange: #ffe1bd;
+  --shine-light-red: #ffccc2;
+
+  --canvas: var(--shine-beige);
   --surface: #ffffff;
-  --surface-soft: #eef4f3;
-  --border: #d7e0e2;
-  --border-strong: #b9c7ca;
-  --ink: #17313a;
-  --muted-foreground: #4d646a;
-  --teal: #0b7168;
-  --teal-dark: #07574f;
-  --teal-soft: #dff2ef;
-  --navy: #183b56;
-  --coral: #bd4c3d;
-  --coral-soft: #fff0ec;
-  --gold: #9b6505;
-  --gold-soft: #fff6dc;
-  --green: #287a50;
-  --green-soft: #e5f5eb;
-  --focus: #146bd1;
-  --help-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --help-font-serif: Georgia, "Times New Roman", serif;
+  --surface-soft: #f1f7fb;
+  --border: #d0d8ec;
+  --border-strong: #9eadd2;
+  --ink: var(--shine-ink);
+  --muted-foreground: #505a78;
+  --primary-hover: var(--shine-blue-hover);
+  --primary-soft: var(--shine-light-blue);
+  --navy: var(--shine-ink);
+  --coral: #b53c2d;
+  --coral-soft: var(--shine-light-red);
+  --gold: #745a00;
+  --gold-soft: #fff3b2;
+  --green: #176b43;
+  --green-soft: var(--shine-light-green);
+  --focus: var(--shine-blue);
+  --help-font-sans: var(--font-inter), Inter, Arial, sans-serif;
+  --help-font-heading: var(--font-anybody), Impact, Arial, sans-serif;
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -30,13 +44,13 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: var(--teal);
+  --primary: var(--shine-blue);
   --primary-foreground: #ffffff;
   --secondary: var(--surface-soft);
   --secondary-foreground: var(--navy);
   --muted: var(--surface-soft);
-  --accent: var(--teal-soft);
-  --accent-foreground: var(--teal-dark);
+  --accent: var(--primary-soft);
+  --accent-foreground: var(--shine-ink);
   --destructive: var(--coral);
   --input: var(--border-strong);
   --ring: var(--focus);
@@ -45,7 +59,7 @@
 
 @theme inline {
   --font-sans: var(--help-font-sans);
-  --font-heading: var(--help-font-serif);
+  --font-heading: var(--help-font-heading);
   --breakpoint-sm: 40rem;
   --breakpoint-md: 48rem;
   --breakpoint-lg: 64rem;
@@ -59,8 +73,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-hover: var(--teal-dark);
-  --color-primary-strong: var(--teal-dark);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-strong: var(--shine-ink);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -68,9 +82,9 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-destructive-strong: #91382c;
+  --color-destructive-strong: #8f2e23;
   --color-destructive-soft: var(--coral-soft);
-  --color-destructive-border: #edb6ad;
+  --color-destructive-border: #e99d91;
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-input: var(--input);
@@ -84,15 +98,23 @@
   --color-success: var(--green);
   --color-success-strong: var(--green);
   --color-success-soft: var(--green-soft);
-  --color-success-border: #bce0c9;
+  --color-success-border: #71d990;
   --color-warning: var(--gold);
-  --color-warning-strong: #76500a;
+  --color-warning-strong: var(--gold);
   --color-warning-soft: var(--gold-soft);
-  --color-warning-border: #ead399;
+  --color-warning-border: #d8ba38;
   --color-info: var(--navy);
   --color-info-strong: var(--navy);
-  --color-info-soft: #eef7fa;
-  --color-info-border: #bad4df;
+  --color-info-soft: #eaf8fc;
+  --color-info-border: #75c9e2;
+
+  --color-brand-blue: var(--shine-blue);
+  --color-brand-light-blue: var(--shine-light-blue);
+  --color-brand-yellow: var(--shine-yellow);
+  --color-brand-green: var(--shine-green);
+  --color-brand-purple: var(--shine-purple);
+  --color-brand-orange: var(--shine-orange);
+  --color-brand-red: var(--shine-red);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);

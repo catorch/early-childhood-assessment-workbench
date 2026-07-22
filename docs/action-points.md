@@ -1,10 +1,11 @@
 # HELP AI Crediting Companion: Action Points
 
-Last reviewed: 2026-07-21
+Last reviewed: 2026-07-22
 
 This is the practical product and engineering backlog derived from:
 
 - `docs/emails.md`
+- `docs/BrandGuide_Product_ShineEarlyLearning_July2025 (1).pdf`
 - `docs/educator-happy-path-guide_SNComments - feedback.pdf`
 - `docs/HELP 0-3_2nd Ed_Strands and Skills List_Updated (1).xlsx`
 - `docs/HELP In-Service Training Deck_07162026_vF (1) (1).pptx`
@@ -16,6 +17,10 @@ The source requests were also checked against the current repository so complete
 ## 2026-07-21 Implementation Update
 
 All work that can be completed without Yi's repository, the full licensed credit notes, or the two private videos/expert scores is now implemented in the working version. The updated sanitized demo is live at `https://earlychildhoodassessment.vercel.app`. Checked items below are complete in code and covered by the repository tests. The generated 810-row workbook artifact remains `REFERENCE`, and the public demo continues to use only sanitized fixtures.
+
+## 2026-07-22 Brand And Discoverability Update
+
+Supraja supplied the Shine Early Learning product brand guide and reported that she did not see the additional-skill workflow. The prototype now uses the official Shine wordmark, Anybody/Inter typography, and the guide's ink blue, Shine blue, beige, and semantic accent palette. The additional-skill action now appears above the AI suggestion groups. The sanitized catalog includes four clearly labeled `DEMO` records beyond the eight AI suggestions so the public sandbox can demonstrate the workflow without exposing the licensed catalog.
 
 ## Confirmed Product Direction
 
@@ -39,6 +44,8 @@ All work that can be completed without Yi's repository, the full licensed credit
 - [x] **NOW-03 Show the meeting-confirmed review grouping:** Present, Emerging, Not observed, then Leave Blank. Use High, Medium, or Not sure for confidence. Keep Atypical, N/A, and family/environment concern controls separate and human-only. Do not imply that the AI generated them.
 - [ ] **NOW-04 Obtain the missing client access.** Sign/return the BAA if still outstanding, then obtain and verify the client email, GitHub repository, and Google AI Studio access before inspecting Yi's code, integrating her model, or handling model assets. **Current blocker: Yi's repository is not accessible yet.**
 - [ ] **NOW-05 Confirm the revised delivery date after the client's 2026-07-22 manager conversation.** Keep 2026-07-31 as the working MVP target, use any approved August extension for model/real-video testing, and do not plan work beyond the stated 2026-08-30 hard deadline.
+- [x] **NOW-06 Apply the supplied Shine Early Learning prototype brand guide.** Use the official Shine wordmark, brand typography and palette, retain HELP as a text product line, and keep the staff-facing interface streamlined.
+- [ ] **NOW-07 Review Supraja's additional notes when they arrive tonight.** Fold actionable product feedback into the next prototype pass without delaying work that is already unblocked.
 
 ## P0: Finalize The Scoring Rules
 
@@ -87,6 +94,8 @@ These are the most visible changes requested for the next prototype.
 - [x] **P1-08 Add summary coverage counts:** developmental domains, strands, included skills, and regulatory/sensory skills are derived from included final decisions.
 - [x] **P1-09 Verify the Admin/Supervisor wording and view.** User-facing roles now use Admin / Supervisor while the existing access and assignment view remains direct.
 - [x] **P1-10 Update the educator walkthrough and screenshots.** The HTML guide, all captured images, and the 15-page PDF now use the implemented terminology, controls, summary, and download behavior.
+- [x] **P1-10A Make the missed-skill workflow impossible to overlook in the prototype.** The primary action is now above the AI suggestion groups, opens and focuses the dependent selector, and remains covered by the complete add/save/reload browser test.
+- [x] **P1-10B Make the sanitized demo exercise that workflow.** Four explicitly labeled `DEMO` catalog records remain available beyond the eight fake AI suggestions; licensed workbook content is still excluded from the public deployment.
 
 ## P1: Repeated Assessments And Progress
 
@@ -125,13 +134,13 @@ These are the most visible changes requested for the next prototype.
 | Optional YouTube input | Missing | Add only after the upload/Yi-model path works and the URL contract is verified |
 | Timestamped AI evidence/rationale UI | Present | Map Yi's primary and supporting timestamps and verify rationale quality |
 | Yi model integration | Blocked: repository access not received; only a verbal meeting description is available | Obtain access, inspect the actual code/contract, map the verified schemas, and run a live private test |
-| Educator adds a missed skill | Complete in the working version | Dependent Domain/section, Strand, Skill, and Credit choices retain educator origin |
+| Educator adds a missed skill | Complete and prominent in the working version | The action is above the suggestion groups; dependent Domain/section, Strand, Skill, and Credit choices retain educator origin |
 | Read-only final record | Complete in the working version | Coverage, PDF download, print, and repeated-assessment links are present |
 | HELP catalog | Sanitized demo plus generated 810-row `REFERENCE` artifact | Obtain approval and licensed credit notes before promoting any artifact to `AUTHORITATIVE` |
 | HELP credit key | Complete for the verified working vocabulary | Map the same boundary to Yi after repository access arrives |
 | Candidate age selection | Within-age plus working always-assess exception | Scientist can confirm or change the exception policy without a schema change |
 | Sequential strand enforcement | Exact confirmed `-` then later `+` pair blocks finalization | Full stopping/highest-skill inference remains pending |
-| Product naming | Complete | HELP AI Crediting Companion is used on user-facing surfaces and the guide |
+| Product naming and brand | Complete | HELP AI Crediting Companion is a text product line under the official Shine Early Learning wordmark, palette, and typography |
 
 ## Inputs Needed From The Client/Scientist
 
@@ -142,7 +151,8 @@ These are the most visible changes requested for the next prototype.
 - [ ] Final confidence labels for the UI and confirmation of whether the optional YouTube input belongs in the first pilot.
 - [ ] Confirmation of the revised delivery date after the 2026-07-22 manager conversation.
 - [ ] Expected educator/child roster size for a useful cost estimate.
-- [ ] Brand guidelines and the client-owned email sender, hosting project/account, domain, and database details when they are ready.
+- [ ] The client-owned email sender, hosting project/account, domain, and database details when they are ready.
+- [ ] Supraja's additional prototype notes promised for the evening of 2026-07-22.
 - [ ] Any requested download format beyond the implemented readable PDF.
 - [ ] HELP Connect sign-in/data/export documentation only when integration work is ready to begin.
 
@@ -158,6 +168,7 @@ These are the most visible changes requested for the next prototype.
 - [x] The built-in model contract requires a real opportunity before `-`; Yi's implementation still needs verification.
 - [x] A suggestion can show its primary timestamp and all additional supporting timestamps without duplicating the skill.
 - [x] Educators can add a missed credit through Domain/section, Strand, Skill, and Credit controls.
+- [x] The shared sanitized prototype visibly exposes the missed-skill action without publishing the licensed catalog.
 - [x] Final summaries show domain, strand, skill, and regulatory/sensory coverage and can be downloaded.
 - [x] A child can accumulate and compare repeated finalized assessments.
 - [ ] Both authorized videos complete the full flow with recorded upload/processing time and expert comparison.

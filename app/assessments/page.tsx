@@ -68,7 +68,7 @@ function AssessmentsContent() {
   return (
     <PageShell>
       <header className="flex items-end justify-between gap-6 max-sm:items-start max-sm:flex-col">
-        <div><Eyebrow>Educator workspace</Eyebrow><h1 className="mt-1 font-heading text-4xl font-normal leading-tight max-sm:text-[30px]">Assessments</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Continue active observations or reopen finalized records.</p></div>
+        <div><Eyebrow>Educator workspace</Eyebrow><h1 className="mt-1 font-heading text-4xl font-bold leading-tight max-sm:text-[30px]">Assessments</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Continue active observations or reopen finalized records.</p></div>
         <Button asChild><Link href="/children">Start from a child</Link></Button>
       </header>
       <div className="mt-7 flex items-center justify-between gap-4 border-y border-border py-4 max-sm:items-stretch max-sm:flex-col">
@@ -91,7 +91,7 @@ function AssessmentsContent() {
           {assessments.map((assessment) => {
             const status = assessmentStatusPresentation[assessment.status];
             return (
-              <article className="grid min-h-[76px] grid-cols-[minmax(160px,1fr)_125px_130px_85px_minmax(140px,.8fr)_auto] items-center gap-3 border-b border-border px-4 py-3 text-[13px] last:border-b-0 hover:bg-[#fafcfc] max-lg:grid-cols-[minmax(160px,1fr)_125px_130px_85px_minmax(140px,.8fr)] max-lg:[&>span:last-child]:col-span-full max-lg:[&>span:last-child]:justify-self-end max-md:grid-cols-2 max-md:gap-2.5 max-sm:grid-cols-1" key={assessment.id}>
+              <article className="grid min-h-[76px] grid-cols-[minmax(160px,1fr)_125px_130px_85px_minmax(140px,.8fr)_auto] items-center gap-3 border-b border-border px-4 py-3 text-[13px] last:border-b-0 hover:bg-surface-soft max-lg:grid-cols-[minmax(160px,1fr)_125px_130px_85px_minmax(140px,.8fr)] max-lg:[&>span:last-child]:col-span-full max-lg:[&>span:last-child]:justify-self-end max-md:grid-cols-2 max-md:gap-2.5 max-sm:grid-cols-1" key={assessment.id}>
                 <span className="flex items-center gap-2.5"><span className="grid size-9 place-items-center rounded-full bg-accent text-primary"><ClipboardList aria-hidden="true" className="size-4" /></span><span className="grid gap-1"><strong>{assessment.childExternalId}</strong><small className="text-muted-foreground">{assessment.childAgeMonths} months</small></span></span>
                 <span className="flex items-center gap-1.5 text-muted-foreground max-sm:before:min-w-[78px] max-sm:before:text-[10px] max-sm:before:font-extrabold max-sm:before:uppercase max-sm:before:content-['Observation']"><CalendarDays aria-hidden="true" size={14} /> {formatDate(assessment.observationDate)}</span>
                 <span className="max-sm:flex max-sm:items-center max-sm:before:min-w-[78px] max-sm:before:text-[10px] max-sm:before:font-extrabold max-sm:before:text-muted-foreground max-sm:before:uppercase max-sm:before:content-['Status']"><StatusBadge status={assessment.status} label={status.label} /></span>

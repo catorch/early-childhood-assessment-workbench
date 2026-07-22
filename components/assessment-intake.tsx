@@ -368,7 +368,7 @@ export function AssessmentIntake() {
   return (
     <PageShell>
       <Link className={backLinkClass} href={`/children/${child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Back to child</Link>
-      <header className="max-w-[720px]"><Eyebrow>New observation</Eyebrow><h1 className="mt-1 font-heading text-4xl font-normal leading-tight max-sm:text-[30px]">Upload observational video</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Add one short observational video for this assessment.</p></header>
+      <header className="max-w-[720px]"><Eyebrow>New observation</Eyebrow><h1 className="mt-1 font-heading text-4xl font-bold leading-tight max-sm:text-[30px]">Upload observational video</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Add one short observational video for this assessment.</p></header>
       {error ? <Alert className="mt-7" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
       <div className="mt-8 grid grid-cols-[minmax(0,1fr)_310px] items-start gap-12 max-md:grid-cols-1">
         <section className="border-t border-border pt-7" aria-labelledby="observation-details-title">
@@ -395,7 +395,7 @@ export function AssessmentIntake() {
               <div className="flex gap-2 max-sm:col-span-full max-sm:justify-end"><Button disabled={step !== "IDLE"} onClick={() => fileInputRef.current?.click()} type="button" variant="secondary"><RefreshCw aria-hidden="true" size={15} /> Replace</Button><Button aria-label="Remove uploaded video" disabled={step !== "IDLE"} onClick={() => void removeUpload()} size="icon" title="Remove uploaded video" type="button" variant="destructive-outline"><Trash2 aria-hidden="true" size={17} /></Button></div>
             </div>
           ) : (
-            <button className="grid min-h-[230px] w-full place-items-center content-center gap-2 rounded-md border border-dashed border-[#91aaa9] bg-[#f9fcfb] text-center text-muted-foreground transition-colors hover:border-primary hover:bg-accent/30" onClick={() => fileInputRef.current?.click()} type="button"><span className="grid size-[52px] place-items-center rounded-full bg-accent text-primary"><Upload aria-hidden="true" /></span><strong className="text-primary-strong">Choose a video</strong><span className="text-[13px]">MP4, WebM, or MOV · maximum 100 MB</span></button>
+            <button className="grid min-h-[230px] w-full place-items-center content-center gap-2 rounded-md border border-dashed border-border-strong bg-canvas text-center text-muted-foreground transition-colors hover:border-primary hover:bg-accent/30" onClick={() => fileInputRef.current?.click()} type="button"><span className="grid size-[52px] place-items-center rounded-full bg-accent text-primary-strong"><Upload aria-hidden="true" /></span><strong className="text-primary-strong">Choose a video</strong><span className="text-[13px]">MP4, WebM, or MOV · maximum 100 MB</span></button>
           )}
           {step === "UPLOADING" ? <div className="mt-4" aria-live="polite"><div className="mb-2 flex justify-between text-[13px] font-bold text-muted-foreground"><span>Uploading video</span><span>{progress}%</span></div><Progress aria-label={`Uploading video, ${progress}%`} value={progress} /></div> : null}
           <div className="mt-6 flex justify-end gap-2.5 border-t border-border pt-5 max-sm:[&>*]:flex-1">

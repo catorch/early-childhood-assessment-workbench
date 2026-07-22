@@ -174,10 +174,10 @@ export default function SignInPage() {
 
   return (
     <main className="grid min-h-[calc(100vh-62px)] place-items-center px-5 py-12 max-sm:min-h-[calc(100vh-62px)] max-sm:px-3 max-sm:py-6">
-      <section className="w-full max-w-[420px] border border-border bg-surface px-7 py-7 shadow-[0_12px_32px_rgba(24,59,86,.08)] max-sm:px-5 max-sm:py-6" aria-labelledby="sign-in-title">
-        <div className="grid size-[38px] place-items-center rounded-md bg-navy text-[#b9d5df]" aria-hidden="true"><ShieldCheck size={20} /></div>
+      <section className="w-full max-w-[420px] border border-border bg-surface px-7 py-7 shadow-[0_12px_32px_rgba(34,58,122,.1)] max-sm:px-5 max-sm:py-6" aria-labelledby="sign-in-title">
+        <div className="grid size-[38px] place-items-center rounded-md bg-navy text-brand-light-blue" aria-hidden="true"><ShieldCheck size={20} /></div>
         <p className="mt-4 text-[9px] font-extrabold uppercase text-primary-strong">HELP AI Crediting Companion</p>
-        <h1 className="mt-1 font-heading text-[32px] font-normal leading-tight text-ink" id="sign-in-title">Sign in</h1>
+        <h1 className="mt-1 font-heading text-[32px] font-bold leading-tight text-ink" id="sign-in-title">Sign in</h1>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           {configuration?.mode === "email-password"
             ? "Use your provisioned staff account."

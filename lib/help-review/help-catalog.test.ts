@@ -35,10 +35,10 @@ describe("versioned HELP catalogue", () => {
     const loaded = loadHelpCatalogFile(
       DEFAULT_HELP_CATALOG_PATH,
       "help-2-provisional-2026-07",
-      "7d604579d6c8f8fdf5ac0f3d0ef0643a1d4479806d6d6be38cb1bc2f92c451d2"
+      "751598ed635e3bde0cc4924a8f90eea0fc0762b568dab0b43d77606c37d070fe"
     );
     expect(loaded.catalog.status).toBe("SANITIZED_FIXTURE");
-    expect(loaded.catalog.skills).toHaveLength(8);
+    expect(loaded.catalog.skills).toHaveLength(12);
     expect(loaded.sha256).toMatch(/^[a-f0-9]{64}$/);
     expect(loaded.absolutePath).not.toContain("..\u0000");
   });

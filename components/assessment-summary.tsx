@@ -121,7 +121,7 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
         <div className="mx-auto w-[min(calc(100%_-_40px),960px)] py-11 max-sm:w-[min(calc(100%_-_24px),960px)] max-sm:py-8">
           <span className={finalView ? "mb-4 grid size-12 place-items-center rounded-full bg-success text-white" : "mb-4 grid size-12 place-items-center rounded-full bg-accent text-primary"}>{finalView ? <LockKeyhole aria-hidden="true" /> : <ClipboardCheck aria-hidden="true" />}</span>
           <Eyebrow className={finalView ? "text-success before:bg-success" : undefined}>{finalView ? "Human-approved record" : "Pre-final review"}</Eyebrow>
-          <h1 className="mt-1 font-heading text-4xl font-normal leading-tight text-ink max-sm:text-[31px]">{finalView ? "Assessment finalized" : "Review assessment summary"}</h1>
+          <h1 className="mt-1 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[31px]">{finalView ? "Assessment finalized" : "Review assessment summary"}</h1>
           <p className="mt-2.5 text-muted-foreground">{data.child.externalChildId} · {data.assessment.ageMonthsAtObservation} months at observation · {formatDate(data.assessment.observationDate)}</p>
           {finalView && data.assessment.finalizedAt ? <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-success-border bg-surface px-3 py-1.5 text-xs font-bold text-success"><CheckCircle2 aria-hidden="true" size={16} /> Confirmed {formatDateTime(data.assessment.finalizedAt)}{data.assessment.finalizedBy ? ` by ${data.assessment.finalizedBy}` : ""}</span> : null}
         </div>
@@ -190,7 +190,7 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
 }
 
 function SummarySection({ eyebrow, title, id, meta, children }: { readonly eyebrow: string; readonly title: string; readonly id: string; readonly meta?: string; readonly children: ReactNode }) {
-  return <section className="mt-10" aria-labelledby={id}><div className="mb-[18px] flex items-end justify-between gap-5"><div><Eyebrow>{eyebrow}</Eyebrow><h2 className="mt-1 font-heading text-2xl font-normal" id={id}>{title}</h2></div>{meta ? <span className="text-[13px] text-muted-foreground">{meta}</span> : null}</div>{children}</section>;
+  return <section className="mt-10" aria-labelledby={id}><div className="mb-[18px] flex items-end justify-between gap-5"><div><Eyebrow>{eyebrow}</Eyebrow><h2 className="mt-1 font-heading text-2xl font-bold" id={id}>{title}</h2></div>{meta ? <span className="text-[13px] text-muted-foreground">{meta}</span> : null}</div>{children}</section>;
 }
 
 function creditSymbolClass(credit: PrimaryCredit | null): string {

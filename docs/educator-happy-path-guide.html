@@ -5,25 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HELP AI Crediting Companion Educator Happy Path</title>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Anybody:wght@700&family=Inter:wght@400;600;700;800&display=swap");
+
       @page {
         size: Letter;
         margin: 0;
       }
 
       :root {
-        --navy: #183b56;
-        --ink: #102f3e;
-        --teal: #087d73;
-        --teal-dark: #00665f;
-        --green: #278458;
-        --green-soft: #e1f4e9;
-        --amber: #a96700;
-        --amber-soft: #fff3d2;
-        --red: #a83c31;
+        --navy: #223a7a;
+        --ink: #223a7a;
+        --teal: #465ed8;
+        --teal-dark: #223a7a;
+        --light-blue: #aae4f4;
+        --green: #176b43;
+        --green-soft: #b6f2bc;
+        --amber: #745a00;
+        --amber-soft: #fff3b2;
+        --red: #b53c2d;
         --paper: #ffffff;
-        --canvas: #eef3f4;
-        --line: #cbd8db;
-        --muted: #4d6672;
+        --canvas: #f9f5f1;
+        --line: #d0d8ec;
+        --muted: #505a78;
       }
 
       * {
@@ -36,7 +39,7 @@
         padding: 0;
         color: var(--ink);
         background: var(--canvas);
-        font-family: Arial, Helvetica, sans-serif;
+        font-family: "Inter", Arial, sans-serif;
         letter-spacing: 0;
       }
 
@@ -56,7 +59,7 @@
 
       h1,
       h2 {
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: "Anybody", Impact, Arial, sans-serif;
         font-weight: 700;
       }
 
@@ -98,6 +101,19 @@
         font-size: 7.5pt;
       }
 
+      .footer-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.08in;
+        color: var(--navy);
+        font-weight: 700;
+      }
+
+      .footer-brand img {
+        width: auto;
+        height: 0.25in;
+      }
+
       .page-number::after {
         content: counter(guide-page);
       }
@@ -105,44 +121,21 @@
       .brand {
         display: flex;
         align-items: center;
-        gap: 0.11in;
+        gap: 0.16in;
         color: var(--navy);
-        font-family: Georgia, "Times New Roman", serif;
-        font-size: 17pt;
+        font-family: "Anybody", Impact, Arial, sans-serif;
+        font-size: 14pt;
         font-weight: 700;
       }
 
-      .brand-mark {
-        position: relative;
-        width: 0.24in;
-        height: 0.29in;
-        border: 2px solid var(--teal);
-        border-radius: 3px;
+      .brand img {
+        width: auto;
+        height: 0.42in;
       }
 
-      .brand-mark::before {
-        content: "";
-        position: absolute;
-        top: -0.07in;
-        left: 50%;
-        width: 0.11in;
-        height: 0.07in;
-        border: 2px solid var(--teal);
-        border-bottom: 0;
-        border-radius: 3px 3px 0 0;
-        transform: translateX(-50%);
-      }
-
-      .brand-mark::after {
-        content: "";
-        position: absolute;
-        top: 0.08in;
-        left: 0.065in;
-        width: 0.07in;
-        height: 0.035in;
-        border-bottom: 2px solid var(--teal);
-        border-left: 2px solid var(--teal);
-        transform: rotate(-45deg);
+      .brand-product {
+        border-left: 1px solid var(--line);
+        padding-left: 0.16in;
       }
 
       .eyebrow {
@@ -150,7 +143,7 @@
         color: var(--teal-dark);
         font-size: 8.5pt;
         font-weight: 700;
-        letter-spacing: 0.08em;
+        letter-spacing: 0;
         text-transform: uppercase;
       }
 
@@ -178,7 +171,7 @@
         border-radius: 999px;
         padding: 0.08in 0.12in;
         color: var(--navy);
-        background: #f6f9f9;
+        background: #eaf8fc;
         font-size: 8pt;
         font-weight: 700;
         text-align: center;
@@ -203,10 +196,10 @@
       .screen {
         position: relative;
         overflow: hidden;
-        border: 1px solid #b8c9cd;
+        border: 1px solid #9eadd2;
         border-radius: 4px;
-        background: #f2f6f6;
-        box-shadow: 0 8px 20px rgba(16, 47, 62, 0.11);
+        background: #f9f5f1;
+        box-shadow: 0 8px 20px rgba(34, 58, 122, 0.11);
       }
 
       .screen img {
@@ -237,17 +230,17 @@
         min-height: 0.92in;
         border-top: 3px solid var(--teal);
         padding: 0.13in 0.15in 0.1in;
-        background: #f7faf9;
+        background: #eaf8fc;
       }
 
       .note.check {
         border-top-color: var(--green);
-        background: #f3fbf6;
+        background: #effcf2;
       }
 
       .note.caution {
         border-top-color: var(--amber);
-        background: #fffaf0;
+        background: #fff8d7;
       }
 
       .note h3 {
@@ -310,7 +303,7 @@
 
       .cover {
         padding-top: 0.48in;
-        background: #f4f8f8;
+        background: #f9f5f1;
       }
 
       .cover-band {
@@ -404,7 +397,7 @@
         min-height: 1.08in;
         border: 1px solid var(--line);
         padding: 0.14in 0.13in 0.12in 0.49in;
-        background: #f8fbfb;
+        background: #eaf8fc;
       }
 
       .journey-step span {
@@ -444,7 +437,7 @@
       .role-box {
         border-top: 4px solid var(--navy);
         padding: 0.14in;
-        background: #f5f8f9;
+        background: #eaf8fc;
       }
 
       .role-box.ai {
@@ -481,8 +474,8 @@
       .check-item {
         position: relative;
         padding: 0.1in 0.12in 0.1in 0.39in;
-        border: 1px solid #bcd5c7;
-        background: #f3fbf6;
+        border: 1px solid #71d990;
+        background: #effcf2;
         color: #315c47;
         font-size: 8pt;
         line-height: 1.35;
@@ -515,7 +508,7 @@
       .detail-layout .screen img {
         height: auto;
         object-fit: contain;
-        background: #edf3f4;
+        background: #f9f5f1;
       }
 
       .detail-copy {
@@ -568,7 +561,7 @@
   <body>
     <section class="page cover">
       <div class="cover-band"></div>
-      <div class="brand"><span class="brand-mark" aria-hidden="true"></span>HELP AI Crediting Companion</div>
+      <div class="brand"><img src="assets/shine-early-learning-logo.png" alt="Shine Early Learning" /><span class="brand-product">HELP® AI Crediting Companion</span></div>
       <div class="eyebrow">Educator workflow guide</div>
       <h1>Educator happy path</h1>
       <p class="cover-deck">From an assigned child and private observation video to a human-approved, read-only assessment record.</p>
@@ -584,7 +577,7 @@
         <span class="cover-note-badge">i</span>
         <span>All names, child identifiers, dates, results, and video content shown here are deterministic sanitized pilot data. Real child data is disabled in the captured environment.</span>
       </div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Educator happy path</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Educator happy path</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -610,7 +603,7 @@
         <div class="role-box final"><h3>Final record</h3><p>Finalization preserves the educator-approved result as a read-only record.</p></div>
       </div>
       <div class="callout"><span><strong>Before starting:</strong> confirm the child is assigned, processing permission is approved, and the observation is a supported MP4, WebM, or MOV file. The local pilot policy accepts one video up to 100 MB and five minutes.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Workflow map</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Workflow map</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -637,7 +630,7 @@
           <div class="callout"><span><strong>Access is provisioned.</strong> There is no public signup path. Contact the pilot administrator when access or assignments are missing.</span></div>
         </div>
       </div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Sign in</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Sign in</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -655,7 +648,7 @@
         <div class="note check"><h3>What to check</h3><p>Confirm the child identifier and context before proceeding. Only currently assigned children should be visible.</p></div>
       </div>
       <div class="callout"><span><strong>Status-aware actions prevent dead ends.</strong> Draft goes to intake, Processing goes to status, Ready for Review goes to review, and In Review resumes unfinished decisions.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Assigned children</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Assigned children</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -673,7 +666,7 @@
         <div class="note check"><h3>What the history tells you</h3><p>Each assessment remains a separate dated record. Finalized observations also show age snapshots and changes from the prior assessment.</p></div>
       </div>
       <div class="callout"><span><strong>Stop if the context is wrong.</strong> Return to Assigned children instead of uploading an observation to the wrong record.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Child record</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Child record</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -691,7 +684,7 @@
         <div class="note check"><h3>Available controls</h3><p>Replace or remove the uploaded video before processing. <strong>Save and exit</strong> keeps the verified draft for later.</p></div>
       </div>
       <div class="callout"><span><strong>Private by default.</strong> The video is available only to the authorized scoring service and assigned educator; it is not a public asset.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Observation upload</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Observation upload</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -709,7 +702,7 @@
         <div class="note check"><h3>What the system does</h3><p>It preserves a processing attempt, validates the result, and exposes review only after an all-or-nothing valid result is ready.</p></div>
       </div>
       <div class="callout"><span><strong>No open browser required.</strong> Closing or leaving this page does not cancel analysis.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Processing</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Processing</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -726,7 +719,7 @@
         <div class="note"><h3>What to do</h3><p>Select <strong>Start review</strong>. Returning to children remains safe if the review must happen later.</p></div>
         <div class="note check"><h3>What to check</h3><p>All four milestones show complete: upload, security, analysis, and review readiness.</p></div>
       </div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Ready for review</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Ready for review</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -738,15 +731,15 @@
       <figure class="screen short-screen">
         <img src="assets/educator-happy-path/07-review-workspace.png" alt="Desktop review workspace with grouped suggestions, video, and editor" />
       </figure>
-      <p class="screen-caption"><strong>At the top:</strong> reviewed progress and Review summary. The list itself shows Present, Emerging, Not observed, and Leave blank groups.</p>
+      <p class="screen-caption"><strong>At the top:</strong> reviewed progress, Review summary, and a prominent Add additional skill action above the grouped suggestions.</p>
       <div class="notes-grid">
         <div class="note"><h3>Use the two-panel workspace</h3><p>Compare the skill suggestion with the observation video and evidence before choosing an educator credit.</p></div>
         <div class="note caution"><h3>AI is not the final scorer</h3><p>AI confidence is model certainty, not an accuracy score. The educator remains responsible for every included or dismissed item.</p></div>
       </div>
       <div class="pill-row">
-        <span class="pill">Accept draft credit</span><span class="pill">Edit / add note</span><span class="pill">Leave blank</span><span class="pill">Change decision</span><span class="pill">Dismiss suggestion</span>
+        <span class="pill">Add additional skill</span><span class="pill">Accept draft credit</span><span class="pill">Edit / add note</span><span class="pill">Leave blank</span><span class="pill">Change decision</span><span class="pill">Dismiss suggestion</span>
       </div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Review workspace</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Review workspace</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -764,7 +757,7 @@
         <div class="note caution"><h3>Model uncertain</h3><p>An uncertain item has no proposed credit. The educator can choose Present, Emerging, Not observed, or Blank; N/A, Atypical, and the O concern flag remain educator-only choices.</p></div>
       </div>
       <div class="callout"><span><strong>Professional judgment wins.</strong> Evidence text helps locate the behavior; it does not replace watching the observation.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Evidence review</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Evidence review</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -779,10 +772,10 @@
       <p class="screen-caption"><strong>Example:</strong> Emerging is selected and the note records that the behavior occurred after the second prompt.</p>
       <div class="notes-grid">
         <div class="note"><h3>What to do</h3><p>Select the final credit, add useful observation context, then choose <strong>Save decision</strong>. Repeat for every suggestion.</p></div>
-        <div class="note check"><h3>Add anything missed</h3><p>Use Add skill AI missed, then choose Domain/section, Strand, Skill, and Credit. The added skill is clearly attributed to the educator.</p></div>
+        <div class="note check"><h3>Add anything missed</h3><p>Use <strong>Add additional skill</strong> above the AI suggestion groups, then choose Domain/section, Strand, Skill, and Credit. The added skill is clearly attributed to the educator.</p></div>
       </div>
       <div class="callout"><span><strong>Do not leave unsaved work.</strong> Internal navigation pauses when edits are pending so the educator can save or deliberately discard them.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Save decisions</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Save decisions</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -800,7 +793,7 @@
         <div class="note check"><h3>Verify decision paths</h3><p>Accepted draft, Overridden, Scored independently, and Dismissed explain how the educator arrived at the result.</p></div>
       </div>
       <div class="callout"><span><strong>Something looks wrong?</strong> Use Return to review. The assessment is still editable until the final confirmation succeeds.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Assessment summary</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Assessment summary</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -817,7 +810,7 @@
         <div class="note"><h3>What to check</h3><p>Read the included skills, confirm notes are appropriate, and make sure dismissed suggestions are not mixed into the included record.</p></div>
         <div class="note check"><h3>Then continue</h3><p>When the list matches the educator's intended assessment, select <strong>Confirm final assessment</strong>.</p></div>
       </div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Final skills</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Final skills</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -840,7 +833,7 @@
           <div class="callout"><span><strong>This is the point of no return.</strong> Do not confirm until the totals and included skills have been checked.</span></div>
         </div>
       </div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Final confirmation</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Final confirmation</span><span class="page-number"></span></div>
     </section>
 
     <section class="page">
@@ -865,7 +858,7 @@
         <div class="check-item">The final totals match the reviewed summary.</div>
       </div>
       <div class="callout"><span><strong>Walkthrough complete.</strong> The workflow has moved from a private observation to an educator-approved record without treating the AI draft as the final assessment.</span></div>
-      <div class="footer"><span>HELP AI Crediting Companion</span><span>Final record</span><span class="page-number"></span></div>
+      <div class="footer"><span class="footer-brand"><img src="assets/shine-early-learning-logo.png" alt="" /><span>HELP®</span></span><span>Final record</span><span class="page-number"></span></div>
     </section>
   </body>
 </html>

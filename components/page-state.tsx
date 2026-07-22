@@ -38,7 +38,7 @@ export function PageState({
       <span className={cn("grid size-[52px] place-items-center rounded-full", presentation.iconClass)}>
         <Icon aria-hidden="true" className={cn("size-6", presentation.spin && "motion-safe:animate-spin")} />
       </span>
-      <h2 className="mt-4 font-heading text-2xl font-normal text-ink">{title}</h2>
+      <h2 className="mt-4 font-heading text-2xl font-bold text-ink">{title}</h2>
       <p className="mt-2 max-w-[560px] leading-relaxed text-muted-foreground">{description}</p>
       {children ? <div className="mt-6 flex flex-wrap justify-center gap-2.5">{children}</div> : null}
     </section>

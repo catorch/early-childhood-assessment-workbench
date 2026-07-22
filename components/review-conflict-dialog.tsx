@@ -43,13 +43,13 @@ export function ReviewConflictDialog({
 }) {
   return (
     <AlertDialog open={Boolean(attempted)} onOpenChange={(open) => !open && onUseCurrent()}>
-      <AlertDialogContent className="max-h-[calc(100vh-2rem)] w-[calc(100%-1.25rem)] max-w-[560px] gap-0 overflow-y-auto rounded-md border border-border-strong bg-surface p-0 shadow-[0_24px_70px_rgba(13,35,47,.26)]">
+      <AlertDialogContent className="max-h-[calc(100vh-2rem)] w-[calc(100%-1.25rem)] max-w-[560px] gap-0 overflow-y-auto rounded-md border border-border-strong bg-surface p-0 shadow-[0_24px_70px_rgba(34,58,122,.26)]">
         <AlertDialogHeader className="grid grid-cols-[auto_1fr] place-items-start gap-3 p-[22px] text-left max-sm:p-[18px_15px]">
           <AlertDialogMedia className="mb-0 size-[38px] rounded-full bg-warning-soft text-warning">
             <AlertTriangle aria-hidden="true" className="size-5" />
           </AlertDialogMedia>
           <div>
-            <AlertDialogTitle className="font-heading text-[21px] font-normal text-ink">Review changed in another session</AlertDialogTitle>
+            <AlertDialogTitle className="font-heading text-[21px] font-bold text-ink">Review changed in another session</AlertDialogTitle>
             <AlertDialogDescription className="mt-1.5 text-[13px] leading-6 text-muted-foreground">
               Your save was paused because a newer decision is already stored. Nothing was overwritten.
             </AlertDialogDescription>

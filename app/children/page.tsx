@@ -63,7 +63,7 @@ export default function ChildrenPage() {
       <header className="flex items-end justify-between gap-6 max-sm:items-start max-sm:flex-col">
         <div>
           <Eyebrow>Educator workspace</Eyebrow>
-          <h1 className="mt-1 font-heading text-4xl font-normal leading-tight text-ink max-sm:text-[30px]">Assigned children</h1>
+          <h1 className="mt-1 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[30px]">Assigned children</h1>
           <p className="mt-2.5 leading-relaxed text-muted-foreground">Only children currently assigned to you are shown.</p>
         </div>
         {children ? <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] font-bold text-muted-foreground max-sm:hidden">{children.length} assigned</span> : null}
@@ -100,7 +100,7 @@ export default function ChildrenPage() {
           const emptyActionLabel = child.processingAllowed ? "Upload observational video" : "View permission";
           return (
             <article className="grid min-h-[104px] grid-cols-[50px_minmax(180px,1fr)_minmax(170px,.8fr)_auto] items-center gap-4 border-b border-border px-2 py-[18px] max-md:grid-cols-[46px_1fr_auto] max-sm:grid-cols-[42px_minmax(0,1fr)_auto] max-sm:gap-2.5 max-sm:px-0 max-sm:py-4" key={child.id}>
-              <div className="grid size-[46px] place-items-center rounded-full border border-[#b8d8d3] bg-accent text-[13px] font-extrabold text-primary-strong max-sm:size-10" aria-hidden="true">{child.externalChildId.split(" ").at(-1)?.slice(-2)}</div>
+              <div className="grid size-[46px] place-items-center rounded-full border border-info-border bg-accent text-[13px] font-extrabold text-primary-strong max-sm:size-10" aria-hidden="true">{child.externalChildId.split(" ").at(-1)?.slice(-2)}</div>
               <div>
                 <h2 className="m-0 text-[17px] font-bold"><Link className="hover:text-primary hover:underline hover:underline-offset-4" href={`/children/${child.id}`}>{child.externalChildId}</Link></h2>
                 <p className="mt-1.5 text-[13px] text-muted-foreground">{child.ageMonths} months{child.contextLabel ? ` · ${child.contextLabel}` : ""}</p>

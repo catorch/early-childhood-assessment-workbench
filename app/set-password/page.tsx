@@ -61,10 +61,10 @@ function SetPasswordForm() {
 
   return (
     <main className="grid min-h-[calc(100vh-62px)] place-items-center px-5 py-12 max-sm:px-3 max-sm:py-6">
-      <section className="w-full max-w-[420px] border border-border bg-surface px-7 py-7 shadow-[0_12px_32px_rgba(24,59,86,.08)] max-sm:px-5 max-sm:py-6" aria-labelledby="set-password-title">
-        <div className="grid size-[38px] place-items-center rounded-md bg-navy text-[#b9d5df]" aria-hidden="true"><KeyRound size={20} /></div>
+      <section className="w-full max-w-[420px] border border-border bg-surface px-7 py-7 shadow-[0_12px_32px_rgba(34,58,122,.1)] max-sm:px-5 max-sm:py-6" aria-labelledby="set-password-title">
+        <div className="grid size-[38px] place-items-center rounded-md bg-navy text-brand-light-blue" aria-hidden="true"><KeyRound size={20} /></div>
         <p className="mt-4 text-[9px] font-extrabold uppercase text-primary-strong">HELP AI Crediting Companion</p>
-        <h1 className="mt-1 font-heading text-[32px] font-normal leading-tight text-ink" id="set-password-title">Set your password</h1>
+        <h1 className="mt-1 font-heading text-[32px] font-bold leading-tight text-ink" id="set-password-title">Set your password</h1>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           {token
             ? `Choose a password with at least ${PASSWORD_MIN_LENGTH} characters to finish setting up your account.`

@@ -510,7 +510,8 @@ test("REVIEW-025: an educator can add and score a skill the AI missed, and it su
 
   const suggestions = page.getByRole("region", { name: "AI skill suggestions" });
   await expect(suggestions.locator("article")).toHaveCount(5);
-  await page.getByRole("button", { name: "Add a skill the AI missed" }).click();
+  await expect(suggestions.getByRole("button", { name: "Add additional skill" })).toBeVisible();
+  await suggestions.getByRole("button", { name: "Add additional skill" }).click();
 
   const addPanel = page.getByRole("region", { name: "Add a skill the AI missed" });
   await addPanel.getByLabel("Domain / section").selectOption({ index: 1 });

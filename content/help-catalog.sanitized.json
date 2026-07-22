@@ -121,6 +121,46 @@
       "minimumAgeMonths": 9,
       "maximumAgeMonths": 30,
       "sourceOrder": 7
+    },
+    {
+      "sourceSkillId": "sandbox-skill-01",
+      "skillCode": "DEMO-01",
+      "skillName": "Fits a shape into a matching opening",
+      "domain": "Cognitive",
+      "strand": "Problem solving",
+      "minimumAgeMonths": 0,
+      "maximumAgeMonths": 36,
+      "sourceOrder": 8
+    },
+    {
+      "sourceSkillId": "sandbox-skill-02",
+      "skillCode": "DEMO-02",
+      "skillName": "Uses two words together",
+      "domain": "Language Expressive",
+      "strand": "Word combinations",
+      "minimumAgeMonths": 0,
+      "maximumAgeMonths": 36,
+      "sourceOrder": 9
+    },
+    {
+      "sourceSkillId": "sandbox-skill-03",
+      "skillCode": "DEMO-03",
+      "skillName": "Turns pages in a board book",
+      "domain": "Fine Motor",
+      "strand": "Book handling",
+      "minimumAgeMonths": 0,
+      "maximumAgeMonths": 36,
+      "sourceOrder": 10
+    },
+    {
+      "sourceSkillId": "sandbox-skill-04",
+      "skillCode": "DEMO-04",
+      "skillName": "Helps put toys away",
+      "domain": "Self-Help",
+      "strand": "Household participation",
+      "minimumAgeMonths": 0,
+      "maximumAgeMonths": 36,
+      "sourceOrder": 11
     }
   ]
 }

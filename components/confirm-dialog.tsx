@@ -45,7 +45,7 @@ export function ConfirmDialog({
   return (
     <AlertDialog open={open} onOpenChange={(nextOpen) => !nextOpen && !pending && onCancel()}>
       <AlertDialogContent
-        className="max-h-[calc(100vh-2rem)] w-[calc(100%-1.25rem)] max-w-[520px] gap-0 overflow-y-auto rounded-md border border-border-strong bg-surface p-0 shadow-[0_24px_70px_rgba(13,35,47,.26)]"
+        className="max-h-[calc(100vh-2rem)] w-[calc(100%-1.25rem)] max-w-[520px] gap-0 overflow-y-auto rounded-md border border-border-strong bg-surface p-0 shadow-[0_24px_70px_rgba(34,58,122,.26)]"
         onCloseAutoFocus={(event) => {
           const returnTarget = returnFocusRef?.current ?? returnFocusRefInternal.current;
           if (!returnTarget?.isConnected) return;
@@ -69,7 +69,7 @@ export function ConfirmDialog({
             <AlertTriangle aria-hidden="true" className="size-5" />
           </AlertDialogMedia>
           <div className="min-w-0">
-            <AlertDialogTitle className="font-heading text-[21px] font-normal text-ink">{title}</AlertDialogTitle>
+            <AlertDialogTitle className="font-heading text-[21px] font-bold text-ink">{title}</AlertDialogTitle>
             <AlertDialogDescription className="mt-1.5 text-[13px] leading-6 text-muted-foreground">{description}</AlertDialogDescription>
           </div>
           <AlertDialogCancel aria-label="Close dialog" disabled={pending} size="icon" variant="outline"><X aria-hidden="true" /></AlertDialogCancel>

@@ -169,6 +169,8 @@ export function ReviewWorkspace() {
   const scrollStorageKey = `help-review:review-scroll:${assessmentId}`;
   const videoRef = useRef<HTMLVideoElement>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
+  const addSkillSectionRef = useRef<HTMLElement>(null);
+  const addDomainSelectRef = useRef<HTMLSelectElement>(null);
   const [data, setData] = useState<ReviewProjection | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -320,6 +322,18 @@ export function ReviewWorkspace() {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previous; };
   }, [mobileEditorOpen]);
+
+  useEffect(() => {
+    if (!addOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      addSkillSectionRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start"
+      });
+      addDomainSelectRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [addOpen]);
 
   const groups = useMemo(() => {
     if (!data) return [];
@@ -528,6 +542,15 @@ export function ReviewWorkspace() {
     setSaveError(null);
   }
 
+  function showAddSkillForm() {
+    if (dirty) {
+      setSaveError("Save or discard the open decision before adding another skill.");
+      return;
+    }
+    setAddError(null);
+    setAddOpen(true);
+  }
+
   function seek(evidenceKey: string, seconds: number) {
     const activeVideo = mobileEditorOpen ? mobileVideoRef.current : videoRef.current;
     if (!activeVideo || videoUnavailable) {
@@ -594,13 +617,13 @@ export function ReviewWorkspace() {
             <div className="flex justify-end gap-2.5"><Skeleton className="h-3 w-[180px]" /><Skeleton className="h-10 w-[120px]" /></div>
           </div>
         </header>
-        <div className="mx-auto mt-[18px] flex min-h-[42px] w-[min(calc(100%_-_40px),1180px)] items-center gap-2 rounded-md border border-info-border bg-info-soft px-3 py-2 text-xs font-bold text-info-strong max-md:w-[min(calc(100%_-_24px),1180px)]"><span className="size-[18px] animate-spin rounded-full border-2 border-[#9cc4d2] border-t-primary" /><span>Loading suggestions, saved decisions, and secure video access...</span></div>
+        <div className="mx-auto mt-[18px] flex min-h-[42px] w-[min(calc(100%_-_40px),1180px)] items-center gap-2 rounded-md border border-info-border bg-info-soft px-3 py-2 text-xs font-bold text-info-strong max-md:w-[min(calc(100%_-_24px),1180px)]"><span className="size-[18px] animate-spin rounded-full border-2 border-info-border border-t-primary" /><span>Loading suggestions, saved decisions, and secure video access...</span></div>
         <div className="mx-auto mt-6 grid w-[min(calc(100%_-_40px),1180px)] grid-cols-[minmax(0,1fr)_390px] items-start gap-6 max-[1000px]:grid-cols-[minmax(300px,.82fr)_minmax(360px,1.18fr)] max-md:w-[min(calc(100%_-_24px),1180px)] max-md:grid-cols-1">
           <section className="overflow-hidden rounded-md border border-border bg-surface px-4 py-2" aria-label="Loading suggestions">
             {Array.from({ length: 7 }, (_, index) => <div className="grid gap-3 border-b border-border py-5 last:border-0" key={index}><Skeleton className="h-3 w-[62%]" /><Skeleton className="h-3 w-[38%]" /><Skeleton className="h-3 w-[78%]" /></div>)}
           </section>
           <aside className="sticky top-5 grid gap-3.5 max-md:static">
-            <div className="grid aspect-video place-items-center rounded-md bg-navy text-[13px] text-[#d9e7eb] motion-safe:animate-pulse"><span>Preparing secure video</span></div>
+            <div className="grid aspect-video place-items-center rounded-md bg-navy text-[13px] text-brand-light-blue motion-safe:animate-pulse"><span>Preparing secure video</span></div>
             <div className="min-h-[310px] rounded-md border border-border bg-surface p-[18px]"><Skeleton className="h-3 w-[110px]" /><Skeleton className="mt-2 h-3 w-[220px]" /><Skeleton className="mt-[18px] h-[120px] w-full" /></div>
           </aside>
         </div>
@@ -617,7 +640,7 @@ export function ReviewWorkspace() {
             <Button asChild aria-label="Back to child" size="icon" variant="outline"><Link href={`/children/${data.child.id}`}><ArrowLeft aria-hidden="true" size={18} /></Link></Button>
             <div className="min-w-0">
               <Eyebrow>Assessment review</Eyebrow>
-              <h1 className="mt-1 font-heading text-[25px] font-normal leading-tight max-md:text-[23px]">Review AI suggestions</h1>
+              <h1 className="mt-1 font-heading text-[25px] font-bold leading-tight max-md:text-[23px]">Review AI suggestions</h1>
               <p className="mt-1 text-xs text-muted-foreground">{data.child.externalChildId} · {data.assessment.ageMonthsAtObservation} months · {formatDate(data.assessment.observationDate)}</p>
               <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground" role="note"><CircleHelp aria-hidden="true" size={13} /> AI confidence is not an accuracy score.</p>
             </div>
@@ -642,7 +665,13 @@ export function ReviewWorkspace() {
       </header>
 
       <div className={cn("mx-auto mt-6 grid w-[min(calc(100%_-_40px),1180px)] grid-cols-[minmax(0,1fr)_390px] items-start gap-6 max-[1000px]:grid-cols-[minmax(300px,.82fr)_minmax(360px,1.18fr)] max-[1000px]:gap-4 max-md:mt-3 max-md:flex max-md:w-[min(calc(100%_-_24px),1180px)] max-md:flex-col max-md:gap-3", mobileEditorOpen && "max-md:m-0 max-md:block max-md:h-full max-md:w-full max-md:p-0")}>
-        <section className={cn("overflow-hidden rounded-md border border-border bg-surface shadow-[0_6px_20px_rgba(24,59,86,.04)] max-md:order-[-1] max-md:w-full max-md:shadow-none", mobileEditorOpen && "max-md:hidden")} aria-label="AI skill suggestions">
+        <section className={cn("overflow-hidden rounded-md border border-border bg-surface shadow-[0_6px_20px_rgba(34,58,122,.07)] max-md:order-[-1] max-md:w-full max-md:shadow-none", mobileEditorOpen && "max-md:hidden")} aria-label="AI skill suggestions">
+          {data.availableSkills.length > 0 && data.assessment.status !== "FINALIZED" ? (
+            <div className="flex min-h-[62px] items-center justify-between gap-4 border-b-8 border-canvas bg-info-soft px-4 py-3 max-sm:items-start max-sm:flex-col max-sm:gap-2.5 max-sm:px-3.5">
+              <strong className="flex items-center gap-2.5 text-sm text-navy"><span className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-yellow text-navy"><Plus aria-hidden="true" size={16} strokeWidth={2.5} /></span>Did the AI miss a skill?</strong>
+              <Button aria-controls="add-missed-skill-panel" aria-expanded={addOpen} className="max-sm:w-full" onClick={showAddSkillForm} size="sm" type="button"><Plus aria-hidden="true" size={15} /> Add additional skill</Button>
+            </div>
+          ) : null}
           {groups.map((group) => (
             <section className="border-t-8 border-canvas first:border-t-0" key={group.key}>
               <header className={cn("flex min-h-[50px] items-center justify-between gap-4 border-b border-border bg-surface-soft px-4 py-2.5 text-navy max-[1000px]:items-start max-[1000px]:flex-col max-[1000px]:gap-1 max-md:px-3.5 max-md:py-3", group.key === "LEAVE_BLANK" && "border-l-4 border-l-warning bg-warning-soft")}>
@@ -658,7 +687,7 @@ export function ReviewWorkspace() {
                 const isExpanded = expanded.has(suggestion.id);
                 const confidence = suggestion.source === "MODEL" ? confidenceLabel(suggestion.confidence) : null;
                 return (
-                  <article className={cn("relative border-b border-border p-4 last:border-b-0 max-md:px-3.5 max-md:py-4", selectedId === suggestion.id && "bg-[#f7fcfb] shadow-[inset_4px_0_0_var(--primary)]")} key={suggestion.id}>
+                  <article className={cn("relative border-b border-border p-4 last:border-b-0 max-md:px-3.5 max-md:py-4", selectedId === suggestion.id && "bg-info-soft shadow-[inset_4px_0_0_var(--primary)]")} key={suggestion.id}>
                     <button className="block w-full bg-transparent p-0 text-left" onClick={() => selectSuggestion(suggestion)} type="button">
                       <span className="flex items-baseline gap-2.5 max-md:items-start"><span className="text-[13px] font-extrabold text-muted-foreground">{suggestion.skillCode}</span><strong className="font-heading text-[17px] leading-snug text-navy max-md:text-base">{suggestion.skillName}</strong></span>
                       <span className="mt-1 block text-xs text-muted-foreground">{suggestion.domain}{suggestion.strand ? ` · ${suggestion.strand}` : ""}</span>
@@ -713,7 +742,7 @@ export function ReviewWorkspace() {
                         {isExpanded ? <ChevronDown aria-hidden="true" size={15} /> : <ChevronRight aria-hidden="true" size={15} />} {aiReasonTitle(suggestion)}
                       </button>
                       {isExpanded ? (
-                        <div className="mt-2 border-l-2 border-[#9fcac4] py-0.5 pl-3">
+                        <div className="mt-2 border-l-2 border-info-border py-0.5 pl-3">
                           {suggestion.uncertaintyReason ? <p className="my-1.5 text-xs leading-relaxed text-muted-foreground">{suggestion.uncertaintyReason}</p> : null}
                           {suggestion.evidence.map((evidence, index) => {
                             const evidenceKey = `${suggestion.id}-${index}`;
@@ -728,7 +757,7 @@ export function ReviewWorkspace() {
             </section>
           ))}
           {data.availableSkills.length > 0 && data.assessment.status !== "FINALIZED" ? (
-            <section aria-label="Add a skill the AI missed" className="border-t-8 border-canvas first:border-t-0">
+            <section aria-label="Add a skill the AI missed" className="scroll-mt-4 border-t-8 border-canvas first:border-t-0" id="add-missed-skill-panel" ref={addSkillSectionRef}>
               {addOpen ? (
                 <div className="grid gap-3 p-4 max-md:px-3.5">
                   <div className="flex items-center justify-between gap-3">
@@ -748,6 +777,7 @@ export function ReviewWorkspace() {
                         setAddSkillId("");
                         setAddCredit(null);
                       }}
+                      ref={addDomainSelectRef}
                       value={addDomain}
                     >
                       <option value="">Choose a domain or section...</option>
@@ -790,7 +820,7 @@ export function ReviewWorkspace() {
                 </div>
               ) : (
                 <div className="p-4 max-md:px-3.5">
-                  <Button onClick={() => setAddOpen(true)} type="button" variant="secondary"><Plus aria-hidden="true" size={15} /> Add a skill the AI missed</Button>
+                  <Button onClick={showAddSkillForm} type="button" variant="secondary"><Plus aria-hidden="true" size={15} /> Add a skill the AI missed</Button>
                 </div>
               )}
             </section>
@@ -798,7 +828,7 @@ export function ReviewWorkspace() {
         </section>
 
         <aside className={cn("sticky top-5 grid gap-3.5 max-md:static max-md:contents", mobileEditorOpen && "max-md:block max-md:h-full max-md:w-full")}>
-          <section className={cn("overflow-hidden rounded-md border border-border bg-surface shadow-[0_6px_20px_rgba(24,59,86,.04)] max-md:order-[-3] max-md:ml-[-12px] max-md:w-[calc(100%+24px)] max-md:rounded-none max-md:border-x-0", mobileEditorOpen && "max-md:hidden")}>
+          <section className={cn("overflow-hidden rounded-md border border-border bg-surface shadow-[0_6px_20px_rgba(34,58,122,.07)] max-md:order-[-3] max-md:ml-[-12px] max-md:w-[calc(100%+24px)] max-md:rounded-none max-md:border-x-0", mobileEditorOpen && "max-md:hidden")}>
             {data.video && !videoUnavailable ? (
               <video
                 className="block aspect-video w-full bg-navy object-contain"
@@ -817,9 +847,9 @@ export function ReviewWorkspace() {
               </video>
             ) : (
               <div className="grid aspect-video w-full place-items-center content-center gap-2 bg-navy p-5 text-center text-white">
-                <CircleHelp aria-hidden="true" className="size-[34px] text-[#b9d5df]" />
+                <CircleHelp aria-hidden="true" className="size-[34px] text-brand-light-blue" />
                 <strong className="text-base">Video access unavailable</strong>
-                <span className="max-w-[290px] text-xs leading-relaxed text-[#d8e6eb]">Restore secure access to continue playback. Your review changes are still here.</span>
+                <span className="max-w-[290px] text-xs leading-relaxed text-brand-light-blue">Restore secure access to continue playback. Your review changes are still here.</span>
                 {data.video ? <Button onClick={() => void restoreVideo()} size="sm" type="button"><RefreshCw aria-hidden="true" size={15} /> Restore video access</Button> : null}
               </div>
             )}
@@ -827,7 +857,7 @@ export function ReviewWorkspace() {
           </section>
 
           {selected ? (
-            <section className={cn("overflow-hidden rounded-md border border-border bg-surface p-[18px] shadow-[0_6px_20px_rgba(24,59,86,.04)] max-md:hidden", mobileEditorOpen && "max-md:block max-md:h-full max-md:w-full max-md:overflow-y-auto max-md:rounded-none max-md:border-0 max-md:px-4 max-md:pt-0 max-md:pb-6 max-md:shadow-none")} id="review-editor" aria-labelledby="editor-title">
+            <section className={cn("overflow-hidden rounded-md border border-border bg-surface p-[18px] shadow-[0_6px_20px_rgba(34,58,122,.07)] max-md:hidden", mobileEditorOpen && "max-md:block max-md:h-full max-md:w-full max-md:overflow-y-auto max-md:rounded-none max-md:border-0 max-md:px-4 max-md:pt-0 max-md:pb-6 max-md:shadow-none")} id="review-editor" aria-labelledby="editor-title">
               <div className="sticky top-0 z-[3] -mx-4 mb-5 hidden grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-white/98 px-4 py-3.5 max-md:grid">
                 <button className="inline-flex items-center gap-1 bg-transparent p-0 text-[11px] font-extrabold text-navy" onClick={closeMobileEditor} type="button"><ArrowLeft aria-hidden="true" className="size-[18px]" /> Back to items</button>
                 <strong className="whitespace-nowrap text-center font-heading text-[17px] text-navy">Review {selected.skillCode}</strong>
@@ -859,7 +889,7 @@ export function ReviewWorkspace() {
                 <Eyebrow>Review {selected.skillCode}</Eyebrow>
                 {selectedDecision ? <Badge className={decisionBadgeClass(selectedDecision)} variant="outline">{selectedDecision.dismissed ? <X aria-hidden="true" /> : <Check aria-hidden="true" />}{decisionLabel(selectedDecision)}</Badge> : <Badge variant="secondary">Not reviewed</Badge>}
               </div>
-              <h2 className="mt-1 mb-2 font-heading text-[19px] font-normal leading-snug max-md:mt-2 max-md:text-[27px]" id="editor-title">{selected.skillName}</h2>
+              <h2 className="mt-1 mb-2 font-heading text-[19px] font-bold leading-snug max-md:mt-2 max-md:text-[27px]" id="editor-title">{selected.skillName}</h2>
               <div className="flex items-center gap-1 text-xs text-primary-strong max-md:text-sm"><span>{selected.domain}{selected.strand ? ` · ${selected.strand}` : ""}</span></div>
               {selected.source === "MODEL" ? (
                 <>
@@ -868,7 +898,7 @@ export function ReviewWorkspace() {
                   {selected.draftCredit ? <Badge variant="info">{creditPresentation[selected.draftCredit].symbol} {creditPresentation[selected.draftCredit].label}</Badge> : <Badge variant="warning">No draft credit</Badge>}
                   <ConfidenceIndicator label={confidenceLabel(selected.confidence)} />
                 </div>
-                <section aria-label={aiReasonTitle(selected)} className="mt-3 border-l-2 border-[#9fcac4] py-0.5 pl-3 max-md:mt-5">
+                <section aria-label={aiReasonTitle(selected)} className="mt-3 border-l-2 border-info-border py-0.5 pl-3 max-md:mt-5">
                   <strong className="block text-xs text-navy">{aiReasonTitle(selected)}</strong>
                   {selected.uncertaintyReason ? <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{selected.uncertaintyReason}</p> : null}
                   <div className="mt-2 grid gap-2">
@@ -981,7 +1011,7 @@ function groupDotClass(group: ReviewGroup): string {
 
 function decisionBadgeClass(decision: SavedReviewDecision): string {
   if (decision.dismissed) return "border-border bg-surface-soft text-muted-foreground";
-  if (decision.origin === "ACCEPTED" || decision.origin === "SCORED_INDEPENDENTLY" || decision.origin === "MANUALLY_ADDED") return "border-[#b8d8d3] bg-accent text-primary-strong";
+  if (decision.origin === "ACCEPTED" || decision.origin === "SCORED_INDEPENDENTLY" || decision.origin === "MANUALLY_ADDED") return "border-info-border bg-accent text-primary-strong";
   if (decision.origin === "OVERRIDDEN") return "border-warning-border bg-warning-soft text-warning-strong";
   return "border-border bg-surface-soft text-muted-foreground";
 }

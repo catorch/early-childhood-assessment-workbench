@@ -76,7 +76,7 @@ jobs:
           HELP_REVIEW_APP_ORIGIN: https://ci.help-review.dev
           HELP_REVIEW_HELP_CATALOG_PATH: content/help-catalog.sanitized.json
           HELP_REVIEW_HELP_CATALOG_VERSION: help-2-provisional-2026-07
-          HELP_REVIEW_HELP_CATALOG_SHA256: 7d604579d6c8f8fdf5ac0f3d0ef0643a1d4479806d6d6be38cb1bc2f92c451d2
+          HELP_REVIEW_HELP_CATALOG_SHA256: 751598ed635e3bde0cc4924a8f90eea0fc0762b568dab0b43d77606c37d070fe
           NEXT_PUBLIC_HELP_REVIEW_SUPPORT_EMAIL: ci-support@help-review.dev
           GCS_VIDEO_BUCKET: ci-private-video-bucket
           GOOGLE_CLOUD_PROJECT: help-review-ci

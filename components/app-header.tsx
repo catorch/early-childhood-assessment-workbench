@@ -1,6 +1,7 @@
 "use client";
 
-import { CircleHelp, ClipboardCheck, ClipboardList, LogOut, ShieldCheck, UsersRound } from "lucide-react";
+import { CircleHelp, ClipboardList, ListChecks, LogOut, ShieldCheck, UsersRound } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -40,7 +41,7 @@ export function AppHeader() {
   }
 
   const navClass = (active: boolean) => cn(
-    "flex min-h-[42px] items-center gap-2 border-b-2 border-transparent px-3 text-sm font-bold text-muted-foreground no-underline transition-colors hover:text-navy max-sm:px-2 max-sm:text-xs max-sm:[&_svg]:hidden",
+    "flex min-h-[42px] items-center gap-2 border-b-2 border-transparent px-3 text-sm font-bold text-muted-foreground no-underline transition-colors hover:text-navy max-sm:w-10 max-sm:justify-center max-sm:px-0",
     active && "border-primary text-primary-strong"
   );
 
@@ -49,28 +50,34 @@ export function AppHeader() {
       <div className={cn("bg-navy text-center text-xs font-bold text-white", isSignIn ? "h-2 overflow-hidden" : "min-h-7 px-4 py-1.5 max-sm:min-h-6 max-sm:px-2 max-sm:py-1 max-sm:text-[10px]")} role="status">
         <span className={cn(isSignIn && "sr-only")}>Sanitized pilot sandbox. Real child data is disabled.</span>
       </div>
-      <header className="relative z-30 border-b border-border bg-white/98">
+      <header className="relative z-30 border-b border-border bg-canvas">
         <div className={cn("mx-auto flex items-center gap-6", isSignIn ? "min-h-[54px] w-full justify-center" : "min-h-[66px] w-[min(calc(100%-40px),1180px)] justify-between max-sm:min-h-[58px] max-sm:w-[min(calc(100%-24px),1120px)] max-sm:gap-2")}>
-          <Link
-            className={cn("inline-flex items-center gap-2 font-heading font-bold text-navy no-underline", isSignIn ? "text-[17px]" : "text-xl max-sm:text-[17px]")}
-            href={visibleUser?.role === "ADMIN" ? "/admin/access" : visibleUser ? "/children" : "/"}
-          >
-            <ClipboardCheck aria-hidden="true" className="text-primary" size={isSignIn ? 18 : 22} strokeWidth={2.2} />
-            <span className="max-sm:hidden">HELP AI Crediting Companion</span>
-            <span className="hidden max-sm:inline">HELP AI Companion</span>
+          <Link className="inline-flex min-w-0 items-center gap-3 text-navy no-underline" href={visibleUser?.role === "ADMIN" ? "/admin/access" : visibleUser ? "/children" : "/"}>
+            <Image
+              alt="Shine Early Learning"
+              className="h-10 w-auto shrink-0"
+              height={345}
+              priority
+              src="/brand/shine-early-learning-logo.png"
+              width={1007}
+            />
+            <span className={cn("border-l border-border-strong pl-3 font-heading text-[15px] font-bold leading-[1.05]", !isSignIn && "max-[900px]:hidden")}>
+              <span className="block">HELP®</span>
+              <span className="mt-1 block font-sans text-[10px] font-semibold leading-none text-muted-foreground">AI Crediting Companion</span>
+            </span>
           </Link>
           {visibleUser ? (
             <div className="flex items-center gap-2 max-sm:gap-1">
               <nav aria-label="Primary navigation" className="flex self-stretch">
                 {visibleUser.role === "EDUCATOR" ? (
                   <>
-                    <Link aria-current={pathname.startsWith("/children") ? "page" : undefined} className={navClass(pathname.startsWith("/children"))} href="/children"><UsersRound aria-hidden="true" size={17} />Children</Link>
-                    <Link aria-current={pathname.startsWith("/assessments") ? "page" : undefined} className={navClass(pathname.startsWith("/assessments"))} href="/assessments"><ClipboardList aria-hidden="true" size={17} />Assessments</Link>
+                    <Link aria-current={pathname.startsWith("/children") ? "page" : undefined} aria-label="Children" className={navClass(pathname.startsWith("/children"))} href="/children"><UsersRound aria-hidden="true" size={18} /><span className="max-sm:sr-only">Children</span></Link>
+                    <Link aria-current={pathname.startsWith("/assessments") ? "page" : undefined} aria-label="Assessments" className={navClass(pathname.startsWith("/assessments"))} href="/assessments"><ClipboardList aria-hidden="true" size={18} /><span className="max-sm:sr-only">Assessments</span></Link>
                   </>
                 ) : (
                   <>
-                    <Link aria-current={pathname === "/admin/access" ? "page" : undefined} className={navClass(pathname === "/admin/access")} href="/admin/access"><ShieldCheck aria-hidden="true" size={17} />Access</Link>
-                    <Link aria-current={pathname === "/admin/jobs" ? "page" : undefined} className={navClass(pathname === "/admin/jobs")} href="/admin/jobs">Jobs</Link>
+                    <Link aria-current={pathname === "/admin/access" ? "page" : undefined} aria-label="Access" className={navClass(pathname === "/admin/access")} href="/admin/access"><ShieldCheck aria-hidden="true" size={18} /><span className="max-sm:sr-only">Access</span></Link>
+                    <Link aria-current={pathname === "/admin/jobs" ? "page" : undefined} aria-label="Jobs" className={navClass(pathname === "/admin/jobs")} href="/admin/jobs"><ListChecks aria-hidden="true" size={18} /><span className="max-sm:sr-only">Jobs</span></Link>
                   </>
                 )}
               </nav>
