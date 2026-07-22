@@ -24,7 +24,7 @@ interface StatusProjection {
   readonly run: { readonly attempt: number; readonly status: string; readonly safeErrorCode: string | null; readonly requestedAt: string; readonly completedAt: string | null } | null;
   readonly error: { readonly title: string; readonly description: string; readonly retryable: boolean } | null;
   readonly suggestionCount: number;
-  readonly needsReviewCount: number;
+  readonly blankSuggestionCount: number;
 }
 
 export default function ProcessingPage() {
@@ -105,7 +105,7 @@ export default function ProcessingPage() {
         </ol>
 
         <div className="mx-auto flex max-w-[520px] items-center gap-3 rounded-md border border-border bg-surface p-3 text-left"><FileVideo2 aria-hidden="true" className="shrink-0 text-primary" /><span className="grid min-w-0 gap-1"><strong className="truncate">{assessment.video?.originalFilename ?? "Video unavailable"}</strong><small className="text-xs text-muted-foreground">{assessment.video ? `${(assessment.video.byteSize / 1024 / 1024).toFixed(1)} MB` : "No available asset"} · updated {formatDateTime(assessment.updatedAt)}</small></span></div>
-        {ready ? <div className="mx-auto mt-4 grid max-w-[520px] grid-cols-2 divide-x divide-border rounded-md border border-border bg-surface max-sm:divide-x-0 max-sm:divide-y"><span className="grid gap-1 p-3 text-xs text-muted-foreground"><strong className="text-xl text-ink">{assessment.suggestionCount}</strong> skill suggestions</span><span className="grid gap-1 p-3 text-xs text-muted-foreground"><strong className="text-xl text-ink">{assessment.needsReviewCount}</strong> need independent review</span></div> : null}
+        {ready ? <div className="mx-auto mt-4 grid max-w-[520px] grid-cols-2 divide-x divide-border rounded-md border border-border bg-surface max-sm:divide-x-0 max-sm:divide-y"><span className="grid gap-1 p-3 text-xs text-muted-foreground"><strong className="text-xl text-ink">{assessment.suggestionCount}</strong> skill suggestions</span><span className="grid gap-1 p-3 text-xs text-muted-foreground"><strong className="text-xl text-ink">{assessment.blankSuggestionCount}</strong> left blank by AI</span></div> : null}
         {error ? <Alert className="mt-5 text-left" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
         <div className="mt-6 flex flex-wrap justify-center gap-2.5 max-sm:flex-col">
           <Button asChild className="max-sm:w-full" variant="secondary"><Link href="/children">Return to children</Link></Button>

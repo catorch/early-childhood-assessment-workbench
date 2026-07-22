@@ -135,7 +135,7 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
             <Button asChild><Link href={`/assessments/${assessmentId}/review`}><ArrowLeft aria-hidden="true" size={16} /> Return to review</Link></Button>
           </section>
         ) : (
-          <section className="flex items-center gap-3 border-y border-success-border bg-success-soft px-1 py-4 text-success"><CheckCircle2 aria-hidden="true" className="shrink-0" /><div><h2 className="font-bold text-ink">{finalView ? "Final educator decisions" : "All items are actioned"}</h2><p className="mt-1 text-sm text-muted-foreground">{finalView ? "This record is read-only." : "Review the totals and included skills before confirming."}</p></div></section>
+          <section className="flex items-center gap-3 border-y border-success-border bg-success-soft px-1 py-4 text-success"><CheckCircle2 aria-hidden="true" className="shrink-0" /><div><h2 className="font-bold text-ink">{finalView ? "Final educator decisions" : "All items are reviewed"}</h2><p className="mt-1 text-sm text-muted-foreground">{finalView ? "This record is read-only." : "Review the totals and included skills before confirming."}</p></div></section>
         )}
 
         <SummarySection eyebrow="Coverage" id="coverage-title" title="Assessment coverage">

@@ -175,6 +175,15 @@ test("CHILD-010: repeated finalized assessments retain age snapshots and compare
   await expect(page.getByText("In review", { exact: true })).toBeVisible();
 });
 
+test("CHILD-011: one finalized assessment explains why no comparison is shown", async ({ page }) => {
+  await resetScreenFixture(page, "02");
+  await signIn(page);
+  await page.goto("/children/child-1024");
+
+  await expect(page.getByRole("heading", { name: "Finalized assessments" })).toBeVisible();
+  await expect(page.getByText("No earlier finalized assessment is available for comparison.", { exact: true })).toBeVisible();
+});
+
 test("CHILD-002 and CHILD-006: child loading and recovery never expose stale assignments", async ({ page }) => {
   await resetScreenFixture(page, "02");
   await signIn(page);
@@ -364,6 +373,16 @@ test("PROCESS-002 and PROCESS-003: processing refreshes automatically and on dem
   const beforeManualRefresh = statusRequests;
   await page.getByRole("button", { name: "Refresh status" }).click();
   await expect.poll(() => statusRequests).toBeGreaterThan(beforeManualRefresh);
+});
+
+test("PROCESS-008: ready state distinguishes AI blanks without implying other suggestions skip review", async ({ page }) => {
+  await resetScreenFixture(page, "22");
+  await signIn(page);
+  await page.goto("/assessments/assessment-ready/processing");
+
+  await expect(page.getByText("skill suggestions", { exact: false })).toBeVisible();
+  await expect(page.getByText("left blank by AI", { exact: false })).toBeVisible();
+  await expect(page.getByText("need independent review", { exact: true })).toHaveCount(0);
 });
 
 test("PROCESS-007: eligible retry creates a new current attempt without false success", async ({ page }) => {
@@ -658,6 +677,7 @@ test("SUMMARY-005 and SUMMARY-006: final items stay reconciled and finalization 
   expect(dismissResponse.ok()).toBe(true);
   await page.goto("/assessments/assessment-complete/summary");
 
+  await expect(page.getByRole("heading", { name: "All items are reviewed" })).toBeVisible();
   const finalSkills = page.getByRole("region", { name: "Final skills" });
   await expect(finalSkills.locator("article")).toHaveCount(7);
   await expect(finalSkills.getByText(/Accepted draft|Overridden|Scored independently/).first()).toBeVisible();

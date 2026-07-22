@@ -199,7 +199,7 @@ export function createAssessmentService(dependencies: AssessmentServiceDependenc
           run: run ? clientProcessingRun(run) : null,
           error: assessment.status === "FAILED" ? safeProcessingError(run?.safeErrorCode ?? null) : null,
           suggestionCount: assessment.suggestions.length,
-          needsReviewCount: assessment.suggestions.filter((suggestion) => suggestion.draftCredit === null).length,
+          blankSuggestionCount: assessment.suggestions.filter((suggestion) => suggestion.draftCredit === null).length,
           ready: ["READY_FOR_REVIEW", "IN_REVIEW", "FINALIZED"].includes(assessment.status)
         };
       });

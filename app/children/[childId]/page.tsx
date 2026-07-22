@@ -104,7 +104,7 @@ function ChildProgress({ assessments }: { readonly assessments: readonly Finaliz
             {changed.map(({ skill, previous: prior, current: latest }) => <div className="grid min-w-[560px] grid-cols-[1fr_120px_120px] border-t border-border bg-surface px-3 py-2.5 text-sm" key={skill.sourceSkillId} role="row"><span className="grid gap-0.5" role="cell"><span><strong className="mr-2 text-xs text-muted-foreground">{skill.skillCode}</strong>{skill.skillName}</span><small className="text-xs text-muted-foreground">{skill.domain}{skill.strand ? ` · ${skill.strand}` : ""}</small></span><span role="cell">{prior ? creditPresentation[prior.finalCredit].shortLabel : "Not included"}</span><span className="font-bold" role="cell">{latest ? creditPresentation[latest.finalCredit].shortLabel : "Not included"}</span></div>)}
           </div> : <p className="mt-2 text-sm text-muted-foreground">No credit or inclusion changes between the latest two assessments.</p>}
         </div>
-      ) : null}
+      ) : <p className="mt-4 text-sm text-muted-foreground">No earlier finalized assessment is available for comparison.</p>}
     </section>
   );
 }
