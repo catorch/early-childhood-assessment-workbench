@@ -7,7 +7,7 @@ import { createFakeScoringResult } from "./fake-scoring";
 import { createSanitizedPilotState } from "./fixtures";
 import type { PilotAssessment, PilotState, ProcessingRun, StoredVideo } from "./models";
 
-export const SCREEN_IDS = Array.from({ length: 45 }, (_, index) => String(index + 1).padStart(2, "0"));
+export const SCREEN_IDS = Array.from({ length: 47 }, (_, index) => String(index + 1).padStart(2, "0"));
 export const SCREEN_STRESS_SCENARIOS = ["long-skill", "dense-results", "long-email", "localized-label", "manual-add"] as const;
 export type ScreenStressScenario = typeof SCREEN_STRESS_SCENARIOS[number];
 

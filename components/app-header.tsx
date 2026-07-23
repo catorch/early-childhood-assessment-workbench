@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleHelp, ClipboardList, ListChecks, LogOut, ShieldCheck, UsersRound } from "lucide-react";
+import { BookOpenText, CircleHelp, ClipboardList, ListChecks, LogOut, ShieldCheck, UsersRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -77,6 +77,8 @@ export function AppHeader() {
                 ) : (
                   <>
                     <Link aria-current={pathname === "/admin/access" ? "page" : undefined} aria-label="Access" className={navClass(pathname === "/admin/access")} href="/admin/access"><ShieldCheck aria-hidden="true" size={18} /><span className="max-sm:sr-only">Access</span></Link>
+                    <Link aria-current={pathname === "/admin/children" ? "page" : undefined} aria-label="Children" className={navClass(pathname === "/admin/children")} href="/admin/children"><UsersRound aria-hidden="true" size={18} /><span className="max-sm:sr-only">Children</span></Link>
+                    <Link aria-current={pathname === "/admin/catalog" ? "page" : undefined} aria-label="Catalogue" className={navClass(pathname === "/admin/catalog")} href="/admin/catalog"><BookOpenText aria-hidden="true" size={18} /><span className="max-sm:sr-only">Catalogue</span></Link>
                     <Link aria-current={pathname === "/admin/jobs" ? "page" : undefined} aria-label="Jobs" className={navClass(pathname === "/admin/jobs")} href="/admin/jobs"><ListChecks aria-hidden="true" size={18} /><span className="max-sm:sr-only">Jobs</span></Link>
                   </>
                 )}

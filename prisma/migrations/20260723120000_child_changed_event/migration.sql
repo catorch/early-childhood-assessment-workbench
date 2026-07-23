@@ -1,0 +1,1 @@
+ALTER TYPE "SupportEventType" ADD VALUE 'CHILD_CHANGED';

@@ -6,7 +6,8 @@ export type ScreenMode =
   | "review" | "review-save-failure" | "review-video-unavailable" | "review-conflict" | "review-no-results" | "review-loading" | "review-editor"
   | "summary-complete" | "summary-incomplete" | "final"
   | "admin-access" | "admin-access-empty" | "admin-access-error" | "admin-deactivate" | "admin-unassign"
-  | "admin-jobs" | "admin-jobs-empty" | "admin-jobs-error" | "admin-retry";
+  | "admin-jobs" | "admin-jobs-empty" | "admin-jobs-error" | "admin-retry"
+  | "admin-children" | "admin-catalog";
 
 export interface ScreenCatalogEntry {
   readonly id: string;
@@ -64,5 +65,7 @@ export const screenCatalog: readonly ScreenCatalogEntry[] = [
   { id: "42", name: "tablet-review-workspace", mode: "review", viewport: tablet },
   { id: "43", name: "tablet-summary", mode: "summary-complete", viewport: tablet },
   { id: "44", name: "review-loading", mode: "review-loading", viewport: desktop },
-  { id: "45", name: "admin-jobs-load-error", mode: "admin-jobs-error", viewport: desktop }
+  { id: "45", name: "admin-jobs-load-error", mode: "admin-jobs-error", viewport: desktop },
+  { id: "46", name: "admin-children-roster", mode: "admin-children", viewport: desktop },
+  { id: "47", name: "admin-skills-catalogue", mode: "admin-catalog", viewport: desktop }
 ];

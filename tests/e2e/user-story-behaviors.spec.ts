@@ -813,3 +813,86 @@ test("ADMIN-JOBS-009: retry failure remains actionable and success can be dismis
   await success.getByRole("button", { name: "Dismiss message" }).click();
   await expect(success).toHaveCount(0);
 });
+
+test("ADMIN-CHILDREN-001: children can be added, assigned, edited, and deactivated from the admin roster", async ({ page }) => {
+  await resetScreenFixture(page, "46");
+  await signIn(page, "Casey Rivera");
+  await page.goto("/admin/children");
+  await expect(page.getByRole("heading", { name: "Children", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Add child", exact: true }).click();
+  const addForm = page.locator("#add-child-form");
+  await addForm.getByLabel("Child identifier").fill("Child 2001");
+  await addForm.getByLabel("Age (months)").fill("14");
+  await addForm.getByLabel("Support context").selectOption("IFSP");
+  await addForm.getByRole("button", { name: "Add child", exact: true }).click();
+  await expect(page.getByText("Child 2001 was added", { exact: false })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Child 2001" })).toBeVisible();
+
+  const editor = page.getByRole("region", { name: "Child 2001" });
+  await expect(editor.getByText("0 active", { exact: true })).toBeVisible();
+  await editor.getByRole("button", { name: "Assign", exact: true }).first().click();
+  await expect(editor.getByText("1 active", { exact: true })).toBeVisible();
+
+  await editor.getByRole("button", { name: "Edit", exact: true }).click();
+  const editFormFields = page.locator("#edit-child-form");
+  await editFormFields.getByLabel("Age (months)").fill("15");
+  await editFormFields.getByRole("button", { name: "Save changes" }).click();
+  await expect(editor.getByText("15 months", { exact: false }).first()).toBeVisible();
+
+  await editor.getByRole("button", { name: "Deactivate", exact: true }).click();
+  const dialog = page.getByRole("alertdialog");
+  await expect(dialog).toContainText("Child 2001");
+  await dialog.getByRole("button", { name: "Deactivate child" }).click();
+  await expect(editor.getByText("Roster status: inactive")).toBeVisible();
+  await expect(editor.getByRole("button", { name: "Reactivate" })).toBeVisible();
+});
+
+test("ADMIN-CHILDREN-002: roster CSV import previews before applying and reports invalid files", async ({ page }) => {
+  await resetScreenFixture(page, "46");
+  await signIn(page, "Casey Rivera");
+  await page.goto("/admin/children");
+
+  await page.getByRole("button", { name: "Import roster CSV" }).click();
+  const header = "child_external_id,age_months,support_context,context_label,processing_allowed,child_active,educator_email,assignment_active";
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "roster.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(`${header}\nChild 3001,10,NONE_REPORTED,,true,true,alex.educator@example.test,true\nChild 3002,22,IFSP,IFSP: Yes,false,true,,\n`)
+  });
+  await expect(page.getByText("roster.csv is valid — 2 rows.")).toBeVisible();
+  await page.getByRole("button", { name: "Apply import" }).click();
+  const dialog = page.getByRole("alertdialog");
+  await expect(dialog).toContainText("2 roster rows");
+  await dialog.getByRole("button", { name: "Apply roster import" }).click();
+  await expect(page.getByText("Roster import applied: 2 added", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Child 3001/ })).toBeVisible();
+
+  await page.getByRole("button", { name: "Import roster CSV" }).click();
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "broken.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(`${header}\nChild 3003,not-a-number,NONE_REPORTED,,true,true,,\n`)
+  });
+  await expect(page.getByText("The CSV did not pass validation. Nothing was imported.")).toBeVisible();
+  await expect(page.getByText("Row 2:", { exact: false })).toBeVisible();
+});
+
+test("ADMIN-CATALOG-001: the skills catalogue is browsable and searchable", async ({ page }) => {
+  await resetScreenFixture(page, "47");
+  await signIn(page, "Casey Rivera");
+  await page.goto("/admin/catalog");
+
+  await expect(page.getByRole("heading", { name: "Skills catalogue", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "help-2-provisional-2026-07" })).toBeVisible();
+  await expect(page.getByText("Sanitized fixture")).toBeVisible();
+  await expect(page.getByText("12 of 12 skills shown")).toBeVisible();
+
+  await page.getByRole("searchbox", { name: "Search skills" }).fill("rings");
+  await expect(page.getByText("1 of 12 skills shown")).toBeVisible();
+  await expect(page.getByText("Stacks rings on post in any order")).toBeVisible();
+
+  await page.getByRole("searchbox", { name: "Search skills" }).fill("");
+  await page.getByLabel("Filter by domain").selectOption("Cognitive");
+  await expect(page.getByText("Looks for object that has fallen out of sight")).toBeVisible();
+});

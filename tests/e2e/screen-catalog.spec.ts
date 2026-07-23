@@ -98,6 +98,14 @@ async function openScreen(page: Page, mode: ScreenMode) {
   if (mode === "admin-unassign") {
     await page.getByRole("button", { name: "Remove", exact: true }).first().click();
   }
+  if (mode === "admin-children") {
+    await page.goto("/admin/children");
+    await expect(page.getByRole("heading", { name: "Children", exact: true })).toBeVisible();
+  }
+  if (mode === "admin-catalog") {
+    await page.goto("/admin/catalog");
+    await expect(page.getByRole("heading", { name: "Skills catalogue", exact: true })).toBeVisible();
+  }
   if (["admin-jobs", "admin-jobs-empty", "admin-jobs-error", "admin-retry"].includes(mode)) {
     if (mode === "admin-jobs-empty") {
       await page.route("**/api/admin/jobs?**", (route) => route.fulfill({ status: 200, json: {

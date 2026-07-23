@@ -223,6 +223,7 @@ export interface SupportEvent {
     | "ACCESS_CHANGED"
     | "CREDENTIAL_CHANGED"
     | "ASSIGNMENT_CHANGED"
+    | "CHILD_CHANGED"
     | "ROSTER_IMPORTED"
     | "ASSESSMENT_FINALIZED";
   readonly actorId: string;
