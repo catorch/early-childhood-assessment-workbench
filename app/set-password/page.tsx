@@ -61,9 +61,9 @@ function SetPasswordForm() {
 
   return (
     <main className="grid min-h-[calc(100vh-62px)] place-items-center px-5 py-12 max-sm:px-3 max-sm:py-6">
-      <section className="w-full max-w-[420px] border border-border bg-surface px-7 py-7 shadow-[0_12px_32px_rgba(34,58,122,.1)] max-sm:px-5 max-sm:py-6" aria-labelledby="set-password-title">
-        <div className="grid size-[38px] place-items-center rounded-md bg-navy text-brand-light-blue" aria-hidden="true"><KeyRound size={20} /></div>
-        <p className="mt-4 text-[9px] font-extrabold uppercase text-primary-strong">HELP AI Crediting Companion</p>
+      <section className="w-full max-w-[420px] rounded-3xl border border-border bg-surface px-7 py-7 shadow-pop max-sm:px-5 max-sm:py-6" aria-labelledby="set-password-title">
+        <div className="grid size-[38px] place-items-center rounded-xl bg-navy text-brand-light-blue" aria-hidden="true"><KeyRound size={20} /></div>
+        <p className="mt-4 text-[10px] font-extrabold tracking-[0.02em] uppercase text-primary-strong">HELP AI Crediting Companion</p>
         <h1 className="mt-1 font-heading text-[32px] font-bold leading-tight text-ink" id="set-password-title">Set your password</h1>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           {token
@@ -114,7 +114,7 @@ function SetPasswordForm() {
               />
             </div>
             <button
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground hover:bg-primary-strong focus-visible:ring-3 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-55"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-[0_2px_10px_-3px_rgba(70,94,216,.55)] hover:bg-primary-hover focus-visible:ring-3 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-55"
               disabled={pending}
               type="submit"
             >

@@ -41,8 +41,8 @@ export function AppHeader() {
   }
 
   const navClass = (active: boolean) => cn(
-    "flex min-h-[42px] items-center gap-2 border-b-2 border-transparent px-3 text-sm font-bold text-muted-foreground no-underline transition-colors hover:text-navy max-sm:w-10 max-sm:justify-center max-sm:px-0",
-    active && "border-primary text-primary-strong"
+    "flex min-h-9 items-center gap-2 rounded-full px-3.5 text-sm font-bold text-muted-foreground no-underline transition-colors hover:bg-surface-soft hover:text-navy max-sm:w-10 max-sm:justify-center max-sm:px-0",
+    active && "bg-accent text-primary-strong hover:bg-accent"
   );
 
   return (
@@ -50,7 +50,7 @@ export function AppHeader() {
       <div className={cn("bg-navy text-center text-xs font-bold text-white", isSignIn ? "h-2 overflow-hidden" : "min-h-7 px-4 py-1.5 max-sm:min-h-6 max-sm:px-2 max-sm:py-1 max-sm:text-[10px]")} role="status">
         <span className={cn(isSignIn && "sr-only")}>Sanitized pilot sandbox. Real child data is disabled.</span>
       </div>
-      <header className="relative z-30 border-b border-border bg-canvas">
+      <header className="relative z-30 border-b border-border bg-surface">
         <div className={cn("mx-auto flex items-center gap-6", isSignIn ? "min-h-[54px] w-full justify-center" : "min-h-[66px] w-[min(calc(100%-40px),1180px)] justify-between max-sm:min-h-[58px] max-sm:w-[min(calc(100%-24px),1120px)] max-sm:gap-2")}>
           <Link className="inline-flex min-w-0 items-center gap-3 text-navy no-underline" href={visibleUser?.role === "ADMIN" ? "/admin/access" : visibleUser ? "/children" : "/"}>
             <Image
@@ -68,7 +68,7 @@ export function AppHeader() {
           </Link>
           {visibleUser ? (
             <div className="flex items-center gap-2 max-sm:gap-1">
-              <nav aria-label="Primary navigation" className="flex self-stretch">
+              <nav aria-label="Primary navigation" className="flex items-center gap-1">
                 {visibleUser.role === "EDUCATOR" ? (
                   <>
                     <Link aria-current={pathname.startsWith("/children") ? "page" : undefined} aria-label="Children" className={navClass(pathname.startsWith("/children"))} href="/children"><UsersRound aria-hidden="true" size={18} /><span className="max-sm:sr-only">Children</span></Link>

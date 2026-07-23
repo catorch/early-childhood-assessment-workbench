@@ -39,7 +39,7 @@ export default function ChildPage() {
   }, [load]);
 
   if (error) return <PageShell><PageState description={error} kind="error" title="Child record could not be loaded"><Button onClick={() => void load()} type="button"><RefreshCw aria-hidden="true" size={16} /> Try again</Button></PageState></PageShell>;
-  if (!data) return <PageShell><div className="mt-9 border-t border-border py-8 text-muted-foreground" role="status">Loading child record...</div></PageShell>;
+  if (!data) return <PageShell><div className="mt-9 rounded-2xl border border-border bg-surface px-5 py-8 text-muted-foreground" role="status">Loading child record...</div></PageShell>;
 
   return (
     <PageShell>
@@ -47,8 +47,8 @@ export default function ChildPage() {
       <header className="flex items-center justify-between gap-6 border-b border-border pb-8 max-sm:items-start max-sm:flex-col">
         <div>
           <Eyebrow>Assigned child</Eyebrow>
-          <h1 className="mt-1 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[30px]">{data.child.externalChildId}</h1>
-          <div className="mt-3.5 flex gap-2"><span className="rounded border border-border bg-surface px-2 py-1 text-xs text-muted-foreground">{data.child.ageMonths} months</span>{data.child.contextLabel ? <span className="rounded border border-border bg-surface px-2 py-1 text-xs text-muted-foreground">{data.child.contextLabel}</span> : null}</div>
+          <h1 className="mt-2.5 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[30px]">{data.child.externalChildId}</h1>
+          <div className="mt-3.5 flex gap-2"><span className="rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-muted-foreground">{data.child.ageMonths} months</span>{data.child.contextLabel ? <span className="rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-muted-foreground">{data.child.contextLabel}</span> : null}</div>
         </div>
         {data.child.processingAllowed ? <Button asChild><Link href={`/assessments/new?childId=${data.child.id}`}><Plus aria-hidden="true" size={17} /> Upload observational video</Link></Button> : <Button aria-describedby="permission" disabled type="button"><Plus aria-hidden="true" size={17} /> Upload observational video</Button>}
       </header>
@@ -57,11 +57,11 @@ export default function ChildPage() {
       ) : null}
       {data.progress.length > 0 ? <ChildProgress assessments={data.progress} /> : null}
       <section className="mt-10" aria-labelledby="assessment-history-title">
-        <div className="mb-4 flex items-end justify-between gap-5"><div><Eyebrow>History</Eyebrow><h2 className="mt-1 font-heading text-2xl font-bold" id="assessment-history-title">Assessments</h2></div><span className="text-[13px] text-muted-foreground">{data.assessments.length} total</span></div>
-        {data.assessments.length === 0 ? <div className="border-t border-border py-7 text-muted-foreground">No observations have been started for this child.</div> : (
-          <div className="border-t border-border">
+        <div className="mb-4 flex items-end justify-between gap-5"><div><Eyebrow>History</Eyebrow><h2 className="mt-2 text-2xl font-extrabold" id="assessment-history-title">Assessments</h2></div><span className="text-[13px] text-muted-foreground">{data.assessments.length} total</span></div>
+        {data.assessments.length === 0 ? <div className="rounded-2xl border border-border bg-surface px-5 py-7 text-muted-foreground">No observations have been started for this child.</div> : (
+          <div className="grid gap-3">
             {data.assessments.map((assessment) => (
-              <Link href={assessment.actionHref} className="grid min-h-[76px] grid-cols-[auto_1fr_auto_auto] items-center gap-3.5 border-b border-border px-2 py-3 no-underline hover:bg-surface max-sm:grid-cols-[auto_1fr_auto]" key={assessment.id}>
+              <Link href={assessment.actionHref} className="grid min-h-[76px] grid-cols-[auto_1fr_auto_auto] items-center gap-3.5 rounded-2xl border border-border bg-surface px-5 py-3 no-underline shadow-card transition-shadow hover:shadow-card-hover max-sm:grid-cols-[auto_1fr_auto]" key={assessment.id}>
                 <CalendarDays aria-hidden="true" className="text-primary" size={18} />
                 <span className="grid gap-1"><strong>Observation {formatDate(assessment.observationDate)}</strong><small className="text-xs text-muted-foreground">Updated {formatDateTime(assessment.updatedAt)}</small></span>
                 <StatusBadge status={assessment.status} label={assessmentStatusPresentation[assessment.status].label} />
@@ -92,14 +92,14 @@ function ChildProgress({ assessments }: { readonly assessments: readonly Finaliz
     : [];
   return (
     <section className="mt-10" aria-labelledby="progress-title">
-      <div className="mb-4 flex items-end justify-between gap-5"><div><Eyebrow>Progress</Eyebrow><h2 className="mt-1 font-heading text-2xl font-bold" id="progress-title">Finalized assessments</h2></div><span className="text-[13px] text-muted-foreground">{assessments.length} finalized</span></div>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] border-y border-border bg-surface">
-        {assessments.map((assessment) => <Link className="grid gap-1 border-r border-border p-4 last:border-r-0 hover:bg-surface-soft" href={`/assessments/${assessment.id}/final`} key={assessment.id}><strong>{formatDate(assessment.observationDate)}</strong><small className="text-muted-foreground">{assessment.ageMonthsAtObservation} months · {assessment.coverage.skillCount} skills · {assessment.coverage.strandCount} strands</small></Link>)}
+      <div className="mb-4 flex items-end justify-between gap-5"><div><Eyebrow>Progress</Eyebrow><h2 className="mt-2 text-2xl font-extrabold" id="progress-title">Finalized assessments</h2></div><span className="text-[13px] text-muted-foreground">{assessments.length} finalized</span></div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+        {assessments.map((assessment) => <Link className="grid gap-1 rounded-2xl border border-border bg-surface p-4 no-underline shadow-card transition-shadow hover:shadow-card-hover" href={`/assessments/${assessment.id}/final`} key={assessment.id}><strong>{formatDate(assessment.observationDate)}</strong><small className="text-muted-foreground">{assessment.ageMonthsAtObservation} months · {assessment.coverage.skillCount} skills · {assessment.coverage.strandCount} strands</small></Link>)}
       </div>
       {previous ? (
         <div className="mt-5">
           <h3 className="text-sm font-bold">Changes since {formatDate(previous.observationDate)}</h3>
-          {changed.length > 0 ? <div className="mt-2 overflow-x-auto border-y border-border" role="table" aria-label="Skill credit changes between the latest two finalized assessments">
+          {changed.length > 0 ? <div className="mt-2 overflow-x-auto rounded-xl border border-border" role="table" aria-label="Skill credit changes between the latest two finalized assessments">
             <div className="grid min-w-[560px] grid-cols-[1fr_120px_120px] bg-surface-soft px-3 py-2 text-xs font-bold text-muted-foreground" role="row"><span role="columnheader">Skill</span><span role="columnheader">Previous</span><span role="columnheader">Current</span></div>
             {changed.map(({ skill, previous: prior, current: latest }) => <div className="grid min-w-[560px] grid-cols-[1fr_120px_120px] border-t border-border bg-surface px-3 py-2.5 text-sm" key={skill.sourceSkillId} role="row"><span className="grid gap-0.5" role="cell"><span><strong className="mr-2 text-xs text-muted-foreground">{skill.skillCode}</strong>{skill.skillName}</span><small className="text-xs text-muted-foreground">{skill.domain}{skill.strand ? ` · ${skill.strand}` : ""}</small></span><span role="cell">{prior ? creditPresentation[prior.finalCredit].shortLabel : "Not included"}</span><span className="font-bold" role="cell">{latest ? creditPresentation[latest.finalCredit].shortLabel : "Not included"}</span></div>)}
           </div> : <p className="mt-2 text-sm text-muted-foreground">No credit or inclusion changes between the latest two assessments.</p>}

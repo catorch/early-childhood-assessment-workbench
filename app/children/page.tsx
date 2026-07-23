@@ -70,7 +70,7 @@ export default function ChildrenPage() {
       </header>
 
       {children && children.length > 0 ? (
-        <label className="mt-7 flex w-full max-w-[420px] items-center gap-2 rounded-md border border-border-strong bg-surface px-3 focus-within:ring-3 focus-within:ring-ring/25" htmlFor="child-search">
+        <label className="mt-7 flex w-full max-w-[420px] items-center gap-2 rounded-full border border-border-strong bg-surface px-4 focus-within:ring-3 focus-within:ring-ring/25" htmlFor="child-search">
           <Search aria-hidden="true" size={17} />
           <span className="sr-only">Search assigned children</span>
           <Input className="border-0 bg-transparent px-0 shadow-none focus-visible:ring-0" id="child-search" onChange={(event) => setQuery(event.target.value)} placeholder="Search assigned children" type="search" value={query} />
@@ -93,13 +93,13 @@ export default function ChildrenPage() {
         <PageState compact description="Try a different child identifier." kind="empty" title="No matching children" />
       ) : null}
 
-      <section className="mt-9 grid border-t border-border" aria-label="Assigned children">
+      <section className="mt-8 grid gap-3" aria-label="Assigned children">
         {visibleChildren.map((child) => {
           const latest = child.assessments[0];
           const status = latest ? assessmentStatusPresentation[latest.status] : null;
           const emptyActionLabel = child.processingAllowed ? "Upload observational video" : "View permission";
           return (
-            <article className="grid min-h-[104px] grid-cols-[50px_minmax(180px,1fr)_minmax(170px,.8fr)_auto] items-center gap-4 border-b border-border px-2 py-[18px] max-md:grid-cols-[46px_1fr_auto] max-sm:grid-cols-[42px_minmax(0,1fr)_auto] max-sm:gap-2.5 max-sm:px-0 max-sm:py-4" key={child.id}>
+            <article className="grid min-h-[104px] grid-cols-[50px_minmax(180px,1fr)_minmax(170px,.8fr)_auto] items-center gap-4 rounded-2xl border border-border bg-surface px-5 py-[18px] shadow-card transition-shadow hover:shadow-card-hover max-md:grid-cols-[46px_1fr_auto] max-sm:grid-cols-[42px_minmax(0,1fr)_auto] max-sm:gap-2.5 max-sm:px-4 max-sm:py-4" key={child.id}>
               <div className="grid size-[46px] place-items-center rounded-full border border-info-border bg-accent text-[13px] font-extrabold text-primary-strong max-sm:size-10" aria-hidden="true">{child.externalChildId.split(" ").at(-1)?.slice(-2)}</div>
               <div>
                 <h2 className="m-0 text-[17px] font-bold"><Link className="hover:text-primary hover:underline hover:underline-offset-4" href={`/children/${child.id}`}>{child.externalChildId}</Link></h2>

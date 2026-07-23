@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { Sparkle } from "@/components/brand";
 import { PageState } from "@/components/page-state";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { backLinkClass, Eyebrow, PageShell } from "@/components/ui/app-patterns";
@@ -90,8 +91,11 @@ export default function ProcessingPage() {
     <main className="mx-auto w-[min(calc(100%_-_40px),900px)] px-0 py-8 pb-16 max-sm:w-full max-sm:px-3 max-sm:py-[18px] max-sm:pb-[50px]">
       <div className="flex items-start justify-between gap-4"><Link className={backLinkClass} href={`/children/${assessment.child.id}`}><ArrowLeft aria-hidden="true" size={16} /> {assessment.child.externalChildId}</Link><Button disabled={refreshing} onClick={() => void loadStatus(true)} size="sm" type="button" variant="secondary"><RefreshCw aria-hidden="true" className={cn(refreshing && "motion-safe:animate-spin")} size={15} /><span className="max-sm:sr-only">Refresh status</span></Button></div>
       <section className="mx-auto max-w-[600px] pt-7 text-center max-sm:pt-5" aria-live="polite">
-        <span className={cn("mx-auto mb-5 grid size-[70px] place-items-center rounded-full [&_svg]:size-8", failed ? "bg-destructive-soft text-destructive" : ready ? "bg-success-soft text-success" : "bg-accent text-primary [&_svg]:motion-safe:animate-spin")}>
-          {failed ? <XCircle aria-hidden="true" /> : ready ? <CheckCircle2 aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
+        <span className="relative mx-auto mb-5 grid w-fit">
+          <span className={cn("grid size-[70px] place-items-center rounded-full [&_svg]:size-8", failed ? "bg-destructive-soft text-destructive" : ready ? "bg-success-soft text-success" : "bg-accent text-primary [&_svg]:motion-safe:animate-spin")}>
+            {failed ? <XCircle aria-hidden="true" /> : ready ? <CheckCircle2 aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
+          </span>
+          {ready ? <Sparkle className="absolute -top-1 -right-3 size-4 text-brand-yellow" /> : null}
         </span>
         <Eyebrow>{failed ? "Processing failed" : ready ? "Analysis complete" : "Analysis in progress"}</Eyebrow>
         <h1 className="mt-2 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[29px]">{failed ? assessment.error?.title ?? "We could not complete the analysis" : ready ? "Ready for review" : "Analyzing observation"}</h1>
@@ -104,8 +108,8 @@ export default function ProcessingPage() {
           <TimelineItem detail={ready ? `${assessment.suggestionCount} validated suggestions` : "Pending valid result"} icon={ready ? <Check aria-hidden="true" /> : <Circle aria-hidden="true" />} state={ready ? "complete" : "pending"} title="Review ready" />
         </ol>
 
-        <div className="mx-auto flex max-w-[520px] items-center gap-3 rounded-md border border-border bg-surface p-3 text-left"><FileVideo2 aria-hidden="true" className="shrink-0 text-primary" /><span className="grid min-w-0 gap-1"><strong className="truncate">{assessment.video?.originalFilename ?? "Video unavailable"}</strong><small className="text-xs text-muted-foreground">{assessment.video ? `${(assessment.video.byteSize / 1024 / 1024).toFixed(1)} MB` : "No available asset"} · updated {formatDateTime(assessment.updatedAt)}</small></span></div>
-        {ready ? <div className="mx-auto mt-4 grid max-w-[520px] grid-cols-2 divide-x divide-border rounded-md border border-border bg-surface max-sm:divide-x-0 max-sm:divide-y"><span className="grid gap-1 p-3 text-xs text-muted-foreground"><strong className="text-xl text-ink">{assessment.suggestionCount}</strong> skill suggestions</span><span className="grid gap-1 p-3 text-xs text-muted-foreground"><strong className="text-xl text-ink">{assessment.blankSuggestionCount}</strong> left blank by AI</span></div> : null}
+        <div className="mx-auto flex max-w-[520px] items-center gap-3 rounded-2xl border border-border bg-surface p-3.5 text-left shadow-card"><FileVideo2 aria-hidden="true" className="shrink-0 text-primary" /><span className="grid min-w-0 gap-1"><strong className="truncate">{assessment.video?.originalFilename ?? "Video unavailable"}</strong><small className="text-xs text-muted-foreground">{assessment.video ? `${(assessment.video.byteSize / 1024 / 1024).toFixed(1)} MB` : "No available asset"} · updated {formatDateTime(assessment.updatedAt)}</small></span></div>
+        {ready ? <div className="mx-auto mt-4 grid max-w-[520px] grid-cols-2 divide-x divide-border rounded-2xl border border-border bg-surface shadow-card max-sm:divide-x-0 max-sm:divide-y"><span className="grid gap-1 p-3.5 text-xs text-muted-foreground"><strong className="text-2xl font-extrabold text-ink">{assessment.suggestionCount}</strong> skill suggestions</span><span className="grid gap-1 p-3.5 text-xs text-muted-foreground"><strong className="text-2xl font-extrabold text-ink">{assessment.blankSuggestionCount}</strong> left blank by AI</span></div> : null}
         {error ? <Alert className="mt-5 text-left" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
         <div className="mt-6 flex flex-wrap justify-center gap-2.5 max-sm:flex-col">
           <Button asChild className="max-sm:w-full" variant="secondary"><Link href="/children">Return to children</Link></Button>

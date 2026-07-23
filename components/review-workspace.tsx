@@ -619,12 +619,12 @@ export function ReviewWorkspace() {
         </header>
         <div className="mx-auto mt-[18px] flex min-h-[42px] w-[min(calc(100%_-_40px),1180px)] items-center gap-2 rounded-md border border-info-border bg-info-soft px-3 py-2 text-xs font-bold text-info-strong max-md:w-[min(calc(100%_-_24px),1180px)]"><span className="size-[18px] animate-spin rounded-full border-2 border-info-border border-t-primary" /><span>Loading suggestions, saved decisions, and secure video access...</span></div>
         <div className="mx-auto mt-6 grid w-[min(calc(100%_-_40px),1180px)] grid-cols-[minmax(0,1fr)_390px] items-start gap-6 max-[1000px]:grid-cols-[minmax(300px,.82fr)_minmax(360px,1.18fr)] max-md:w-[min(calc(100%_-_24px),1180px)] max-md:grid-cols-1">
-          <section className="overflow-hidden rounded-md border border-border bg-surface px-4 py-2" aria-label="Loading suggestions">
+          <section className="overflow-hidden rounded-2xl border border-border bg-surface px-4 py-2 shadow-card" aria-label="Loading suggestions">
             {Array.from({ length: 7 }, (_, index) => <div className="grid gap-3 border-b border-border py-5 last:border-0" key={index}><Skeleton className="h-3 w-[62%]" /><Skeleton className="h-3 w-[38%]" /><Skeleton className="h-3 w-[78%]" /></div>)}
           </section>
           <aside className="sticky top-5 grid gap-3.5 max-md:static">
-            <div className="grid aspect-video place-items-center rounded-md bg-navy text-[13px] text-brand-light-blue motion-safe:animate-pulse"><span>Preparing secure video</span></div>
-            <div className="min-h-[310px] rounded-md border border-border bg-surface p-[18px]"><Skeleton className="h-3 w-[110px]" /><Skeleton className="mt-2 h-3 w-[220px]" /><Skeleton className="mt-[18px] h-[120px] w-full" /></div>
+            <div className="grid aspect-video place-items-center rounded-2xl bg-navy text-[13px] text-brand-light-blue motion-safe:animate-pulse"><span>Preparing secure video</span></div>
+            <div className="min-h-[310px] rounded-2xl border border-border bg-surface p-[18px]"><Skeleton className="h-3 w-[110px]" /><Skeleton className="mt-2 h-3 w-[220px]" /><Skeleton className="mt-[18px] h-[120px] w-full" /></div>
           </aside>
         </div>
         <span className="sr-only" role="status">Loading review workspace</span>
@@ -665,7 +665,7 @@ export function ReviewWorkspace() {
       </header>
 
       <div className={cn("mx-auto mt-6 grid w-[min(calc(100%_-_40px),1180px)] grid-cols-[minmax(0,1fr)_390px] items-start gap-6 max-[1000px]:grid-cols-[minmax(300px,.82fr)_minmax(360px,1.18fr)] max-[1000px]:gap-4 max-md:mt-3 max-md:flex max-md:w-[min(calc(100%_-_24px),1180px)] max-md:flex-col max-md:gap-3", mobileEditorOpen && "max-md:m-0 max-md:block max-md:h-full max-md:w-full max-md:p-0")}>
-        <section className={cn("overflow-hidden rounded-md border border-border bg-surface shadow-[0_6px_20px_rgba(34,58,122,.07)] max-md:order-[-1] max-md:w-full max-md:shadow-none", mobileEditorOpen && "max-md:hidden")} aria-label="AI skill suggestions">
+        <section className={cn("overflow-hidden rounded-2xl border border-border bg-surface shadow-card max-md:order-[-1] max-md:w-full max-md:shadow-none", mobileEditorOpen && "max-md:hidden")} aria-label="AI skill suggestions">
           {data.availableSkills.length > 0 && data.assessment.status !== "FINALIZED" ? (
             <div className="flex min-h-[62px] items-center justify-between gap-4 border-b-8 border-canvas bg-info-soft px-4 py-3 max-sm:items-start max-sm:flex-col max-sm:gap-2.5 max-sm:px-3.5">
               <strong className="flex items-center gap-2.5 text-sm text-navy"><span className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-yellow text-navy"><Plus aria-hidden="true" size={16} strokeWidth={2.5} /></span>Did the AI miss a skill?</strong>
@@ -689,7 +689,7 @@ export function ReviewWorkspace() {
                 return (
                   <article className={cn("relative border-b border-border p-4 last:border-b-0 max-md:px-3.5 max-md:py-4", selectedId === suggestion.id && "bg-info-soft shadow-[inset_4px_0_0_var(--primary)]")} key={suggestion.id}>
                     <button className="block w-full bg-transparent p-0 text-left" onClick={() => selectSuggestion(suggestion)} type="button">
-                      <span className="flex items-baseline gap-2.5 max-md:items-start"><span className="text-[13px] font-extrabold text-muted-foreground">{suggestion.skillCode}</span><strong className="font-heading text-[17px] leading-snug text-navy max-md:text-base">{suggestion.skillName}</strong></span>
+                      <span className="flex items-baseline gap-2.5 max-md:items-start"><span className="text-[13px] font-extrabold text-muted-foreground">{suggestion.skillCode}</span><strong className="text-base font-bold leading-snug text-navy">{suggestion.skillName}</strong></span>
                       <span className="mt-1 block text-xs text-muted-foreground">{suggestion.domain}{suggestion.strand ? ` · ${suggestion.strand}` : ""}</span>
                     </button>
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
@@ -703,7 +703,7 @@ export function ReviewWorkspace() {
                         return (
                           <button
                             aria-pressed={activeEvidence === evidenceKey}
-                            className={cn("inline-flex min-h-[26px] items-center gap-1 rounded border border-border bg-surface px-2 py-1 text-[11px] font-extrabold text-primary-strong", activeEvidence === evidenceKey && "ring-2 ring-ring ring-offset-2")}
+                            className={cn("inline-flex min-h-[26px] items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-extrabold text-primary-strong transition-colors hover:border-primary hover:bg-accent/40", activeEvidence === evidenceKey && "ring-2 ring-ring ring-offset-2")}
                             key={evidenceKey}
                             onClick={() => seek(evidenceKey, evidence.timestampSeconds)}
                             type="button"
@@ -761,7 +761,7 @@ export function ReviewWorkspace() {
               {addOpen ? (
                 <div className="grid gap-3 p-4 max-md:px-3.5">
                   <div className="flex items-center justify-between gap-3">
-                    <strong className="font-heading text-[17px] text-navy">Add a skill the AI missed</strong>
+                    <strong className="text-[17px] font-extrabold text-navy">Add a skill the AI missed</strong>
                     <Button disabled={addPending} onClick={() => { setAddOpen(false); setAddError(null); }} size="xs" type="button" variant="secondary"><X aria-hidden="true" size={14} /> Cancel</Button>
                   </div>
                   <p className="text-xs leading-relaxed text-muted-foreground">Choose the section or domain, strand, skill, and your credit. The entry is recorded as added by you.</p>
@@ -828,7 +828,7 @@ export function ReviewWorkspace() {
         </section>
 
         <aside className={cn("sticky top-5 grid gap-3.5 max-md:static max-md:contents", mobileEditorOpen && "max-md:block max-md:h-full max-md:w-full")}>
-          <section className={cn("overflow-hidden rounded-md border border-border bg-surface shadow-[0_6px_20px_rgba(34,58,122,.07)] max-md:order-[-3] max-md:ml-[-12px] max-md:w-[calc(100%+24px)] max-md:rounded-none max-md:border-x-0", mobileEditorOpen && "max-md:hidden")}>
+          <section className={cn("overflow-hidden rounded-2xl border border-border bg-surface shadow-card max-md:order-[-3] max-md:ml-[-12px] max-md:w-[calc(100%+24px)] max-md:rounded-none max-md:border-x-0", mobileEditorOpen && "max-md:hidden")}>
             {data.video && !videoUnavailable ? (
               <video
                 className="block aspect-video w-full bg-navy object-contain"
@@ -857,10 +857,10 @@ export function ReviewWorkspace() {
           </section>
 
           {selected ? (
-            <section className={cn("overflow-hidden rounded-md border border-border bg-surface p-[18px] shadow-[0_6px_20px_rgba(34,58,122,.07)] max-md:hidden", mobileEditorOpen && "max-md:block max-md:h-full max-md:w-full max-md:overflow-y-auto max-md:rounded-none max-md:border-0 max-md:px-4 max-md:pt-0 max-md:pb-6 max-md:shadow-none")} id="review-editor" aria-labelledby="editor-title">
+            <section className={cn("overflow-hidden rounded-2xl border border-border bg-surface p-[18px] shadow-card max-md:hidden", mobileEditorOpen && "max-md:block max-md:h-full max-md:w-full max-md:overflow-y-auto max-md:rounded-none max-md:border-0 max-md:px-4 max-md:pt-0 max-md:pb-6 max-md:shadow-none")} id="review-editor" aria-labelledby="editor-title">
               <div className="sticky top-0 z-[3] -mx-4 mb-5 hidden grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-white/98 px-4 py-3.5 max-md:grid">
                 <button className="inline-flex items-center gap-1 bg-transparent p-0 text-[11px] font-extrabold text-navy" onClick={closeMobileEditor} type="button"><ArrowLeft aria-hidden="true" className="size-[18px]" /> Back to items</button>
-                <strong className="whitespace-nowrap text-center font-heading text-[17px] text-navy">Review {selected.skillCode}</strong>
+                <strong className="whitespace-nowrap text-center text-[17px] font-extrabold text-navy">Review {selected.skillCode}</strong>
                 <span className={cn("justify-self-end text-[11px] font-extrabold text-muted-foreground", selectedDecision && "text-success", dirty && "text-warning")}>{dirty ? "Unsaved" : selectedDecision ? "Saved" : "Not reviewed"}</span>
               </div>
               {mobileEditorOpen ? (
@@ -882,18 +882,18 @@ export function ReviewWorkspace() {
                   ) : (
                     <div className="grid aspect-video w-full place-items-center gap-1 rounded-md bg-navy text-center text-[9px] text-white"><CircleHelp aria-hidden="true" /><span>Video access unavailable</span></div>
                   )}
-                  <strong className="text-center font-heading text-2xl text-navy">{formatTime(Math.floor(lastVideoTime))}</strong>
+                  <strong className="text-center text-2xl font-extrabold text-navy">{formatTime(Math.floor(lastVideoTime))}</strong>
                 </div>
               ) : null}
               <div className="flex items-center justify-between gap-3">
                 <Eyebrow>Review {selected.skillCode}</Eyebrow>
                 {selectedDecision ? <Badge className={decisionBadgeClass(selectedDecision)} variant="outline">{selectedDecision.dismissed ? <X aria-hidden="true" /> : <Check aria-hidden="true" />}{decisionLabel(selectedDecision)}</Badge> : <Badge variant="secondary">Not reviewed</Badge>}
               </div>
-              <h2 className="mt-1 mb-2 font-heading text-[19px] font-bold leading-snug max-md:mt-2 max-md:text-[27px]" id="editor-title">{selected.skillName}</h2>
+              <h2 className="mt-2 mb-2 text-[19px] font-extrabold leading-snug max-md:text-[25px]" id="editor-title">{selected.skillName}</h2>
               <div className="flex items-center gap-1 text-xs text-primary-strong max-md:text-sm"><span>{selected.domain}{selected.strand ? ` · ${selected.strand}` : ""}</span></div>
               {selected.source === "MODEL" ? (
                 <>
-                <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-soft px-3 py-2.5">
+                <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-soft px-3 py-2.5">
                   <span className="text-[11px] font-extrabold uppercase text-muted-foreground">AI suggestion</span>
                   {selected.draftCredit ? <Badge variant="info">{creditPresentation[selected.draftCredit].symbol} {creditPresentation[selected.draftCredit].label}</Badge> : <Badge variant="warning">No draft credit</Badge>}
                   <ConfidenceIndicator label={confidenceLabel(selected.confidence)} />
@@ -924,7 +924,7 @@ export function ReviewWorkspace() {
               ) : null}
               <fieldset className="mt-[18px] border-0 p-0 max-md:mt-6">
                 <legend className="mb-2 block text-[11px] font-extrabold uppercase text-muted-foreground">Your decision</legend>
-                <div className="grid grid-cols-4 overflow-hidden rounded-md border border-border-strong max-md:grid-cols-2">
+                <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-border-strong max-md:grid-cols-2">
                   {standardCredits.map((credit) => (
                     <button aria-pressed={draftCredit === credit} className={cn(creditButtonClass(draftCredit === credit), "mt-0 max-md:min-h-[82px]")} key={credit} onClick={() => { setDraftCredit(credit); if (credit === "BLANK") setDraftConcernFlag(false); }} type="button">
                       <strong>{creditPresentation[credit].symbol}</strong>
@@ -933,7 +933,7 @@ export function ReviewWorkspace() {
                   ))}
                 </div>
               </fieldset>
-              <details className="group mt-[18px] rounded-md border border-border bg-surface">
+              <details className="group mt-[18px] rounded-xl border border-border bg-surface">
                 <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-extrabold text-navy focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/35">
                   N/A, atypical, or concern options
                   <ChevronDown aria-hidden="true" className="transition-transform group-open:rotate-180" size={16} />
@@ -941,7 +941,7 @@ export function ReviewWorkspace() {
                 <div className="border-t border-border p-3">
                   <fieldset className="border-0 p-0">
                     <legend className="mb-2 block text-[11px] font-extrabold uppercase text-muted-foreground">Educator-only credit</legend>
-                    <div className="grid grid-cols-2 overflow-hidden rounded-md border border-border-strong">
+                    <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-border-strong">
                       {educatorOnlyCreditsFor(
                         selected.domain,
                         data.skillCreditRules.find((rule) => rule.sourceSkillId === selected.sourceSkillId)?.sensoryCreditKeys
@@ -970,8 +970,8 @@ export function ReviewWorkspace() {
                   <AlertDescription><strong className="block">Decision needs attention</strong><span>{saveError}</span><div className="mt-1 flex gap-3"><button className="text-[11px] font-extrabold underline underline-offset-2" onClick={discardDraft} type="button">Discard changes</button>{draftCredit ? <button className="text-[11px] font-extrabold underline underline-offset-2" onClick={() => void saveDecision(selected, { finalCredit: draftCredit, dismissed: false, concernFlag: draftConcernFlag, note: draftNote.trim() || null })} type="button">Retry save</button> : null}</div></AlertDescription>
                 </Alert>
               ) : null}
-              <div className="mt-4 flex justify-end gap-2 border-t border-border pt-3.5 max-md:mx-[-16px] max-md:mt-6 max-md:grid max-md:grid-cols-2 max-md:px-4 max-md:py-3.5 max-md:pb-[calc(14px+env(safe-area-inset-bottom))]">
-                <Button className="max-md:col-span-full max-md:justify-self-start" disabled={saving || Boolean(selectedDecision?.dismissed && !dirty)} onClick={() => void saveDecision(selected, { finalCredit: null, dismissed: true, concernFlag: false, note: draftNote.trim() || null })} size="sm" type="button" variant="destructive-outline"><X aria-hidden="true" size={15} /> {selectedDecision?.dismissed && !dirty ? "Suggestion dismissed" : "Dismiss suggestion"}</Button>
+              <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border pt-3.5 max-md:mx-[-16px] max-md:mt-6 max-md:grid max-md:grid-cols-2 max-md:px-4 max-md:py-3.5 max-md:pb-[calc(14px+env(safe-area-inset-bottom))]">
+                <Button className="mr-auto max-md:col-span-full max-md:justify-self-start" disabled={saving || Boolean(selectedDecision?.dismissed && !dirty)} onClick={() => void saveDecision(selected, { finalCredit: null, dismissed: true, concernFlag: false, note: draftNote.trim() || null })} size="sm" type="button" variant="destructive-outline"><X aria-hidden="true" size={15} /> {selectedDecision?.dismissed && !dirty ? "Suggestion dismissed" : "Dismiss suggestion"}</Button>
                 <Button disabled={!dirty || saving} onClick={discardDraft} size="sm" type="button" variant="secondary">Discard</Button>
                 <Button disabled={!canSaveDecision} onClick={() => void saveDecision(selected, { finalCredit: draftCredit, dismissed: false, concernFlag: draftConcernFlag, note: draftNote.trim() || null })} size="sm" type="button"><Save aria-hidden="true" size={15} /> {saving ? "Saving..." : selectedDecision ? "Save changes" : "Save decision"}</Button>
               </div>

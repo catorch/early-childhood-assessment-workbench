@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { Sparkle } from "@/components/brand";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PageState } from "@/components/page-state";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -119,9 +120,12 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
     <main className="min-h-screen bg-canvas">
       <header className={finalView ? "border-b border-success-border bg-success-soft" : "border-b border-border bg-surface"}>
         <div className="mx-auto w-[min(calc(100%_-_40px),960px)] py-11 max-sm:w-[min(calc(100%_-_24px),960px)] max-sm:py-8">
-          <span className={finalView ? "mb-4 grid size-12 place-items-center rounded-full bg-success text-white" : "mb-4 grid size-12 place-items-center rounded-full bg-accent text-primary"}>{finalView ? <LockKeyhole aria-hidden="true" /> : <ClipboardCheck aria-hidden="true" />}</span>
-          <Eyebrow className={finalView ? "text-success before:bg-success" : undefined}>{finalView ? "Human-approved record" : "Pre-final review"}</Eyebrow>
-          <h1 className="mt-1 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[31px]">{finalView ? "Assessment finalized" : "Review assessment summary"}</h1>
+          <span className="relative mb-4 grid w-fit">
+            <span className={finalView ? "grid size-12 place-items-center rounded-full bg-success text-white" : "grid size-12 place-items-center rounded-full bg-accent text-primary"}>{finalView ? <LockKeyhole aria-hidden="true" /> : <ClipboardCheck aria-hidden="true" />}</span>
+            {finalView ? <Sparkle className="absolute -top-1 -right-2.5 size-3.5 text-brand-yellow" /> : null}
+          </span>
+          <Eyebrow className={finalView ? "bg-white/70 text-success-strong" : undefined}>{finalView ? "Human-approved record" : "Pre-final review"}</Eyebrow>
+          <h1 className="mt-2.5 font-heading text-4xl font-bold leading-tight text-ink max-sm:text-[31px]">{finalView ? "Assessment finalized" : "Review assessment summary"}</h1>
           <p className="mt-2.5 text-muted-foreground">{data.child.externalChildId} · {data.assessment.ageMonthsAtObservation} months at observation · {formatDate(data.assessment.observationDate)}</p>
           {finalView && data.assessment.finalizedAt ? <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-success-border bg-surface px-3 py-1.5 text-xs font-bold text-success"><CheckCircle2 aria-hidden="true" size={16} /> Confirmed {formatDateTime(data.assessment.finalizedAt)}{data.assessment.finalizedBy ? ` by ${data.assessment.finalizedBy}` : ""}</span> : null}
         </div>
@@ -129,17 +133,17 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
 
       <div className="mx-auto w-[min(calc(100%_-_40px),960px)] py-8 pb-[72px] max-sm:w-[min(calc(100%_-_24px),960px)] max-sm:pt-5">
         {!finalView && remaining.length > 0 ? (
-          <section className="border border-warning-border bg-warning-soft p-5" aria-labelledby="remaining-title">
+          <section className="rounded-2xl border border-warning-border bg-warning-soft p-5" aria-labelledby="remaining-title">
             <div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-warning text-lg font-extrabold text-white">{remaining.length}</span><span><h2 className="text-lg font-bold" id="remaining-title">Items still need an action</h2><p className="mt-1 text-sm text-warning-strong">Final confirmation stays locked until each suggestion is scored or dismissed.</p></span></div>
             <ul className="my-4 grid border-t border-warning-border">{remaining.map((suggestion) => <li className="border-b border-warning-border py-2.5" key={suggestion.id}><Link className="font-bold underline decoration-warning underline-offset-4" href={`/assessments/${assessmentId}/review?skill=${encodeURIComponent(suggestion.id)}`}><span className="mr-2 text-xs text-warning-strong">{suggestion.skillCode}</span>{suggestion.skillName}</Link></li>)}</ul>
             <Button asChild><Link href={`/assessments/${assessmentId}/review`}><ArrowLeft aria-hidden="true" size={16} /> Return to review</Link></Button>
           </section>
         ) : (
-          <section className="flex items-center gap-3 border-y border-success-border bg-success-soft px-1 py-4 text-success"><CheckCircle2 aria-hidden="true" className="shrink-0" /><div><h2 className="font-bold text-ink">{finalView ? "Final educator decisions" : "All items are reviewed"}</h2><p className="mt-1 text-sm text-muted-foreground">{finalView ? "This record is read-only." : "Review the totals and included skills before confirming."}</p></div></section>
+          <section className="flex items-center gap-3 rounded-2xl border border-success-border bg-success-soft px-5 py-4 text-success"><CheckCircle2 aria-hidden="true" className="shrink-0" /><div><h2 className="font-bold text-ink">{finalView ? "Final educator decisions" : "All items are reviewed"}</h2><p className="mt-1 text-sm text-muted-foreground">{finalView ? "This record is read-only." : "Review the totals and included skills before confirming."}</p></div></section>
         )}
 
         <SummarySection eyebrow="Coverage" id="coverage-title" title="Assessment coverage">
-          <div className="grid grid-cols-4 divide-x divide-border rounded-md border border-border bg-surface max-md:grid-cols-2 max-md:divide-x-0">
+          <div className="grid grid-cols-4 divide-x divide-border rounded-2xl border border-border bg-surface shadow-card max-md:grid-cols-2 max-md:divide-x-0">
             {[
               [data.summary.coverage.developmentalDomainCount, "Developmental domains"],
               [data.summary.coverage.strandCount, "Strands"],
@@ -150,31 +154,31 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
         </SummarySection>
 
         <SummarySection eyebrow="Final scoring" id="credit-totals-title" meta={`${data.summary.concernFlags} O concern flag${data.summary.concernFlags === 1 ? "" : "s"}`} title="Credit totals">
-          <div className="grid grid-cols-6 divide-x divide-border rounded-md border border-border bg-surface max-lg:grid-cols-3 max-md:grid-cols-2 max-md:divide-x-0">
+          <div className="grid grid-cols-6 divide-x divide-border rounded-2xl border border-border bg-surface shadow-card max-lg:grid-cols-3 max-md:grid-cols-2 max-md:divide-x-0">
             {creditBuckets.map((credit, index) => <div className="grid min-h-[116px] place-items-center content-center gap-1 p-4 text-center max-md:border-b max-md:border-border max-md:odd:border-r" key={credit.label}><span className={creditSymbolClass(credit.keys[0] ?? null)}>{credit.symbol}</span><strong className="text-2xl">{bucketCount(data.summary.credits, credit.keys)}</strong><small className="text-xs text-muted-foreground">{credit.label}</small><span className="sr-only">Position {index + 1}</span></div>)}
           </div>
         </SummarySection>
 
         <SummarySection eyebrow="Human review" id="decision-path-title" title="Decision paths">
-          <div className="grid grid-cols-4 divide-x divide-border rounded-md border border-border bg-surface max-md:grid-cols-2 max-md:divide-x-0">
+          <div className="grid grid-cols-4 divide-x divide-border rounded-2xl border border-border bg-surface shadow-card max-md:grid-cols-2 max-md:divide-x-0">
             {Object.entries(originLabels).map(([origin, label]) => <div className="grid gap-1 p-4 text-center max-md:border-b max-md:border-border max-md:odd:border-r max-md:[&:nth-child(n+3)]:border-b-0" key={origin}><strong className="text-2xl">{data.summary.origins[origin as keyof typeof originLabels]}</strong><span className="text-xs text-muted-foreground">{label}</span></div>)}
           </div>
         </SummarySection>
 
         <SummarySection eyebrow="By domain" id="domain-summary-title" title="Domain summary">
-          <div className="overflow-x-auto rounded-md border border-border outline-none focus-visible:ring-3 focus-visible:ring-ring/35" role="table" aria-label="Credits by HELP domain" tabIndex={0}>
+          <div className="overflow-x-auto rounded-xl border border-border outline-none focus-visible:ring-3 focus-visible:ring-ring/35" role="table" aria-label="Credits by HELP domain" tabIndex={0}>
             <div className="grid min-w-[700px] grid-cols-[minmax(220px,1fr)_repeat(6,70px)] bg-surface-soft px-4 py-2.5 text-[10px] font-extrabold uppercase text-muted-foreground" role="row"><span role="columnheader">Domain / section</span>{creditBuckets.map((credit) => <span className="text-center" role="columnheader" key={credit.label}>{credit.symbol}</span>)}</div>
             {data.summary.domains.map((domain) => <div className="grid min-w-[700px] grid-cols-[minmax(220px,1fr)_repeat(6,70px)] border-t border-border bg-surface px-4 py-3 text-sm" role="row" key={domain.domain}><strong role="cell">{domain.domain}</strong>{creditBuckets.map((credit) => <span className="text-center" role="cell" key={credit.label}>{bucketCount(domain.credits, credit.keys)}</span>)}</div>)}
           </div>
         </SummarySection>
 
         <SummarySection eyebrow="Included record" id="final-skills-title" title="Final skills">
-          <div className="border-t border-border">
-            {data.summary.included.map(({ suggestion, decision }) => <article className="grid grid-cols-[36px_minmax(0,1fr)_auto] gap-3 border-b border-border px-2 py-3.5 max-sm:grid-cols-[36px_1fr]" key={suggestion.id}><span className={creditSymbolClass(decision.finalCredit)}>{decision.finalCredit ? creditSymbol(decision.finalCredit) : ""}</span><span className="grid gap-1"><strong><small className="mr-2 text-muted-foreground">{suggestion.skillCode}</small>{suggestion.skillName}</strong><small className="text-muted-foreground">{suggestion.domain}{suggestion.strand ? ` · ${suggestion.strand}` : ""}</small>{decision.concernFlag ? <small className="font-bold text-warning-strong">O concern flag</small> : null}{decision.note ? <p className="mt-1 text-sm italic text-muted-foreground">“{decision.note}”</p> : null}</span><span className="self-start rounded-full bg-surface-soft px-2 py-1 text-[11px] font-bold text-muted-foreground max-sm:col-start-2 max-sm:justify-self-start">{originLabels[decision.origin]}</span></article>)}
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface px-4 shadow-card">
+            {data.summary.included.map(({ suggestion, decision }) => <article className="grid grid-cols-[36px_minmax(0,1fr)_auto] gap-3 border-b border-border px-2 py-3.5 last:border-b-0 max-sm:grid-cols-[36px_1fr]" key={suggestion.id}><span className={creditSymbolClass(decision.finalCredit)}>{decision.finalCredit ? creditSymbol(decision.finalCredit) : ""}</span><span className="grid gap-1"><strong><small className="mr-2 text-muted-foreground">{suggestion.skillCode}</small>{suggestion.skillName}</strong><small className="text-muted-foreground">{suggestion.domain}{suggestion.strand ? ` · ${suggestion.strand}` : ""}</small>{decision.concernFlag ? <small className="font-bold text-warning-strong">O concern flag</small> : null}{decision.note ? <p className="mt-1 text-sm italic text-muted-foreground">“{decision.note}”</p> : null}</span><span className="self-start rounded-full bg-surface-soft px-2 py-1 text-[11px] font-bold text-muted-foreground max-sm:col-start-2 max-sm:justify-self-start">{originLabels[decision.origin]}</span></article>)}
           </div>
         </SummarySection>
 
-        {data.summary.dismissed.length > 0 ? <SummarySection eyebrow="Excluded from final record" id="dismissed-skills-title" meta={String(data.summary.dismissed.length)} title="Dismissed suggestions"><div className="border-t border-border">{data.summary.dismissed.map(({ suggestion, decision }) => <article className="grid grid-cols-[30px_minmax(0,1fr)] gap-2.5 border-b border-border px-2 py-3" key={suggestion.id}><X aria-hidden="true" className="mt-0.5 text-muted-foreground" size={16} /><span className="grid gap-1"><strong><small className="mr-2 text-muted-foreground">{suggestion.skillCode}</small>{suggestion.skillName}</strong><small className="text-xs text-muted-foreground">{suggestion.domain}</small>{decision.note ? <p className="text-xs text-muted-foreground">{decision.note}</p> : null}</span></article>)}</div></SummarySection> : null}
+        {data.summary.dismissed.length > 0 ? <SummarySection eyebrow="Excluded from final record" id="dismissed-skills-title" meta={String(data.summary.dismissed.length)} title="Dismissed suggestions"><div className="overflow-hidden rounded-2xl border border-border bg-surface px-4">{data.summary.dismissed.map(({ suggestion, decision }) => <article className="grid grid-cols-[30px_minmax(0,1fr)] gap-2.5 border-b border-border px-2 py-3 last:border-b-0" key={suggestion.id}><X aria-hidden="true" className="mt-0.5 text-muted-foreground" size={16} /><span className="grid gap-1"><strong><small className="mr-2 text-muted-foreground">{suggestion.skillCode}</small>{suggestion.skillName}</strong><small className="text-xs text-muted-foreground">{suggestion.domain}</small>{decision.note ? <p className="text-xs text-muted-foreground">{decision.note}</p> : null}</span></article>)}</div></SummarySection> : null}
 
         <footer className="print-hidden mt-10 flex justify-end gap-2.5 border-t border-border pt-5 max-sm:flex-col-reverse">
           {finalView ? <><Button asChild className="max-sm:w-full"><a download href={`/api/assessments/${assessmentId}/final/download`}><Download aria-hidden="true" size={16} /> Download PDF</a></Button><Button className="max-sm:w-full" onClick={() => window.print()} type="button" variant="secondary"><Printer aria-hidden="true" size={16} /> Print</Button><Button asChild className="max-sm:w-full" variant="secondary"><Link href={`/children/${data.child.id}`}><ArrowLeft aria-hidden="true" size={16} /> Return to child</Link></Button></> : <>
@@ -190,7 +194,7 @@ export function AssessmentSummary({ finalView }: { readonly finalView: boolean }
 }
 
 function SummarySection({ eyebrow, title, id, meta, children }: { readonly eyebrow: string; readonly title: string; readonly id: string; readonly meta?: string; readonly children: ReactNode }) {
-  return <section className="mt-10" aria-labelledby={id}><div className="mb-[18px] flex items-end justify-between gap-5"><div><Eyebrow>{eyebrow}</Eyebrow><h2 className="mt-1 font-heading text-2xl font-bold" id={id}>{title}</h2></div>{meta ? <span className="text-[13px] text-muted-foreground">{meta}</span> : null}</div>{children}</section>;
+  return <section className="mt-10" aria-labelledby={id}><div className="mb-[18px] flex items-end justify-between gap-5"><div><Eyebrow>{eyebrow}</Eyebrow><h2 className="mt-2 text-2xl font-extrabold" id={id}>{title}</h2></div>{meta ? <span className="text-[13px] text-muted-foreground">{meta}</span> : null}</div>{children}</section>;
 }
 
 function creditSymbolClass(credit: PrimaryCredit | null): string {

@@ -8,7 +8,7 @@ export function PageShell({ className, ...props }: ComponentProps<"main">) {
 
 export function Eyebrow({ className, children, ...props }: ComponentProps<"span">) {
   return (
-    <span className={cn("inline-flex items-center gap-2 text-[11px] font-extrabold tracking-normal text-primary-strong uppercase before:h-0.5 before:w-4 before:rounded-full before:bg-primary", className)} {...props}>
+    <span className={cn("inline-flex min-h-6 items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-extrabold tracking-[0.02em] text-primary-strong uppercase", className)} {...props}>
       {children}
     </span>
   );
@@ -31,7 +31,7 @@ export function PageHeading({
     <header className={cn("flex items-end justify-between gap-6 max-sm:items-start max-sm:flex-col", className)}>
       <div className="max-w-[720px]">
         {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-        <h1 className="mt-1 font-heading text-4xl font-bold leading-[1.15] text-ink max-sm:text-[30px]">{title}</h1>
+        <h1 className="mt-2.5 font-heading text-4xl font-bold leading-[1.12] text-ink max-sm:text-[30px]">{title}</h1>
         {description ? <p className="mt-2.5 leading-relaxed text-muted-foreground">{description}</p> : null}
       </div>
       {actions}
@@ -41,4 +41,4 @@ export function PageHeading({
 
 export const backLinkClass = "mb-[26px] inline-flex items-center gap-1.5 text-sm font-bold text-primary-strong no-underline hover:underline hover:underline-offset-4";
 
-export const serifSectionHeadingClass = "font-heading text-2xl font-bold text-ink";
+export const sectionHeadingClass = "text-2xl font-extrabold tracking-[-0.01em] text-ink";

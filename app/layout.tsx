@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Anybody, Inter } from "next/font/google";
 
 import { AppHeader } from "@/components/app-header";
+import { BrandFooter } from "@/components/brand";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
@@ -26,10 +27,11 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <title>HELP AI Crediting Companion</title>
         <meta content="Educator review of draft HELP assessment suggestions." name="description" />
       </head>
-      <body>
+      <body className="flex min-h-screen flex-col">
         <TooltipProvider>
           <AppHeader />
-          {children}
+          <div className="flex flex-1 flex-col [&>*]:flex-1">{children}</div>
+          <BrandFooter />
         </TooltipProvider>
       </body>
     </html>

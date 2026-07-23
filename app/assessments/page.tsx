@@ -68,14 +68,14 @@ function AssessmentsContent() {
   return (
     <PageShell>
       <header className="flex items-end justify-between gap-6 max-sm:items-start max-sm:flex-col">
-        <div><Eyebrow>Educator workspace</Eyebrow><h1 className="mt-1 font-heading text-4xl font-bold leading-tight max-sm:text-[30px]">Assessments</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Continue active observations or reopen finalized records.</p></div>
+        <div><Eyebrow>Educator workspace</Eyebrow><h1 className="mt-2.5 font-heading text-4xl font-bold leading-tight max-sm:text-[30px]">Assessments</h1><p className="mt-2.5 leading-relaxed text-muted-foreground">Continue active observations or reopen finalized records.</p></div>
         <Button asChild><Link href="/children">Start from a child</Link></Button>
       </header>
-      <div className="mt-7 flex items-center justify-between gap-4 border-y border-border py-4 max-sm:items-stretch max-sm:flex-col">
-        <div className="inline-flex overflow-hidden rounded-md border border-border bg-surface-soft max-sm:w-full" aria-label="Assessment status filter" role="group">
-          {(["active", "finalized", "all"] as const).map((option) => <button aria-pressed={filter === option} className={cn("min-h-9 border-r border-border px-3 py-1.5 text-xs font-extrabold capitalize text-muted-foreground last:border-r-0 hover:bg-surface hover:text-navy max-sm:flex-1", filter === option && "bg-surface text-navy shadow-[inset_0_-3px_0_var(--primary)]")} key={option} onClick={() => selectFilter(option)} type="button">{option}</button>)}
+      <div className="mt-7 flex items-center justify-between gap-4 py-1 max-sm:items-stretch max-sm:flex-col">
+        <div className="inline-flex gap-1 rounded-full border border-border bg-surface p-1 max-sm:w-full" aria-label="Assessment status filter" role="group">
+          {(["active", "finalized", "all"] as const).map((option) => <button aria-pressed={filter === option} className={cn("min-h-8 rounded-full px-3.5 py-1 text-xs font-extrabold capitalize text-muted-foreground transition-colors hover:bg-surface-soft hover:text-navy max-sm:flex-1", filter === option && "bg-accent text-primary-strong hover:bg-accent")} key={option} onClick={() => selectFilter(option)} type="button">{option}</button>)}
         </div>
-        <form className="flex w-[320px] items-center gap-2 rounded-md border border-border-strong bg-surface px-2.5 focus-within:ring-3 focus-within:ring-ring/25 max-sm:w-full" onSubmit={search}>
+        <form className="flex w-[320px] items-center gap-2 rounded-full border border-border-strong bg-surface px-3 focus-within:ring-3 focus-within:ring-ring/25 max-sm:w-full" onSubmit={search}>
           <Search aria-hidden="true" size={17} /><label className="sr-only" htmlFor="assessment-search">Search assessments</label>
           <Input className="border-0 bg-transparent px-0 shadow-none focus-visible:ring-0" defaultValue={query} id="assessment-search" key={query} name="search" placeholder="Search child ID" type="search" />
           <Button aria-label="Search" size="icon-xs" title="Search" type="submit" variant="ghost"><ArrowRight aria-hidden="true" size={17} /></Button>
@@ -86,7 +86,7 @@ function AssessmentsContent() {
       {assessments === null && !error ? <PageState description="Loading your authorized assessment records." kind="loading" title="Loading assessments" /> : null}
       {assessments?.length === 0 ? <PageState description="No assessments match this filter. Start from an assigned child when you are ready." kind="empty" title="No matching assessments"><Button asChild variant="secondary"><Link href="/children">View assigned children</Link></Button></PageState> : null}
       {assessments && assessments.length > 0 ? (
-        <section className="mt-6 overflow-hidden rounded-md border border-border bg-surface" aria-label="Assessments">
+        <section className="mt-6 overflow-hidden rounded-2xl border border-border bg-surface shadow-card" aria-label="Assessments">
           <div className="grid grid-cols-[minmax(160px,1fr)_125px_130px_85px_minmax(140px,.8fr)_auto] gap-3 border-b border-border bg-surface-soft px-4 py-2.5 text-[10px] font-extrabold uppercase text-muted-foreground max-lg:grid-cols-[minmax(160px,1fr)_125px_130px_85px_minmax(140px,.8fr)] max-lg:[&>span:last-child]:hidden max-md:hidden" aria-hidden="true"><span>Child</span><span>Observation</span><span>Status</span><span>Progress</span><span>Updated</span><span>Action</span></div>
           {assessments.map((assessment) => {
             const status = assessmentStatusPresentation[assessment.status];
